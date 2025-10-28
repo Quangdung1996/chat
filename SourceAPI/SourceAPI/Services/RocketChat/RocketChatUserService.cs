@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Core.Repository;
-using SourceAPI.Data.Entities;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;

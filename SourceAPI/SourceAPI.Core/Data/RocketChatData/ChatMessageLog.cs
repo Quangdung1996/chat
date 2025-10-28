@@ -1,15 +1,15 @@
 using System;
 
-namespace SourceAPI.Data.Entities
+namespace SourceAPI.Core.Data.RocketChatData
 {
     /// <summary>
-    /// Mapping for Rocket.Chat rooms/groups
-    /// T-17, T-18: Group and Channel mapping
-    /// Database First: chat.RoomMapping
+    /// Log of chat messages from Rocket.Chat
+    /// T-35: Message logging
+    /// Database First: chat.ChatMessageLog
     /// </summary>
-    public partial class RoomMapping
+    public partial class ChatMessageLog
     {
-        public RoomMapping()
+        public ChatMessageLog()
         {
             OnCreated();
         }
@@ -17,12 +17,12 @@ namespace SourceAPI.Data.Entities
         /// <summary>
         /// Primary key
         /// </summary>
-        public virtual int Id { get; set; }
+        public virtual long Id { get; set; }
 
         /// <summary>
-        /// Unique business code for the group (e.g., DEPT-PROJ-001)
+        /// Rocket.Chat message ID
         /// </summary>
-        public virtual string GroupCode { get; set; }
+        public virtual string RocketMessageId { get; set; }
 
         /// <summary>
         /// Rocket.Chat room ID
@@ -30,74 +30,69 @@ namespace SourceAPI.Data.Entities
         public virtual string RocketRoomId { get; set; }
 
         /// <summary>
-        /// Room name in Rocket.Chat
+        /// Rocket.Chat user ID (sender)
         /// </summary>
-        public virtual string RoomName { get; set; }
+        public virtual string RocketUserId { get; set; }
 
         /// <summary>
-        /// Room type: 'group' (private) or 'channel' (public)
+        /// Internal user ID (if mapped)
         /// </summary>
-        public virtual string RoomType { get; set; }
+        public virtual int? UserId { get; set; }
 
         /// <summary>
-        /// Department ID (optional)
+        /// Internal room mapping ID (if mapped)
         /// </summary>
-        public virtual int? DepartmentId { get; set; }
+        public virtual int? RoomMappingId { get; set; }
 
         /// <summary>
-        /// Project ID (optional)
+        /// Message text
         /// </summary>
-        public virtual int? ProjectId { get; set; }
+        public virtual string MessageText { get; set; }
 
         /// <summary>
-        /// Room description
+        /// Message type (text, file, etc.)
         /// </summary>
-        public virtual string Description { get; set; }
+        public virtual string MessageType { get; set; }
 
         /// <summary>
-        /// Is read-only room
-        /// </summary>
-        public virtual bool IsReadOnly { get; set; }
-
-        /// <summary>
-        /// Is announcement room
-        /// </summary>
-        public virtual bool IsAnnouncement { get; set; }
-
-        /// <summary>
-        /// Is archived
-        /// </summary>
-        public virtual bool IsArchived { get; set; }
-
-        /// <summary>
-        /// Is deleted
+        /// Is message deleted
         /// </summary>
         public virtual bool IsDeleted { get; set; }
 
         /// <summary>
-        /// Created date
+        /// Was message auto-deleted by policy
+        /// </summary>
+        public virtual bool IsAutoDeleted { get; set; }
+
+        /// <summary>
+        /// Deletion reason
+        /// </summary>
+        public virtual string DeletionReason { get; set; }
+
+        /// <summary>
+        /// When was message deleted
+        /// </summary>
+        public virtual DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// Who deleted the message
+        /// </summary>
+        public virtual string DeletedBy { get; set; }
+
+        /// <summary>
+        /// Message created timestamp
         /// </summary>
         public virtual DateTime CreatedAt { get; set; }
 
         /// <summary>
-        /// Created by user ID
-        /// </summary>
-        public virtual int? CreatedBy { get; set; }
-
-        /// <summary>
-        /// Last updated date
+        /// Message updated timestamp
         /// </summary>
         public virtual DateTime? UpdatedAt { get; set; }
 
         /// <summary>
-        /// Updated by user ID
+        /// Additional metadata (JSON)
         /// </summary>
-        public virtual int? UpdatedBy { get; set; }
-
-        /// <summary>
-        /// Custom fields (JSON)
-        /// </summary>
-        public virtual string CustomFields { get; set; }
+        public virtual string Metadata { get; set; }
 
         /// <summary>
         /// Log: Created date
@@ -126,3 +121,4 @@ namespace SourceAPI.Data.Entities
         #endregion
     }
 }
+

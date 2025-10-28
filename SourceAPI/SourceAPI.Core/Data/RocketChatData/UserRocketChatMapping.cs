@@ -1,6 +1,6 @@
 using System;
 
-namespace SourceAPI.Data.Entities
+namespace SourceAPI.Core.Data.RocketChatData
 {
     /// <summary>
     /// Mapping between internal users and Rocket.Chat users
@@ -96,3 +96,4 @@ namespace SourceAPI.Data.Entities
         #endregion
     }
 }
+

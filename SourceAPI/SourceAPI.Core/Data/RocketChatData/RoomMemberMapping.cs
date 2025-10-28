@@ -1,6 +1,6 @@
 using System;
 
-namespace SourceAPI.Data.Entities
+namespace SourceAPI.Core.Data.RocketChatData
 {
     /// <summary>
     /// Room member mapping
@@ -96,3 +96,4 @@ namespace SourceAPI.Data.Entities
         #endregion
     }
 }
+
