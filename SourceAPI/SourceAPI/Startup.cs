@@ -38,7 +38,32 @@ namespace SourceOAWebAPI
         public void ConfigureServices(IServiceCollection services)
         {
             var config = SocialAuthenticationOptionManager.Instance;
-            services.AddCors();
+            
+            // CORS configuration for frontend
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", builder =>
+                {
+                    builder.WithOrigins(
+                        "http://localhost:3000",      // Next.js dev
+                        "http://localhost:3001",      // Alternative port
+                        "https://localhost:3000",     // HTTPS
+                        "https://localhost:3001"
+                    )
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .WithExposedHeaders("X-API-Key"); // Expose custom headers
+                });
+
+                // Allow all origins (for development only - remove in production)
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                  .AddJwtBearer(options =>
                  {
@@ -102,6 +127,9 @@ namespace SourceOAWebAPI
                 x.MultipartBodyLengthLimit = int.MaxValue; // In case of multipart
             });
             services.AddSignalR();
+            
+            // Register Rocket.Chat services
+            services.AddRocketChatServices(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -113,11 +141,19 @@ namespace SourceOAWebAPI
             //app.UseHttpsRedirection();
             SetupUseStaticFiles(app, env);
             app.UseRouting();
-            app.UseCors(x => x
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .SetIsOriginAllowed(origin => true) // allow any origin
-               .AllowCredentials()); // allow credentials
+            
+            // CORS - Must be between UseRouting and UseEndpoints
+            if (env.IsDevelopment())
+            {
+                // Development: Allow all origins
+                app.UseCors("AllowAll");
+            }
+            else
+            {
+                // Production: Only allow specific frontend
+                app.UseCors("AllowFrontend");
+            }
+            
             app.UseAuthentication();
             app.UseAuthorization();
 
