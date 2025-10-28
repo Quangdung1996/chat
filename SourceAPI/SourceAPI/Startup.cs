@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using SourceAPI.Core.DataInfo.Cached;
+using SourceAPI.Extensions;
 using SourceAPI.Shared.Engines;
 using SourceAPI.Shared.Helper;
 using SourceAPI.Shared.Services;
@@ -102,6 +103,9 @@ namespace SourceOAWebAPI
                 x.MultipartBodyLengthLimit = int.MaxValue; // In case of multipart
             });
             services.AddSignalR();
+
+            // Register Rocket.Chat services
+            services.AddRocketChatServices(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
