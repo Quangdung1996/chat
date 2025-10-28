@@ -1,0 +1,37 @@
+{
+    "EntityName": "GSTaskAssignTemplate",
+    "FileId": "",
+    "SheetName": "WI.GM.03",
+    "StartRowIndex": 4,
+    "StartColumnIndex": 0,
+    "Dic_Columns": {
+        "Id": {
+            "Title": null,
+            "ColumnName": "A"
+        },
+        "ProjectCode": {
+            "Title": null,
+            "ColumnName": "B"
+        },
+        "ProjectName": {
+            "Title": null,
+            "ColumnName": "C"
+        },
+        "AssignToId": {
+            "Title": null,
+            "ColumnName": "F"
+        },
+        "ConfigTaskId": {
+            "Title": null,
+            "ColumnName": "H"
+        },
+        "SyncFromTemplate": {
+            "Title": null,
+            "ColumnName": "O"
+        },
+        "Group": {
+            "Title": null,
+            "ColumnName": "D"
+        }
+    }
+}

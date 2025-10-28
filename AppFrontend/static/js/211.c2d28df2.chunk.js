@@ -1,0 +1,2 @@
+(this["webpackJsonpapp-admin-v5"]=this["webpackJsonpapp-admin-v5"]||[]).push([[211],{1184:function(a,t,n){"use strict";n.r(t),n.d(t,"default",(function(){return i}));n(0);var e=n(2);function i(a){return Object(e.jsx)("div",{className:"mpat-header-detail"})}}}]);
+//# sourceMappingURL=211.c2d28df2.chunk.js.map

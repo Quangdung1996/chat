@@ -1,0 +1,149 @@
+{
+    "EntityName": "GGProject",
+    "FileId": "",
+    "SheetName": "PROJECTS",
+    "StartRowIndex": 4,
+    "StartColumnIndex": 0,
+    "Dic_Columns": {
+        "Id": {
+            "Title": null,
+            "ColumnName": "A"
+        },
+        "IdText": {
+            "Title": null,
+            "ColumnName": "B"
+        },
+        "Name": {
+            "Title": null,
+            "ColumnName": "C"
+        },
+        "Place_AddressLine": {
+            "Title": null,
+            "ColumnName": "D"
+        },
+        "Place_Area": {
+            "Title": null,
+            "ColumnName": "E"
+        },
+        "Stage_Text": {
+            "Title": null,
+            "ColumnName": "F"
+        },
+        "ConfigStageId": {
+            "Title": null,
+            "ColumnName": "F"
+        },
+        "NgayNhanMB": {
+            "Title": null,
+            "ColumnName": "G"
+        },
+        "PMId": {
+            "Title": null,
+            "ColumnName": "I"
+        },
+        "Source": {
+            "Title": null,
+            "ColumnName": "J"
+        },
+        "Place_Partner": {
+            "Title": null,
+            "ColumnName": "K"
+        },
+        "Customer_Name": {
+            "Title": null,
+            "ColumnName": "L"
+        },
+        "Customer_Phone": {
+            "Title": null,
+            "ColumnName": "M"
+        },
+        "Customer_Email": {
+            "Title": null,
+            "ColumnName": "N"
+        },
+        "Customer_Title": {
+            "Title": null,
+            "ColumnName": "O"
+        },
+        "PM_Comment": {
+            "Title": null,
+            "ColumnName": "P"
+        },
+        "Place_PartnerComment": {
+            "Title": null,
+            "ColumnName": "Q"
+        },
+        "Date_Created": {
+            "Title": null,
+            "ColumnName": "R"
+        },
+        "Date_Updated": {
+            "Title": null,
+            "ColumnName": "S"
+        },
+        "ColorCode": {
+            "Title": null,
+            "ColumnName": "T"
+        },
+        "IsActive": {
+            "Title": null,
+            "ColumnName": "U"
+        },
+        "FileId": {
+            "Title": null,
+            "ColumnName": "V"
+        },
+        "SheetName": {
+            "Title": null,
+            "ColumnName": "W"
+        },
+        "CreatedBy": {
+            "Title": null,
+            "ColumnName": "X"
+        },
+        "UpdatedBy": {
+            "Title": null,
+            "ColumnName": "Y"
+        },
+        "ShowComment1": {
+            "Title": null,
+            "ColumnName": "Z"
+        },
+        "ShowComment2": {
+            "Title": null,
+            "ColumnName": "AA"
+        },
+        "IsDeleted": {
+            "Title": null,
+            "ColumnName": "AB"
+        },
+        "User_Access": {
+            "Title": null,
+            "ColumnName": "AC"
+        },
+        "StructureItself": {
+            "Title": null,
+            "ColumnName": "AD"
+        },
+        "PercentCompleted": {
+            "Title": null,
+            "ColumnName": "AE"
+        },
+        "ProjectTypeId": {
+            "Title": null,
+            "ColumnName": "AF"
+        },
+        "ProjectPhaseId": {
+            "Title": null,
+            "ColumnName": "AG"
+        },
+        "Place_Building": {
+            "Title": null,
+            "ColumnName": "AN"
+        },
+        "ProjectAmount": {
+            "Title": null,
+            "ColumnName": "AH"
+        }
+    }
+}

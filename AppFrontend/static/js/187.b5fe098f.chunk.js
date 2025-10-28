@@ -1,0 +1,2 @@
+(this["webpackJsonpapp-admin-v5"]=this["webpackJsonpapp-admin-v5"]||[]).push([[187],{1286:function(a,n,e){"use strict";e.r(n);var t=e(4),s=(e(0),e(1)),o=e(2);n.default=function(a){return Object(o.jsx)(s.MyLib,Object(t.a)({type:"monacoeditor",value:a.value,onChange:function(n,e){console.warn("change:",n),a.onChange&&a.onChange(n)},className:a.className,style:a.style,options:{tabSize:2,folding:!0,minimap:{enabled:!1}}},a.attrs))}}}]);
+//# sourceMappingURL=187.b5fe098f.chunk.js.map

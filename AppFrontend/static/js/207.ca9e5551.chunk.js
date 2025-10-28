@@ -1,0 +1,2 @@
+(this["webpackJsonpapp-admin-v5"]=this["webpackJsonpapp-admin-v5"]||[]).push([[207],{1200:function(n,e,c){"use strict";c.r(e),c.d(e,"default",(function(){return s}));var a,i=c(22),t=(c(0),c(57),c(20)),p=c(2),r=t.b.div(a||(a=Object(i.a)(["\n  padding: 0rem 0px;\n"])));function s(n){n.row,n.cell;return Object(p.jsx)(r,{className:"mui-wcell",children:"cell"})}}}]);
+//# sourceMappingURL=207.ca9e5551.chunk.js.map

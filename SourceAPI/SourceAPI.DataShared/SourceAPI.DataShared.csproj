@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Ezy.APIService.Core">
+      <HintPath>..\Libs\Ezy.APIService.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Ezy.Module.BaseData">
+      <HintPath>..\Libs\Ezy.Module.BaseData.dll</HintPath>
+    </Reference>
+    <Reference Include="Ezy.Module.Library">
+      <HintPath>..\Libs\Ezy.Module.Library.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

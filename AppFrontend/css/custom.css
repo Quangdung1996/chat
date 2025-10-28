@@ -1,0 +1,10 @@
+.app-sidebar.sidebar-text-light .app-header__logo .logo-src {
+  background: url("/assets/logo.png"); }
+.app-header__logo .logo-src {
+  height: 23px;
+  width: 97px;
+  background: url("/assets/logo-inverse.png"); }
+.app-header.header-text-light .app-header__logo .logo-src {
+  background: url("/assets/logo.png"); }
+.app-header.header-text-dark .app-header__logo .logo-src {
+  background: url("/assets/logo-inverse.png"); }

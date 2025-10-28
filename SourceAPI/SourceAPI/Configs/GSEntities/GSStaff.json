@@ -1,0 +1,77 @@
+{
+    "EntityName": "GSStaff",
+    "FileId": "",
+    "SheetName": "TEAM",
+    "StartRowIndex": 1,
+    "StartColumnIndex": 0,
+    "Dic_Columns": {
+        "FirstName": {
+            "Title": null,
+            "ColumnName": "B"
+        },
+        "Username": {
+            "Title": null,
+            "ColumnName": "D"
+        },
+        "DepartmentName": {
+            "Title": null,
+            "ColumnName": "C"
+        },
+        "EmailAddress": {
+            "Title": null,
+            "ColumnName": "D"
+        },
+        "IsAdmin": {
+            "Title": null,
+            "ColumnName": "E"
+        },
+        "IsPM": {
+            "Title": null,
+            "ColumnName": "F"
+        },
+        "UI_Role": {
+            "Title": null,
+            "ColumnName": "G"
+        },
+        "LevelNo": {
+            "Title": null,
+            "ColumnName": "H"
+        },
+        "Group": {
+            "Title": null,
+            "ColumnName": "I"
+        },
+        "CanSeeProjectView": {
+            "Title": null,
+            "ColumnName": "P"
+        },
+        "CanSeeActiveProject": {
+            "Title": null,
+            "ColumnName": "Q"
+        },
+        "DisplayName": {
+            "Title": null,
+            "ColumnName": "AF"
+        },
+        "IsConsManager": {
+            "Title": null,
+            "ColumnName": "AG"
+        },
+        "CanSeeALLProject": {
+            "Title": null,
+            "ColumnName": "AA"
+        },
+        "CanSeePartnerColumns": {
+            "Title": null,
+            "ColumnName": "Z"
+        },
+        "HomepageScreenCode": {
+            "Title": null,
+            "ColumnName": "AB"
+        },
+        "AlterName": {
+            "Title": null,
+            "ColumnName": "AH"
+        }
+    }
+}

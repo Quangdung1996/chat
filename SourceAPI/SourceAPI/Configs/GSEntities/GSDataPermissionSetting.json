@@ -1,0 +1,21 @@
+{
+    "EntityName": "GSDataPermissionSetting",
+    "FileId": "",
+    "SheetName": "SETTING",
+    "StartRowIndex": 1,
+    "StartColumnIndex": 0,
+    "Dic_Columns": {
+        "Id": {
+            "Title": null,
+            "ColumnName": "A"
+        },
+        "Key": {
+            "Title": null,
+            "ColumnName": "C"
+        },
+        "Value": {
+            "Title": null,
+            "ColumnName": "D"
+        }
+    }
+}

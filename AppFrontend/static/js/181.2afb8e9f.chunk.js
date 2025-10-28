@@ -1,0 +1,2 @@
+(this["webpackJsonpapp-admin-v5"]=this["webpackJsonpapp-admin-v5"]||[]).push([[181],{1150:function(e,t,n){"use strict";n.r(t);n(0);var a=n(11),i=n(2),p={UIUrl:"/test/1",ScreenCode:"Test 1",Title:"1",APIName:"ConfigDoiTCCompany",UIType:"table",Config:'{"type":"myuiinput"}',RequestData:null,Id:"2"};t.default=function(){var e=p;return Object(i.jsx)(a.g,{configPage:e})}}}]);
+//# sourceMappingURL=181.2afb8e9f.chunk.js.map

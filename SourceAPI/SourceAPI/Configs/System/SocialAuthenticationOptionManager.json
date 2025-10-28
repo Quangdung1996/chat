@@ -1,0 +1,14 @@
+{
+    "FaceBook": {
+        "AppId": "",
+        "AppSecret": ""
+    },
+    "Twitter": {
+        "AppId": "",
+        "AppSecret": ""
+    },
+    "Google": {
+        "AppId": "",
+        "AppSecret": ""
+    }
+}

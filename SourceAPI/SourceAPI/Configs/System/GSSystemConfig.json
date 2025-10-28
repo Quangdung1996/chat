@@ -1,0 +1,18 @@
+{
+    "ApplicationName": "SOLID APP",
+    "FileUploadRootFolderId": "0B8YFFrr3TEZoalIwdEdpRFFCa28",
+    "GoogleAppScriptUrl": "https://script.google.com/macros/s/AKfycby-bljv6OOO9jy8H_FxZcBwjSkY4kKnIeC0nwcd0PMmFw3lnYnF/exec",
+    "ConfigCoreFileId": "1VBIJ19CW0EFenyx-CbliaTKRVN4PpVMMQToLSbv8erA",
+    "ProjectFileId": "1SHkgq5XQRIromYYmqlcwufLB6JIpPoeq_W14gSh6mcI",
+    "AuthFileNames": [ "App 2 0-697fc8988171.json" ],
+    "Template_HRFileId": "1He7tVZpLh8GB4suq3LCulinxThDw4nuyLYdFUFqWP-E",
+    "ProjectRootFolderId": "0B8YFFrr3TEZoVU15XzUzTFA0M00",
+    "FileExportRootFolderId": "1B_erg2PX7y8D_Z0AAnP-5BrYtj0KFSLX",
+    "Template_ListFileIds": {
+        "CostPlan3_SheetId": "1lePkDaZ6FVshxcPtLm04yiCW0uV-HF9gVUZt0p90P-8",
+        "Intergration_SheetId": "1JLr4xAFyCGvMfwYoo2w_aDlRaYigjbWsPJsovbSl7k0"
+    },
+    "FileBackupRootFolderId": "0B8YFFrr3TEZoUUpUMkFZbUtEUm8",
+    "DownloadRootFolderId": "136C3FtAt5TiBiE49-5gHBt9ToxolxeHd",
+    "AuthFileName_Calendar": "App-Calendar-credentials01.json"
+}

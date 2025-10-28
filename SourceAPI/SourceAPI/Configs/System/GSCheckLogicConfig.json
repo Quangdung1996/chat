@@ -1,0 +1,6 @@
+{
+    "Dic_Items": {
+        "ICheckFileInfoMultiFolderId": { "IsRun": true },
+        "ICheckIDDuplicate": { "IsRun": true }
+    }
+}

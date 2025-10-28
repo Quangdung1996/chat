@@ -1,0 +1,1 @@
+{"ServerName":"deb-postgresql.allianceitsc.com","CatalogName":"AllianceTraining250408_Log","Username":"alliancedb","Password":"@ll1@nceP@ss25"}

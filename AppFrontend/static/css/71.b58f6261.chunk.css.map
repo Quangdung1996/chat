@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://src/modules/adminpanel/MyBase/Types/Styles/date_flatpickr.css"],"names":[],"mappings":"AAAA,gCACE,eACF,CAEA,uCACE,WACF","file":"71.b58f6261.chunk.css","sourcesContent":["input.flatpickr-input[readonly] {\r\n  background: white;\r\n}\r\n\r\n.flatpickr-calendar.hasTime.noCalendar{\r\n  width: 200px;\r\n}"]}

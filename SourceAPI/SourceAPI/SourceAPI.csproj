@@ -1,0 +1,329 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Version>1.07.16.1144</Version>
+		<UserSecretsId>714fc7ab-4d4d-431a-8342-ef9daf00f059</UserSecretsId>
+		<AssemblyName>SourceAPI</AssemblyName>
+		<RootNamespace>SourceAPI</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ESCug|AnyCPU'">
+		<OutputPath></OutputPath>
+		<GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="App_Data\\**\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="App_Data\DEV\**" />
+	  <Compile Remove="App_Data\LIVE\**" />
+	  <Compile Remove="logs\**" />
+	  <Compile Remove="Upload\**" />
+	  <Content Remove="App_Data\DEV\**" />
+	  <Content Remove="App_Data\LIVE\**" />
+	  <Content Remove="logs\**" />
+	  <Content Remove="Upload\**" />
+	  <EmbeddedResource Remove="App_Data\DEV\**" />
+	  <EmbeddedResource Remove="App_Data\LIVE\**" />
+	  <EmbeddedResource Remove="logs\**" />
+	  <EmbeddedResource Remove="Upload\**" />
+	  <None Remove="App_Data\DEV\**" />
+	  <None Remove="App_Data\LIVE\**" />
+	  <None Remove="logs\**" />
+	  <None Remove="Upload\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="App_Data\Setting_Facebook.txt" />
+	  <Content Remove="App_Data\Setting_Release.txt" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="App_Data\Setting_Facebook.txt" />
+	  <None Remove="App_Data\Setting_Release.txt" />
+	  <None Remove="Avatar\A.png" />
+	  <None Remove="Avatar\B.png" />
+	  <None Remove="Avatar\C.png" />
+	  <None Remove="Avatar\D.png" />
+	  <None Remove="Avatar\E.png" />
+	  <None Remove="Avatar\F.png" />
+	  <None Remove="Avatar\G.png" />
+	  <None Remove="Avatar\H.png" />
+	  <None Remove="Avatar\I.png" />
+	  <None Remove="Avatar\J.png" />
+	  <None Remove="Avatar\K.png" />
+	  <None Remove="Avatar\L.png" />
+	  <None Remove="Avatar\M.png" />
+	  <None Remove="Avatar\N.png" />
+	  <None Remove="Avatar\O.png" />
+	  <None Remove="Avatar\P.png" />
+	  <None Remove="Avatar\Q.png" />
+	  <None Remove="Avatar\R.png" />
+	  <None Remove="Avatar\S.png" />
+	  <None Remove="Avatar\T.png" />
+	  <None Remove="Avatar\U.png" />
+	  <None Remove="Avatar\V.png" />
+	  <None Remove="Avatar\W.png" />
+	  <None Remove="Avatar\X.png" />
+	  <None Remove="Avatar\Y.png" />
+	  <None Remove="Avatar\Z.png" />
+	  <None Remove="Views\Home\index.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Avatar\A.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\B.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\C.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\D.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\E.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\F.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\G.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\H.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\I.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\J.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\K.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\L.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\M.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\N.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\O.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\P.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\Q.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\R.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\S.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\T.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\U.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\V.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\W.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\X.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\Y.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Avatar\Z.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Views\Home\index.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="GoogleAuthenticator" Version="2.1.1" />
+		<PackageReference Include="Magick.NET-Q16-AnyCPU" Version="8.3.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="5.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="5.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.10" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.1" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.8" />
+		<PackageReference Include="System.Runtime.Caching" Version="9.0.8" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.10.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="App_Data\Setting.txt">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+		<None Update="App_Data\Setting_Log.txt">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="EPPlus">
+	    <HintPath>..\Libs\EPPlus.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.AppSystemAPI">
+	    <HintPath>..\Libs\Ezy.APIService.AppSystemAPI.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.AppSystemCore">
+	    <HintPath>..\Libs\Ezy.APIService.AppSystemCore.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.AppSystemService">
+	    <HintPath>..\Libs\Ezy.APIService.AppSystemService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.AuthShared">
+	    <HintPath>..\Libs\Ezy.APIService.AuthShared.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.Core">
+	    <HintPath>..\Libs\Ezy.APIService.Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.CoreUtilities">
+	    <HintPath>..\Libs\Ezy.APIService.CoreUtilities.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.EmailMessage">
+	    <HintPath>..\Libs\Ezy.APIService.EmailMessage.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.ExcelHelper">
+	    <HintPath>..\Libs\Ezy.APIService.ExcelHelper.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.HRMAPI">
+	    <HintPath>..\Libs\Ezy.APIService.HRMAPI.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.HRMCore">
+	    <HintPath>..\Libs\Ezy.APIService.HRMCore.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.HRMService">
+	    <HintPath>..\Libs\Ezy.APIService.HRMService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.LogChange">
+	    <HintPath>..\Libs\Ezy.APIService.LogChange.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.LogService">
+	    <HintPath>..\Libs\Ezy.APIService.LogService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.Release.API">
+	    <HintPath>..\Libs\Ezy.ApiService.Release.API.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.Release.Core">
+	    <HintPath>..\Libs\Ezy.ApiService.Release.Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.ReleaseService">
+	    <HintPath>..\Libs\Ezy.ApiService.ReleaseService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.Shared">
+	    <HintPath>..\Libs\Ezy.APIService.Shared.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.SharedController">
+	    <HintPath>..\Libs\Ezy.APIService.SharedController.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.SMSCore">
+	    <HintPath>..\Libs\Ezy.APIService.SMSCore.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.APIService.SQLLogCore">
+	    <HintPath>..\Libs\Ezy.APIService.SQLLogCore.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.SystemTestAPI">
+	    <HintPath>..\Libs\Ezy.ApiService.SystemTestAPI.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.SystemTestCore">
+	    <HintPath>..\Libs\Ezy.ApiService.SystemTestCore.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.ApiService.SystemTestService">
+	    <HintPath>..\Libs\Ezy.ApiService.SystemTestService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.BaseCache">
+	    <HintPath>..\Libs\Ezy.Module.BaseCache.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.BaseData">
+	    <HintPath>..\Libs\Ezy.Module.BaseData.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.BaseMSSQLData">
+	    <HintPath>..\Libs\Ezy.Module.BaseMSSQLData.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.BaseService">
+	    <HintPath>..\Libs\Ezy.Module.BaseService.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Controller">
+	    <HintPath>..\Libs\Ezy.Module.Controller.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.DataShared">
+	    <HintPath>..\Libs\Ezy.Module.DataShared.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.DisplayInfo.Core">
+	    <HintPath>..\Libs\Ezy.Module.DisplayInfo.Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.DisplayInfo.Share">
+	    <HintPath>..\Libs\Ezy.Module.DisplayInfo.Share.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Engine">
+	    <HintPath>..\Libs\Ezy.Module.Engine.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Infrastructure">
+	    <HintPath>..\Libs\Ezy.Module.Infrastructure.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Library">
+	    <HintPath>..\Libs\Ezy.Module.Library.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.LogPath">
+	    <HintPath>..\Libs\Ezy.Module.LogPath.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Media">
+	    <HintPath>..\Libs\Ezy.Module.Media.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.Message">
+	    <HintPath>..\Libs\Ezy.Module.Message.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Ezy.Module.MSSQLRepository">
+	    <HintPath>..\Libs\Ezy.Module.MSSQLRepository.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Microsoft.AspNet.Identity.Core">
+	    <HintPath>..\Libs\Microsoft.AspNet.Identity.Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="MimeMapping">
+	    <HintPath>..\Libs\MimeMapping.dll</HintPath>
+	  </Reference>
+	  <Reference Include="RestSharp">
+	    <HintPath>..\Libs\RestSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Z.EntityFramework.Extensions.EFCore">
+	    <HintPath>..\Libs\Z.EntityFramework.Extensions.EFCore.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Controllers\Base\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\SourceAPI.Core\SourceAPI.Core.csproj" />
+	  <ProjectReference Include="..\SourceAPI.DataShared\SourceAPI.DataShared.csproj" />
+	  <ProjectReference Include="..\SourceAPI.Shared\SourceAPI.Shared.csproj" />
+	</ItemGroup>
+
+</Project>

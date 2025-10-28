@@ -1,0 +1,2 @@
+(this["webpackJsonpapp-admin-v5"]=this["webpackJsonpapp-admin-v5"]||[]).push([[198],{1296:function(a,e,t){"use strict";t.r(e),t.d(e,"default",(function(){return p}));var n=t(4),u=(t(1133),t(1136)),i=t(2);function p(a){return Object(i.jsx)(u.a,Object(n.a)({height:a.height||"90vh",defaultLanguage:a.language||"javascript",language:"javascript",theme:"vs-dark",defaultValue:a.value,value:a.value,options:a.options},a))}}}]);
+//# sourceMappingURL=198.ae759aa8.chunk.js.map

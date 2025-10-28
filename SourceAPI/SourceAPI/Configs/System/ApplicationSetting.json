@@ -1,0 +1,11 @@
+{
+    "ServerOS": "Window",
+    "IsLocalhost": true,
+    "AppCode": "",
+    "SystemCacheType": "1",
+    "IsDontRunEngine": true,
+    "IsPostgreSQL": true,
+    "SystemCacheREDISURL": "localhost:6379",
+    "StrongestPassword": "122B21404AA482BAA85B7C2F23DF5EB76D07016E1234",
+    "Domain": "all"
+}

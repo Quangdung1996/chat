@@ -1,0 +1,53 @@
+{
+    "EntityName": "GGProject",
+    "FileId": "",
+    "SheetName": "PROJECT_REPORT_CONFIG",
+    "StartRowIndex": 1,
+    "StartColumnIndex": 0,
+    "Dic_Columns": {
+        "Id": {
+            "Title": null,
+            "ColumnName": "A"
+        },
+        "ProjectId": {
+            "Title": null,
+            "ColumnName": "B"
+        },
+        "ProjectName": {
+            "Title": null,
+            "ColumnName": "B"
+        },
+        "FileId": {
+            "Title": null,
+            "ColumnName": "C"
+        },
+        "QualityControl": {
+            "Title": null,
+            "ColumnName": "U"
+        },
+        "CostPlan2_SheetId": {
+            "Title": null,
+            "ColumnName": "O"
+        },
+        "CostPlan3_SheetId": {
+            "Title": null,
+            "ColumnName": "P"
+        },
+        "QualityManagement": {
+            "Title": null,
+            "ColumnName": "V"
+        },
+        "ScopeManagement": {
+            "Title": null,
+            "ColumnName": "W"
+        },
+        "HRManagement": {
+            "Title": null,
+            "ColumnName": "X"
+        },
+        "Intergration_SheetId": {
+            "Title": null,
+            "ColumnName": "Q"
+        }
+    }
+}
