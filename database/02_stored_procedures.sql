@@ -1,6 +1,6 @@
 -- =====================================================
 -- Rocket.Chat Integration - Stored Procedures
--- Schema: chat
+-- Schema: dbo
 -- Database: PostgreSQL
 -- Pattern: JSON input/output (Ezy Framework style)
 -- =====================================================
@@ -10,7 +10,7 @@
 -- =====================================================
 
 -- SP: Get user mapping by UserId
-CREATE OR REPLACE FUNCTION chat."sp_GetUserRocketMapping_ByUserId"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetUserRocketMapping_ByUserId"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -34,7 +34,7 @@ BEGIN
         'LastSyncAt', "LastSyncAt",
         'Metadata', "Metadata"
     )::TEXT INTO v_result
-    FROM chat."UserRocketChatMapping"
+    FROM dbo."UserRocketChatMapping"
     WHERE "UserId" = v_user_id 
         AND "IsDeleted" = false
         AND "IsActive" = true
@@ -45,7 +45,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Get user mapping by RocketUserId
-CREATE OR REPLACE FUNCTION chat."sp_GetUserRocketMapping_ByRocketUserId"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetUserRocketMapping_ByRocketUserId"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -66,7 +66,7 @@ BEGIN
         'CreatedAt', "CreatedAt",
         'LastSyncAt', "LastSyncAt"
     )::TEXT INTO v_result
-    FROM chat."UserRocketChatMapping"
+    FROM dbo."UserRocketChatMapping"
     WHERE "RocketUserId" = v_rocket_user_id 
         AND "IsDeleted" = false
     LIMIT 1;
@@ -76,7 +76,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Insert or Update user mapping
-CREATE OR REPLACE FUNCTION chat."sp_UpsertUserRocketMapping"(
+CREATE OR REPLACE FUNCTION dbo."sp_UpsertUserRocketMapping"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -100,7 +100,7 @@ BEGIN
     v_created_by := p_json::json->>'CreatedBy';
     
     -- Upsert
-    INSERT INTO chat."UserRocketChatMapping" (
+    INSERT INTO dbo."UserRocketChatMapping" (
         "UserId", "RocketUserId", "RocketUsername", 
         "Email", "FullName", "IsActive", 
         "CreatedAt", "LastSyncAt", "Metadata",
@@ -118,7 +118,7 @@ BEGIN
         "Email" = EXCLUDED."Email",
         "FullName" = EXCLUDED."FullName",
         "LastSyncAt" = NOW(),
-        "Metadata" = COALESCE(EXCLUDED."Metadata", chat."UserRocketChatMapping"."Metadata"),
+        "Metadata" = COALESCE(EXCLUDED."Metadata", dbo."UserRocketChatMapping"."Metadata"),
         "IsActive" = true,
         "IsDeleted" = false,
         "Log_UpdatedBy" = v_created_by,
@@ -137,7 +137,7 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 -- SP: Get room by GroupCode
-CREATE OR REPLACE FUNCTION chat."sp_GetRoomMapping_ByGroupCode"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetRoomMapping_ByGroupCode"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -162,7 +162,7 @@ BEGIN
         'CreatedAt', "CreatedAt",
         'CreatedBy', "CreatedBy"
     )::TEXT INTO v_result
-    FROM chat."RoomMapping"
+    FROM dbo."RoomMapping"
     WHERE "GroupCode" = v_group_code 
         AND "IsDeleted" = false
     LIMIT 1;
@@ -172,7 +172,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Get room by RocketRoomId
-CREATE OR REPLACE FUNCTION chat."sp_GetRoomMapping_ByRocketRoomId"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetRoomMapping_ByRocketRoomId"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -192,7 +192,7 @@ BEGIN
         'ProjectId', "ProjectId",
         'IsArchived', "IsArchived"
     )::TEXT INTO v_result
-    FROM chat."RoomMapping"
+    FROM dbo."RoomMapping"
     WHERE "RocketRoomId" = v_rocket_room_id 
         AND "IsDeleted" = false
     LIMIT 1;
@@ -202,7 +202,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Insert room mapping
-CREATE OR REPLACE FUNCTION chat."sp_InsertRoomMapping"(
+CREATE OR REPLACE FUNCTION dbo."sp_InsertRoomMapping"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -234,7 +234,7 @@ BEGIN
     v_custom_fields := p_json::json->>'CustomFields';
     
     -- Insert
-    INSERT INTO chat."RoomMapping" (
+    INSERT INTO dbo."RoomMapping" (
         "GroupCode", "RocketRoomId", "RoomName", "RoomType",
         "DepartmentId", "ProjectId", "Description",
         "IsReadOnly", "IsAnnouncement",
@@ -258,7 +258,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: List rooms with filters
-CREATE OR REPLACE FUNCTION chat."sp_ListRoomMappings"(
+CREATE OR REPLACE FUNCTION dbo."sp_ListRoomMappings"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -297,7 +297,7 @@ BEGIN
     )::TEXT INTO v_result
     FROM (
         SELECT *
-        FROM chat."RoomMapping"
+        FROM dbo."RoomMapping"
         WHERE "IsDeleted" = false
             AND (v_department_id IS NULL OR "DepartmentId" = v_department_id)
             AND (v_project_id IS NULL OR "ProjectId" = v_project_id)
@@ -315,7 +315,7 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 -- SP: Add room member
-CREATE OR REPLACE FUNCTION chat."sp_AddRoomMember"(
+CREATE OR REPLACE FUNCTION dbo."sp_AddRoomMember"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -337,7 +337,7 @@ BEGIN
     v_created_by := p_json::json->>'CreatedBy';
     
     -- Insert or reactivate
-    INSERT INTO chat."RoomMemberMapping" (
+    INSERT INTO dbo."RoomMemberMapping" (
         "RoomMappingId", "UserMappingId", "UserId", "RocketUserId",
         "Role", "IsActive", "JoinedAt",
         "Log_CreatedBy", "Log_CreatedDate"
@@ -365,7 +365,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Remove room member
-CREATE OR REPLACE FUNCTION chat."sp_RemoveRoomMember"(
+CREATE OR REPLACE FUNCTION dbo."sp_RemoveRoomMember"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -378,7 +378,7 @@ BEGIN
     v_user_id := (p_json::json->>'UserId')::INTEGER;
     v_updated_by := p_json::json->>'UpdatedBy';
     
-    UPDATE chat."RoomMemberMapping"
+    UPDATE dbo."RoomMemberMapping"
     SET "IsActive" = false,
         "LeftAt" = NOW(),
         "Log_UpdatedBy" = v_updated_by,
@@ -391,7 +391,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Get room members
-CREATE OR REPLACE FUNCTION chat."sp_GetRoomMembers"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetRoomMembers"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -416,8 +416,8 @@ BEGIN
             'FullName', u."FullName"
         )
     )::TEXT INTO v_result
-    FROM chat."RoomMemberMapping" m
-    LEFT JOIN chat."UserRocketChatMapping" u ON m."UserMappingId" = u."Id"
+    FROM dbo."RoomMemberMapping" m
+    LEFT JOIN dbo."UserRocketChatMapping" u ON m."UserMappingId" = u."Id"
     WHERE m."RoomMappingId" = v_room_mapping_id
         AND m."IsDeleted" = false
         AND (v_include_inactive OR m."IsActive" = true)
@@ -428,7 +428,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Update member role
-CREATE OR REPLACE FUNCTION chat."sp_UpdateRoomMemberRole"(
+CREATE OR REPLACE FUNCTION dbo."sp_UpdateRoomMemberRole"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -443,7 +443,7 @@ BEGIN
     v_role := p_json::json->>'Role';
     v_updated_by := p_json::json->>'UpdatedBy';
     
-    UPDATE chat."RoomMemberMapping"
+    UPDATE dbo."RoomMemberMapping"
     SET "Role" = v_role,
         "Log_UpdatedBy" = v_updated_by,
         "Log_UpdatedDate" = NOW()
@@ -460,7 +460,7 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 -- SP: Insert message log
-CREATE OR REPLACE FUNCTION chat."sp_InsertChatMessageLog"(
+CREATE OR REPLACE FUNCTION dbo."sp_InsertChatMessageLog"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -486,7 +486,7 @@ BEGIN
     v_metadata := p_json::json->>'Metadata';
     
     -- Insert (ignore duplicates)
-    INSERT INTO chat."ChatMessageLog" (
+    INSERT INTO dbo."ChatMessageLog" (
         "RocketMessageId", "RocketRoomId", "RocketUserId",
         "UserId", "RoomMappingId", "MessageText", "MessageType",
         "CreatedAt", "Metadata", "Log_CreatedDate"
@@ -507,7 +507,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Get room messages with pagination
-CREATE OR REPLACE FUNCTION chat."sp_GetRoomMessages"(
+CREATE OR REPLACE FUNCTION dbo."sp_GetRoomMessages"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
@@ -537,7 +537,7 @@ BEGIN
     )::TEXT INTO v_result
     FROM (
         SELECT *
-        FROM chat."ChatMessageLog"
+        FROM dbo."ChatMessageLog"
         WHERE "RocketRoomId" = v_rocket_room_id
             AND "IsDeleted" = false
         ORDER BY "CreatedAt" DESC
@@ -549,7 +549,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- SP: Mark message as deleted
-CREATE OR REPLACE FUNCTION chat."sp_DeleteChatMessage"(
+CREATE OR REPLACE FUNCTION dbo."sp_DeleteChatMessage"(
     p_json TEXT
 )
 RETURNS TEXT AS $$
