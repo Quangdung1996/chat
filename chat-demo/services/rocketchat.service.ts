@@ -1,6 +1,7 @@
 /**
  * RocketChat Service
  * Service tương tác với Rocket.Chat API backend
+ * Updated to match backend controller endpoints
  */
 
 import { apiClient } from '@/lib/api-client';
@@ -25,7 +26,6 @@ import type {
   RoomFilter,
   PaginationParams,
   PaginatedResponse,
-  ApiResponse,
 } from '@/types/rocketchat';
 
 class RocketChatService {
@@ -35,170 +35,192 @@ class RocketChatService {
   
   /**
    * Đồng bộ user vào Rocket.Chat
+   * POST /api/integrations/rocket/sync-user
    */
-  async syncUser(request: SyncUserRequest): Promise<ApiResponse<SyncUserResponse>> {
+  async syncUser(request: SyncUserRequest): Promise<SyncUserResponse> {
     return apiClient.post(this.endpoints.syncUser, request);
   }
 
   /**
    * Lấy thông tin user
+   * GET /api/integrations/rocket/user/{userId}/info
    */
-  async getUserInfo(userId: number): Promise<ApiResponse<UserInfo>> {
-    return apiClient.get(`/api/rocketchat/user/${userId}/info`);
+  async getUserInfo(userId: number): Promise<UserInfo> {
+    const endpoint = this.endpoints.getUserInfo.replace('{userId}', userId.toString());
+    return apiClient.get(endpoint);
   }
 
   // ===== ROOM MANAGEMENT =====
   
   /**
    * Tạo group/channel
+   * POST /api/integrations/rocket/create-group
    */
-  async createGroup(request: CreateGroupRequest): Promise<ApiResponse<CreateGroupResponse>> {
+  async createGroup(request: CreateGroupRequest): Promise<CreateGroupResponse> {
     return apiClient.post(this.endpoints.createGroup, request);
   }
 
   /**
    * Lấy danh sách rooms với filter và pagination
+   * GET /api/integrations/rocket/groups?departmentId=1&pageSize=50&pageNumber=1
    */
   async getRooms(
     filter?: RoomFilter,
     pagination?: PaginationParams
-  ): Promise<ApiResponse<PaginatedResponse<Room>>> {
-    return apiClient.get('/api/integrations/rocket/rooms', {
+  ): Promise<PaginatedResponse<Room>> {
+    return apiClient.get(this.endpoints.listGroups, {
       params: {
-        ...filter,
-        ...pagination,
+        departmentId: filter?.departmentId,
+        projectId: filter?.projectId,
+        roomType: filter?.roomType,
+        pageSize: pagination?.pageSize || 50,
+        pageNumber: pagination?.pageNumber || 1,
       },
     });
   }
 
   /**
-   * Lấy chi tiết room
-   */
-  async getRoomDetail(roomId: string): Promise<ApiResponse<Room>> {
-    return apiClient.get(`/api/integrations/rocket/rooms/${roomId}`);
-  }
-
-  /**
    * Đổi tên room
+   * PUT /api/integrations/rocket/room/{roomId}/rename
    */
-  async renameRoom(request: RenameRoomRequest): Promise<ApiResponse> {
-    return apiClient.post('/api/integrations/rocket/rename-room', request);
+  async renameRoom(roomId: string, newName: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.renameRoom.replace('{roomId}', roomId);
+    return apiClient.put(endpoint, { newName, roomType });
   }
 
   /**
-   * Archive/Unarchive room
+   * Archive room
+   * POST /api/integrations/rocket/room/{roomId}/archive?roomType=group
    */
-  async archiveRoom(request: ArchiveRoomRequest): Promise<ApiResponse> {
-    return apiClient.post('/api/integrations/rocket/archive-room', request);
+  async archiveRoom(roomId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.archiveRoom.replace('{roomId}', roomId);
+    return apiClient.post(`${endpoint}?roomType=${roomType}`);
   }
 
   /**
-   * Xóa room
+   * Xóa room (cần confirm)
+   * DELETE /api/integrations/rocket/room/{roomId}?roomType=group&confirm=true
    */
-  async deleteRoom(request: DeleteRoomRequest): Promise<ApiResponse> {
-    return apiClient.post('/api/integrations/rocket/delete-room', request);
+  async deleteRoom(roomId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.deleteRoom.replace('{roomId}', roomId);
+    return apiClient.delete(`${endpoint}?roomType=${roomType}&confirm=true`);
+  }
+
+  /**
+   * Bật/tắt announcement mode
+   * POST /api/integrations/rocket/room/{roomId}/announcement-mode
+   */
+  async setAnnouncementMode(roomId: string, announcementOnly: boolean, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.setAnnouncementMode.replace('{roomId}', roomId);
+    return apiClient.post(endpoint, { announcementOnly, roomType });
+  }
+
+  /**
+   * Set topic cho room
+   * PUT /api/integrations/rocket/room/{roomId}/topic
+   */
+  async setRoomTopic(roomId: string, topic: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.setTopic.replace('{roomId}', roomId);
+    return apiClient.put(endpoint, { topic, roomType });
   }
 
   // ===== MEMBER MANAGEMENT =====
   
   /**
-   * Thêm members vào room
+   * Thêm 1 member vào room
+   * POST /api/integrations/rocket/room/{roomId}/add-member
    */
-  async addMembers(request: AddMembersRequest): Promise<ApiResponse<AddMembersResponse>> {
-    const endpoint = this.endpoints.addMembers.replace('{roomId}', request.roomId);
-    return apiClient.post(endpoint, { userIds: request.userIds });
+  async addMember(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.addMember.replace('{roomId}', roomId);
+    return apiClient.post(endpoint, { rocketUserId, roomType });
+  }
+
+  /**
+   * Thêm nhiều members vào room (bulk)
+   * POST /api/integrations/rocket/room/{roomId}/add-members
+   */
+  async addMembers(roomId: string, rocketUserIds: string[], roomType: string = 'group'): Promise<AddMembersResponse> {
+    const endpoint = this.endpoints.addMembers.replace('{roomId}', roomId);
+    return apiClient.post(endpoint, { rocketUserIds, roomType });
   }
 
   /**
    * Xóa member khỏi room
+   * DELETE /api/integrations/rocket/room/{roomId}/member/{rocketUserId}?roomType=group
    */
-  async removeMember(roomId: string, userId: number): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/${roomId}/remove-member`, { userId });
+  async removeMember(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.removeMember
+      .replace('{roomId}', roomId)
+      .replace('{rocketUserId}', rocketUserId);
+    return apiClient.delete(`${endpoint}?roomType=${roomType}`);
   }
 
   /**
-   * Cập nhật role của member
+   * Thêm moderator role
+   * POST /api/integrations/rocket/room/{roomId}/moderator/{rocketUserId}?roomType=group
    */
-  async updateMemberRole(request: UpdateMemberRoleRequest): Promise<ApiResponse> {
-    return apiClient.post(
-      `/api/integrations/rocket/${request.roomId}/update-role`,
-      { userId: request.userId, role: request.role }
-    );
+  async addModerator(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.addModerator
+      .replace('{roomId}', roomId)
+      .replace('{rocketUserId}', rocketUserId);
+    return apiClient.post(`${endpoint}?roomType=${roomType}`);
+  }
+
+  /**
+   * Xóa moderator role
+   * DELETE /api/integrations/rocket/room/{roomId}/moderator/{rocketUserId}?roomType=group
+   */
+  async removeModerator(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.removeModerator
+      .replace('{roomId}', roomId)
+      .replace('{rocketUserId}', rocketUserId);
+    return apiClient.delete(`${endpoint}?roomType=${roomType}`);
+  }
+
+  /**
+   * Thêm owner role
+   * POST /api/integrations/rocket/room/{roomId}/owner/{rocketUserId}?roomType=group
+   */
+  async addOwner(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.addOwner
+      .replace('{roomId}', roomId)
+      .replace('{rocketUserId}', rocketUserId);
+    return apiClient.post(`${endpoint}?roomType=${roomType}`);
   }
 
   /**
    * Lấy danh sách members của room
+   * GET /api/integrations/rocket/room/{roomMappingId}/members?includeInactive=false
    */
-  async getRoomMembers(roomId: string): Promise<ApiResponse<RoomMember[]>> {
-    return apiClient.get(`/api/integrations/rocket/${roomId}/members`);
-  }
-
-  /**
-   * Đối soát members (so sánh DB vs Rocket.Chat)
-   */
-  async reconcileMembers(roomId: string): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/${roomId}/reconcile-members`);
+  async getRoomMembers(roomMappingId: number, includeInactive: boolean = false): Promise<{ success: boolean; roomMappingId: number; members: RoomMember[] }> {
+    const endpoint = this.endpoints.getRoomMembers.replace('{roomMappingId}', roomMappingId.toString());
+    return apiClient.get(`${endpoint}?includeInactive=${includeInactive}`);
   }
 
   // ===== MESSAGING =====
   
   /**
    * Gửi tin nhắn vào room
+   * POST /api/integrations/rocket/send
    */
-  async sendMessage(request: SendMessageRequest): Promise<ApiResponse<SendMessageResponse>> {
+  async sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
     return apiClient.post(this.endpoints.sendMessage, request);
   }
 
   /**
    * Lấy lịch sử tin nhắn
+   * GET /api/integrations/rocket/room/{rocketRoomId}/messages?pageSize=100&pageNumber=1
    */
   async getMessages(
-    roomId: string,
+    rocketRoomId: string,
     pagination?: PaginationParams
-  ): Promise<ApiResponse<PaginatedResponse<ChatMessage>>> {
-    return apiClient.get(`/api/integrations/rocket/${roomId}/messages`, {
-      params: pagination,
-    });
-  }
-
-  /**
-   * Xóa tin nhắn
-   */
-  async deleteMessage(messageId: string): Promise<ApiResponse> {
-    return apiClient.delete(`/api/integrations/rocket/messages/${messageId}`);
-  }
-
-  // ===== ANNOUNCEMENTS =====
-  
-  /**
-   * Bật/tắt announcement mode
-   */
-  async setAnnouncementMode(roomId: string, enabled: boolean): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/${roomId}/announcement`, { enabled });
-  }
-
-  /**
-   * Set topic/announcement cho room
-   */
-  async setRoomTopic(roomId: string, topic: string): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/${roomId}/topic`, { topic });
-  }
-
-  /**
-   * Pin message
-   */
-  async pinMessage(messageId: string): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/messages/${messageId}/pin`);
-  }
-
-  // ===== TRANSFER OWNERSHIP =====
-  
-  /**
-   * Chuyển quyền owner
-   */
-  async transferOwnership(roomId: string, newOwnerId: number): Promise<ApiResponse> {
-    return apiClient.post(`/api/integrations/rocket/${roomId}/transfer-owner`, {
-      newOwnerId,
+  ): Promise<PaginatedResponse<ChatMessage>> {
+    const endpoint = this.endpoints.getMessages.replace('{rocketRoomId}', rocketRoomId);
+    return apiClient.get(endpoint, {
+      params: {
+        pageSize: pagination?.pageSize || 100,
+        pageNumber: pagination?.pageNumber || 1,
+      },
     });
   }
 
@@ -206,11 +228,13 @@ class RocketChatService {
   
   /**
    * Kiểm tra kết nối API
+   * GET /api/integrations/rocket/health (nếu có)
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_CONFIG.baseURL}/api/health`);
-      return response.ok;
+      // Thử gọi list groups để check connection
+      await this.getRooms({}, { pageSize: 1, pageNumber: 1 });
+      return true;
     } catch {
       return false;
     }
@@ -219,4 +243,3 @@ class RocketChatService {
 
 export const rocketChatService = new RocketChatService();
 export default rocketChatService;
-

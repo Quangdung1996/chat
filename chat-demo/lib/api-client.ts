@@ -1,6 +1,7 @@
 /**
  * API Client - Axios version
  * Thư viện gọi API đến backend với authentication
+ * Updated to include X-API-Key header for Rocket.Chat endpoints
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
@@ -19,13 +20,20 @@ class ApiClient {
       },
     });
 
-    // Request interceptor - Thêm token vào mọi request
+    // Request interceptor - Thêm token và API key vào request
     this.axiosInstance.interceptors.request.use(
       (config) => {
+        // Add Bearer token for authentication
         const token = useAuthStore.getState().token;
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Add X-API-Key for Rocket.Chat endpoints
+        if (config.url?.includes('/integrations/rocket') || config.url?.includes('/webhooks/rocketchat')) {
+          config.headers['X-API-Key'] = API_CONFIG.apiKey;
+        }
+
         return config;
       },
       (error) => {
@@ -47,9 +55,10 @@ class ApiClient {
             // Thử refresh token
             const { refreshToken } = useAuthStore.getState();
             if (refreshToken) {
-              // TODO: Gọi refresh token endpoint
-              // const newToken = await authService.refreshToken(refreshToken);
-              // useAuthStore.getState().setAuth(newToken, refreshToken, user);
+              // TODO: Implement refresh token logic
+              // const response = await authService.refreshToken(refreshToken);
+              // useAuthStore.getState().setAuth(response.access_token, refreshToken, user);
+              // originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
               // return this.axiosInstance(originalRequest);
             }
           } catch (refreshError) {
@@ -100,6 +109,14 @@ class ApiClient {
   }
 
   /**
+   * PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.patch<T>(endpoint, data, config);
+    return response.data;
+  }
+
+  /**
    * Get axios instance (để customize nếu cần)
    */
   getAxiosInstance(): AxiosInstance {
@@ -110,4 +127,3 @@ class ApiClient {
 // Export instance
 export const apiClient = new ApiClient(API_CONFIG.baseURL);
 export default apiClient;
-

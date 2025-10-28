@@ -1,6 +1,7 @@
 /**
  * RocketChat Types & Interfaces
  * Định nghĩa các types cho tích hợp Rocket.Chat
+ * Updated to match backend responses
  */
 
 // ===== USER TYPES =====
@@ -10,42 +11,46 @@ export interface RocketChatUser {
   username: string;
   email: string;
   fullName: string;
-  department?: string;
+  isActive: boolean;
   createdAt: string;
-  updatedAt?: string;
+  lastSyncAt?: string;
 }
 
 export interface SyncUserRequest {
   userId: number;
   email: string;
   fullName: string;
-  department?: string;
 }
 
 export interface SyncUserResponse {
   userId: number;
   rocketUserId: string;
   username: string;
-  success: boolean;
-  message?: string;
+  isNewUser: boolean;
+  message: string;
+}
+
+export interface UserInfo {
+  userId: number;
+  rocketUserId: string;
+  username: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+  lastSyncAt?: string;
 }
 
 // ===== ROOM/GROUP TYPES =====
-export interface RoomMetadata {
+export interface CreateGroupRequest {
+  groupCode: string;
+  name?: string;
+  isPrivate: boolean;
   departmentId?: number;
   projectId?: number;
   description?: string;
-  customFields?: Record<string, any>;
-}
-
-export interface CreateGroupRequest {
-  groupCode: string;
-  name: string;
-  departmentId?: number;
-  projectId?: number;
-  isPrivate: boolean;
-  readOnly?: boolean;
-  metadata?: RoomMetadata;
+  isReadOnly?: boolean;
+  members?: string[]; // Array of Rocket.Chat user IDs
+  createdBy?: number;
 }
 
 export interface CreateGroupResponse {
@@ -53,140 +58,136 @@ export interface CreateGroupResponse {
   groupCode: string;
   name: string;
   success: boolean;
-  message?: string;
+  message: string;
 }
 
 export interface Room {
-  roomId: string;
+  id: number;
   groupCode: string;
-  name: string;
-  isPrivate: boolean;
-  readOnly: boolean;
+  rocketRoomId: string;
+  roomName: string;
+  roomType: string;
   departmentId?: number;
   projectId?: number;
-  memberCount: number;
+  description?: string;
+  isReadOnly: boolean;
+  isAnnouncement?: boolean;
+  isArchived: boolean;
   createdAt: string;
-  archived?: boolean;
+  createdBy?: number;
+}
+
+export interface RoomFilter {
+  departmentId?: number;
+  projectId?: number;
+  roomType?: string;
 }
 
 // ===== MEMBER TYPES =====
 export interface RoomMember {
+  id: number;
   userId: number;
   rocketUserId: string;
+  role: 'owner' | 'moderator' | 'member';
+  isActive: boolean;
+  joinedAt: string;
+  leftAt?: string;
   username: string;
   fullName: string;
-  role: 'owner' | 'moderator' | 'member';
-  joinedAt: string;
 }
 
 export interface AddMembersRequest {
   roomId: string;
-  userIds: number[];
+  rocketUserIds: string[];
+  roomType?: string;
 }
 
 export interface AddMembersResponse {
   success: boolean;
-  added: number;
-  failed: Array<{
-    userId: number;
-    reason: string;
-  }>;
+  totalProcessed: number;
+  successCount: number;
+  failCount: number;
+  details: Record<string, boolean>;
 }
 
 export interface UpdateMemberRoleRequest {
   roomId: string;
-  userId: number;
+  rocketUserId: string;
   role: 'owner' | 'moderator' | 'member';
+  roomType?: string;
 }
 
 // ===== MESSAGE TYPES =====
 export interface SendMessageRequest {
-  roomId?: string;
-  groupCode?: string;
+  roomId: string;
   text: string;
-  attachments?: any[];
+  alias?: string;
 }
 
 export interface SendMessageResponse {
-  messageId: string;
-  roomId: string;
-  timestamp: string;
   success: boolean;
+  messageId: string;
 }
 
 export interface ChatMessage {
-  messageId: string;
-  roomId: string;
-  userId: number;
-  username: string;
-  text: string;
-  timestamp: string;
-  edited?: boolean;
-  deleted?: boolean;
-}
-
-// ===== WEBHOOK TYPES =====
-export interface WebhookEvent {
-  eventType: 'message' | 'join' | 'leave' | 'room_created' | 'room_deleted';
-  roomId: string;
-  userId?: string;
-  timestamp: string;
-  data: any;
+  id: number;
+  rocketMessageId: string;
+  rocketUserId: string;
+  userId?: number;
+  messageText: string;
+  messageType: string;
+  isDeleted: boolean;
+  createdAt: string;
 }
 
 // ===== ROOM MANAGEMENT =====
 export interface RenameRoomRequest {
-  roomId: string;
   newName: string;
+  roomType?: string;
 }
 
 export interface ArchiveRoomRequest {
   roomId: string;
-  archive: boolean; // true = archive, false = unarchive
+  roomType?: string;
 }
 
 export interface DeleteRoomRequest {
   roomId: string;
-  confirmation: string; // Phải gõ tên room để confirm
+  roomType?: string;
+  confirm: boolean;
 }
 
-// ===== FILTER & PAGINATION =====
-export interface RoomFilter {
-  departmentId?: number;
-  projectId?: number;
-  ownerId?: number;
-  search?: string;
-  isArchived?: boolean;
+export interface SetAnnouncementModeRequest {
+  announcementOnly: boolean;
+  roomType?: string;
 }
 
+export interface SetTopicRequest {
+  topic: string;
+  roomType?: string;
+}
+
+// ===== PAGINATION =====
 export interface PaginationParams {
-  page: number;
-  pageSize: number;
+  pageSize?: number;
+  pageNumber?: number;
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
-// ===== USER INFO =====
-export interface UserInfo {
-  userId: number;
-  fullName: string;
-  email: string;
-  department?: string;
-  position?: string;
-  avatar?: string;
-}
-
-// ===== API RESPONSE =====
-export interface ApiResponse<T = any> {
   success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
+  pageNumber: number;
+  pageSize: number;
+  data: T[];
 }
 
+// ===== WEBHOOK TYPES =====
+export interface WebhookEvent {
+  event: string;
+  messageId?: string;
+  roomId?: string;
+  userId?: string;
+  username?: string;
+  text?: string;
+  roomName?: string;
+  timestamp?: string;
+}
