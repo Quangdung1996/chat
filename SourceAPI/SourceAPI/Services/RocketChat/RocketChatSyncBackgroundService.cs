@@ -1,11 +1,10 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using SourceAPI.Core.Repository;
-using System.Linq;
 
 namespace SourceAPI.Services.RocketChat
 {
@@ -32,8 +31,7 @@ namespace SourceAPI.Services.RocketChat
         {
             _logger.LogInformation("RocketChat Sync Background Service is starting...");
 
-            // Đợi 30 giây sau khi app start mới chạy lần đầu
-            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+
 
             // Load config từ appsettings (nếu có)
             using (var scope = _serviceProvider.CreateScope())
@@ -87,7 +85,7 @@ namespace SourceAPI.Services.RocketChat
                     // TODO: Get list of users from main system
                     // Đây là placeholder - bạn cần implement logic lấy danh sách users từ DB chính
                     // VD: var users = await _userRepository.GetAllActiveUsersAsync();
-                    
+
                     var usersToSync = await GetUsersToSyncAsync(scope);
 
                     if (usersToSync == null || usersToSync.Length == 0)
@@ -122,13 +120,13 @@ namespace SourceAPI.Services.RocketChat
                             if (!string.IsNullOrWhiteSpace(result.RocketUserId))
                             {
                                 successCount++;
-                                _logger.LogInformation("Successfully synced user {UserId} - {Username}", 
+                                _logger.LogInformation("Successfully synced user {UserId} - {Username}",
                                     user.UserId, result.Username);
                             }
                             else
                             {
                                 errorCount++;
-                                _logger.LogWarning("Failed to sync user {UserId}: {Message}", 
+                                _logger.LogWarning("Failed to sync user {UserId}: {Message}",
                                     user.UserId, result.Message);
                             }
 
@@ -162,14 +160,14 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                // Gọi stored procedure để lấy users chưa sync
-                var users = RocketChatRepository.ExecuteStoredProcedure<UserToSyncDto>(
-                    "sp_GetUsersForRocketChatSync",
-                    new { } // Empty param
-                );
+                //// Gọi stored procedure để lấy users chưa sync
+                //var users = RocketChatRepository.ExecuteStoredProcedure<UserToSyncDto>(
+                //    "sp_GetUsersForRocketChatSync",
+                //    new { } // Empty param
+                //);
 
                 await Task.CompletedTask;
-                return users ?? Array.Empty<UserToSyncDto>();
+                return Array.Empty<UserToSyncDto>();
             }
             catch (Exception ex)
             {

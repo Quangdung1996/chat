@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
@@ -21,12 +22,12 @@ namespace SourceAPI.Services.RocketChat
         public RocketChatAutoLoginService(
             IRocketChatUserService userService,
             IRocketChatAuthService authService,
-            RocketChatConfig config,
+           IOptions<RocketChatConfig> config,
             ILogger<RocketChatAutoLoginService> logger)
         {
             _userService = userService;
             _authService = authService;
-            _config = config;
+            _config = config.Value;
             _logger = logger;
         }
 
@@ -67,7 +68,7 @@ namespace SourceAPI.Services.RocketChat
                 // Login to Rocket.Chat with stored credentials
                 var token = await _authService.LoginAsync(mapping.RocketUsername, password);
 
-                _logger.LogInformation("Generated auto-login token for user {UserId} - {Username}", 
+                _logger.LogInformation("Generated auto-login token for user {UserId} - {Username}",
                     userId, mapping.RocketUsername);
 
                 return token;

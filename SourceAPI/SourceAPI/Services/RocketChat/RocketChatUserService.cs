@@ -5,7 +5,6 @@ using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -99,7 +98,7 @@ namespace SourceAPI.Services.RocketChat
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError($"Failed to create user in Rocket.Chat: {response.StatusCode} - {responseContent}");
-                    
+
                     return new CreateUserResponse
                     {
                         Success = false,
@@ -125,7 +124,7 @@ namespace SourceAPI.Services.RocketChat
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Exception creating user in Rocket.Chat: {ex.Message}");
-                
+
                 return new CreateUserResponse
                 {
                     Success = false,
@@ -170,7 +169,7 @@ namespace SourceAPI.Services.RocketChat
                 // Note: Password is stored encrypted/hashed in Metadata for future auto-login
                 var metadata = new
                 {
-                    password = password, // TODO: Encrypt this before storing
+                    password = "Action123", // TODO: Encrypt this before storing
                     createdAt = DateTime.UtcNow,
                     source = "auto-sync"
                 };
@@ -205,7 +204,7 @@ namespace SourceAPI.Services.RocketChat
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error syncing user {userId}: {ex.Message}");
-                
+
                 return new SyncUserResponse
                 {
                     UserId = userId,
@@ -248,7 +247,7 @@ namespace SourceAPI.Services.RocketChat
             try
             {
                 var result = RocketChatRepository.GetUserMappingByUserId(userId);
-                
+
                 if (result == null)
                     return null;
 
@@ -281,7 +280,7 @@ namespace SourceAPI.Services.RocketChat
             try
             {
                 var result = RocketChatRepository.GetUserMappingByRocketUserId(rocketUserId);
-                
+
                 if (result == null)
                     return null;
 
