@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using SourceAPI.Core.Repository;
 using SourceAPI.Data.Entities;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
@@ -15,12 +15,12 @@ namespace SourceAPI.Services.RocketChat
     /// <summary>
     /// T-08: RocketChat User Service Implementation
     /// DoD: Gọi users.create; trả RocketUserId/Username; persist mapping; bắt lỗi có ngữ nghĩa
+    /// Uses Database First pattern with Repository
     /// </summary>
     public class RocketChatUserService : IRocketChatUserService
     {
         private readonly HttpClient _httpClient;
         private readonly IRocketChatAuthService _authService;
-        private readonly DbContext _dbContext; // Replace with your actual DbContext
         private readonly ILogger<RocketChatUserService> _logger;
 
         public RocketChatUserService(
@@ -31,8 +31,6 @@ namespace SourceAPI.Services.RocketChat
             _httpClient = httpClientFactory.CreateClient("RocketChat");
             _authService = authService;
             _logger = logger;
-            // TODO: Inject your DbContext here
-            // _dbContext = dbContext;
         }
 
         /// <summary>
@@ -168,20 +166,21 @@ namespace SourceAPI.Services.RocketChat
                     throw new Exception($"Failed to create user in Rocket.Chat: {createResult.Error}");
                 }
 
-                // Save mapping to database
-                var mapping = new UserRocketChatMapping
+                // Save mapping to database using Repository
+                var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
                 {
                     UserId = userId,
                     RocketUserId = createResult.User.Id,
                     RocketUsername = createResult.User.Username,
-                    CreatedAt = DateTime.UtcNow,
-                    LastSyncAt = DateTime.UtcNow,
-                    IsActive = true
-                };
+                    Email = email,
+                    FullName = fullName,
+                    CreatedBy = userId.ToString()
+                });
 
-                // TODO: Save to your DbContext
-                // await _dbContext.Set<UserRocketChatMapping>().AddAsync(mapping);
-                // await _dbContext.SaveChangesAsync();
+                if (upsertResult == null || !upsertResult.Success)
+                {
+                    _logger.LogWarning($"Failed to save user mapping for user {userId}");
+                }
 
                 _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {createResult.User.Id}");
 
@@ -237,12 +236,32 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<UserRocketChatMapping?> GetMappingAsync(int userId)
         {
-            // TODO: Query from your DbContext
-            // return await _dbContext.Set<UserRocketChatMapping>()
-            //     .FirstOrDefaultAsync(m => m.UserId == userId && m.IsActive);
-            
-            await Task.CompletedTask;
-            return null;
+            try
+            {
+                var result = RocketChatRepository.GetUserMappingByUserId(userId);
+                
+                if (result == null)
+                    return null;
+
+                return new UserRocketChatMapping
+                {
+                    Id = result.Id,
+                    UserId = result.UserId,
+                    RocketUserId = result.RocketUserId,
+                    RocketUsername = result.RocketUsername,
+                    Email = result.Email,
+                    FullName = result.FullName,
+                    IsActive = result.IsActive,
+                    CreatedAt = result.CreatedAt,
+                    LastSyncAt = result.LastSyncAt,
+                    Metadata = result.Metadata
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting mapping for user {userId}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -250,12 +269,32 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId)
         {
-            // TODO: Query from your DbContext
-            // return await _dbContext.Set<UserRocketChatMapping>()
-            //     .FirstOrDefaultAsync(m => m.RocketUserId == rocketUserId && m.IsActive);
-            
-            await Task.CompletedTask;
-            return null;
+            try
+            {
+                var result = RocketChatRepository.GetUserMappingByRocketUserId(rocketUserId);
+                
+                if (result == null)
+                    return null;
+
+                return new UserRocketChatMapping
+                {
+                    Id = result.Id,
+                    UserId = result.UserId,
+                    RocketUserId = result.RocketUserId,
+                    RocketUsername = result.RocketUsername,
+                    Email = result.Email,
+                    FullName = result.FullName,
+                    IsActive = result.IsActive,
+                    CreatedAt = result.CreatedAt,
+                    LastSyncAt = result.LastSyncAt,
+                    Metadata = result.Metadata
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting mapping for Rocket user {rocketUserId}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -265,17 +304,23 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
+                // Get current mapping to ensure it exists
                 var mapping = await GetMappingAsync(userId);
                 if (mapping == null)
                     return false;
 
-                mapping.IsActive = isActive;
-                mapping.LastSyncAt = DateTime.UtcNow;
+                // Update using Repository (re-upsert with new status)
+                var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
+                {
+                    UserId = userId,
+                    RocketUserId = mapping.RocketUserId,
+                    RocketUsername = mapping.RocketUsername,
+                    Email = mapping.Email,
+                    FullName = mapping.FullName,
+                    CreatedBy = userId.ToString()
+                });
 
-                // TODO: Update in your DbContext
-                // await _dbContext.SaveChangesAsync();
-
-                return true;
+                return upsertResult != null && upsertResult.Success;
             }
             catch (Exception ex)
             {

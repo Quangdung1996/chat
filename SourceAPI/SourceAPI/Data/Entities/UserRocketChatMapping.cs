@@ -1,60 +1,98 @@
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SourceAPI.Data.Entities
 {
     /// <summary>
     /// Mapping between internal users and Rocket.Chat users
-    /// T-06, T-07: Migration and EF Model
+    /// T-06, T-07: User mapping entity
+    /// Database First: chat.UserRocketChatMapping
     /// </summary>
-    [Table("UserRocketChatMapping")]
-    public class UserRocketChatMapping
+    public partial class UserRocketChatMapping
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public UserRocketChatMapping()
+        {
+            OnCreated();
+        }
+
+        /// <summary>
+        /// Primary key
+        /// </summary>
+        public virtual int Id { get; set; }
 
         /// <summary>
         /// Internal system user ID
         /// </summary>
-        [Required]
-        public int UserId { get; set; }
+        public virtual int UserId { get; set; }
 
         /// <summary>
-        /// Rocket.Chat user ID
+        /// Rocket.Chat user ID (_id)
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketUserId { get; set; } = string.Empty;
+        public virtual string RocketUserId { get; set; }
 
         /// <summary>
         /// Rocket.Chat username
         /// </summary>
-        [Required]
-        [MaxLength(100)]
-        public string RocketUsername { get; set; } = string.Empty;
+        public virtual string RocketUsername { get; set; }
 
         /// <summary>
-        /// When the mapping was created
+        /// User email
         /// </summary>
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public virtual string Email { get; set; }
 
         /// <summary>
-        /// Last sync date
+        /// Full name
         /// </summary>
-        public DateTime? LastSyncAt { get; set; }
+        public virtual string FullName { get; set; }
 
         /// <summary>
-        /// Is this user active in Rocket.Chat
+        /// Is the mapping active
         /// </summary>
-        public bool IsActive { get; set; } = true;
+        public virtual bool IsActive { get; set; }
+
+        /// <summary>
+        /// When this mapping was created
+        /// </summary>
+        public virtual DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Last time synced with Rocket.Chat
+        /// </summary>
+        public virtual DateTime? LastSyncAt { get; set; }
 
         /// <summary>
         /// Additional metadata (JSON)
         /// </summary>
-        [MaxLength(1000)]
-        public string? Metadata { get; set; }
+        public virtual string Metadata { get; set; }
+
+        /// <summary>
+        /// Is deleted (soft delete)
+        /// </summary>
+        public virtual bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// Log: Created date
+        /// </summary>
+        public virtual DateTime? Log_CreatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Created by
+        /// </summary>
+        public virtual string Log_CreatedBy { get; set; }
+
+        /// <summary>
+        /// Log: Updated date
+        /// </summary>
+        public virtual DateTime? Log_UpdatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Updated by
+        /// </summary>
+        public virtual string Log_UpdatedBy { get; set; }
+
+        #region Extensibility Method Definitions
+
+        partial void OnCreated();
+
+        #endregion
     }
 }
-

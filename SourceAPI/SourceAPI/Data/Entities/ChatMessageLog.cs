@@ -1,95 +1,123 @@
-using Microsoft.EntityFrameworkCore;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SourceAPI.Data.Entities
 {
     /// <summary>
     /// Log of chat messages from Rocket.Chat
     /// T-35: Message logging
+    /// Database First: chat.ChatMessageLog
     /// </summary>
-    [Table("ChatMessageLog")]
-    [Index(nameof(RocketRoomId), nameof(CreatedAt))]
-    [Index(nameof(RocketMessageId), IsUnique = true)]
-    public class ChatMessageLog
+    public partial class ChatMessageLog
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long Id { get; set; }
+        public ChatMessageLog()
+        {
+            OnCreated();
+        }
+
+        /// <summary>
+        /// Primary key
+        /// </summary>
+        public virtual long Id { get; set; }
 
         /// <summary>
         /// Rocket.Chat message ID
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketMessageId { get; set; } = string.Empty;
+        public virtual string RocketMessageId { get; set; }
 
         /// <summary>
         /// Rocket.Chat room ID
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketRoomId { get; set; } = string.Empty;
+        public virtual string RocketRoomId { get; set; }
 
         /// <summary>
         /// Rocket.Chat user ID (sender)
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketUserId { get; set; } = string.Empty;
+        public virtual string RocketUserId { get; set; }
 
         /// <summary>
         /// Internal user ID (if mapped)
         /// </summary>
-        public int? UserId { get; set; }
+        public virtual int? UserId { get; set; }
 
         /// <summary>
         /// Internal room mapping ID (if mapped)
         /// </summary>
-        public int? RoomMappingId { get; set; }
+        public virtual int? RoomMappingId { get; set; }
 
         /// <summary>
         /// Message text
         /// </summary>
-        public string MessageText { get; set; } = string.Empty;
+        public virtual string MessageText { get; set; }
 
         /// <summary>
         /// Message type (text, file, etc.)
         /// </summary>
-        [MaxLength(50)]
-        public string MessageType { get; set; } = "text";
+        public virtual string MessageType { get; set; }
 
         /// <summary>
         /// Is message deleted
         /// </summary>
-        public bool IsDeleted { get; set; } = false;
+        public virtual bool IsDeleted { get; set; }
 
         /// <summary>
         /// Was message auto-deleted by policy
         /// </summary>
-        public bool IsAutoDeleted { get; set; } = false;
+        public virtual bool IsAutoDeleted { get; set; }
 
         /// <summary>
         /// Deletion reason
         /// </summary>
-        [MaxLength(500)]
-        public string? DeletionReason { get; set; }
+        public virtual string DeletionReason { get; set; }
 
         /// <summary>
-        /// When message was created in Rocket.Chat
+        /// When was message deleted
         /// </summary>
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public virtual DateTime? DeletedAt { get; set; }
 
         /// <summary>
-        /// When message was logged in our DB
+        /// Who deleted the message
         /// </summary>
-        public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
+        public virtual string DeletedBy { get; set; }
 
         /// <summary>
-        /// Attachments/metadata (JSON)
+        /// Message created timestamp
         /// </summary>
-        public string? Metadata { get; set; }
+        public virtual DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Message updated timestamp
+        /// </summary>
+        public virtual DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Additional metadata (JSON)
+        /// </summary>
+        public virtual string Metadata { get; set; }
+
+        /// <summary>
+        /// Log: Created date
+        /// </summary>
+        public virtual DateTime? Log_CreatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Created by
+        /// </summary>
+        public virtual string Log_CreatedBy { get; set; }
+
+        /// <summary>
+        /// Log: Updated date
+        /// </summary>
+        public virtual DateTime? Log_UpdatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Updated by
+        /// </summary>
+        public virtual string Log_UpdatedBy { get; set; }
+
+        #region Extensibility Method Definitions
+
+        partial void OnCreated();
+
+        #endregion
     }
 }
-

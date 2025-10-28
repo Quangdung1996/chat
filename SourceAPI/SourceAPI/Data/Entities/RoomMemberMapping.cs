@@ -1,78 +1,98 @@
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SourceAPI.Data.Entities
 {
     /// <summary>
-    /// Room member mapping with roles
+    /// Room member mapping
     /// T-20, T-21, T-22: Member management
+    /// Database First: chat.RoomMemberMapping
     /// </summary>
-    [Table("RoomMemberMapping")]
-    public class RoomMemberMapping
+    public partial class RoomMemberMapping
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public RoomMemberMapping()
+        {
+            OnCreated();
+        }
 
         /// <summary>
-        /// Room mapping ID
+        /// Primary key
         /// </summary>
-        [Required]
-        public int RoomMappingId { get; set; }
+        public virtual int Id { get; set; }
 
         /// <summary>
-        /// User mapping ID
+        /// Reference to RoomMapping
         /// </summary>
-        [Required]
-        public int UserMappingId { get; set; }
+        public virtual int RoomMappingId { get; set; }
 
         /// <summary>
-        /// Internal user ID (for quick reference)
+        /// Reference to UserRocketChatMapping
         /// </summary>
-        [Required]
-        public int UserId { get; set; }
+        public virtual int UserMappingId { get; set; }
 
         /// <summary>
-        /// Rocket.Chat user ID (for quick reference)
+        /// Internal user ID
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketUserId { get; set; } = string.Empty;
+        public virtual int UserId { get; set; }
 
         /// <summary>
-        /// Member role: 'owner', 'moderator', 'member'
+        /// Rocket.Chat user ID
         /// </summary>
-        [Required]
-        [MaxLength(20)]
-        public string Role { get; set; } = "member";
+        public virtual string RocketUserId { get; set; }
 
         /// <summary>
-        /// Is currently a member
+        /// Member role: owner, moderator, member
         /// </summary>
-        public bool IsActive { get; set; } = true;
+        public virtual string Role { get; set; }
 
         /// <summary>
-        /// Joined date
+        /// Is member active in this room
         /// </summary>
-        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+        public virtual bool IsActive { get; set; }
 
         /// <summary>
-        /// Left date (if applicable)
+        /// When member joined
         /// </summary>
-        public DateTime? LeftAt { get; set; }
+        public virtual DateTime JoinedAt { get; set; }
 
         /// <summary>
-        /// Last activity/update
+        /// When member left (if applicable)
         /// </summary>
-        public DateTime? LastActivityAt { get; set; }
+        public virtual DateTime? LeftAt { get; set; }
 
-        // Navigation properties
-        [ForeignKey("RoomMappingId")]
-        public virtual RoomMapping? Room { get; set; }
+        /// <summary>
+        /// Last activity timestamp
+        /// </summary>
+        public virtual DateTime? LastActivityAt { get; set; }
 
-        [ForeignKey("UserMappingId")]
-        public virtual UserRocketChatMapping? User { get; set; }
+        /// <summary>
+        /// Is deleted (soft delete)
+        /// </summary>
+        public virtual bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// Log: Created date
+        /// </summary>
+        public virtual DateTime? Log_CreatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Created by
+        /// </summary>
+        public virtual string Log_CreatedBy { get; set; }
+
+        /// <summary>
+        /// Log: Updated date
+        /// </summary>
+        public virtual DateTime? Log_UpdatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Updated by
+        /// </summary>
+        public virtual string Log_UpdatedBy { get; set; }
+
+        #region Extensibility Method Definitions
+
+        partial void OnCreated();
+
+        #endregion
     }
 }
-

@@ -1,99 +1,128 @@
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SourceAPI.Data.Entities
 {
     /// <summary>
     /// Mapping for Rocket.Chat rooms/groups
     /// T-17, T-18: Group and Channel mapping
+    /// Database First: chat.RoomMapping
     /// </summary>
-    [Table("RoomMapping")]
-    public class RoomMapping
+    public partial class RoomMapping
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public RoomMapping()
+        {
+            OnCreated();
+        }
+
+        /// <summary>
+        /// Primary key
+        /// </summary>
+        public virtual int Id { get; set; }
 
         /// <summary>
         /// Unique business code for the group (e.g., DEPT-PROJ-001)
         /// </summary>
-        [Required]
-        [MaxLength(100)]
-        public string GroupCode { get; set; } = string.Empty;
+        public virtual string GroupCode { get; set; }
 
         /// <summary>
         /// Rocket.Chat room ID
         /// </summary>
-        [Required]
-        [MaxLength(50)]
-        public string RocketRoomId { get; set; } = string.Empty;
+        public virtual string RocketRoomId { get; set; }
 
         /// <summary>
         /// Room name in Rocket.Chat
         /// </summary>
-        [Required]
-        [MaxLength(200)]
-        public string RoomName { get; set; } = string.Empty;
+        public virtual string RoomName { get; set; }
 
         /// <summary>
         /// Room type: 'group' (private) or 'channel' (public)
         /// </summary>
-        [Required]
-        [MaxLength(20)]
-        public string RoomType { get; set; } = "group";
+        public virtual string RoomType { get; set; }
 
         /// <summary>
         /// Department ID (optional)
         /// </summary>
-        public int? DepartmentId { get; set; }
+        public virtual int? DepartmentId { get; set; }
 
         /// <summary>
         /// Project ID (optional)
         /// </summary>
-        public int? ProjectId { get; set; }
+        public virtual int? ProjectId { get; set; }
 
         /// <summary>
         /// Room description
         /// </summary>
-        [MaxLength(500)]
-        public string? Description { get; set; }
+        public virtual string Description { get; set; }
 
         /// <summary>
         /// Is read-only room
         /// </summary>
-        public bool IsReadOnly { get; set; } = false;
+        public virtual bool IsReadOnly { get; set; }
+
+        /// <summary>
+        /// Is announcement room
+        /// </summary>
+        public virtual bool IsAnnouncement { get; set; }
 
         /// <summary>
         /// Is archived
         /// </summary>
-        public bool IsArchived { get; set; } = false;
+        public virtual bool IsArchived { get; set; }
 
         /// <summary>
         /// Is deleted
         /// </summary>
-        public bool IsDeleted { get; set; } = false;
+        public virtual bool IsDeleted { get; set; }
 
         /// <summary>
         /// Created date
         /// </summary>
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public virtual DateTime CreatedAt { get; set; }
 
         /// <summary>
         /// Created by user ID
         /// </summary>
-        public int? CreatedBy { get; set; }
+        public virtual int? CreatedBy { get; set; }
 
         /// <summary>
         /// Last updated date
         /// </summary>
-        public DateTime? UpdatedAt { get; set; }
+        public virtual DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Updated by user ID
+        /// </summary>
+        public virtual int? UpdatedBy { get; set; }
 
         /// <summary>
         /// Custom fields (JSON)
         /// </summary>
-        [MaxLength(2000)]
-        public string? CustomFields { get; set; }
+        public virtual string CustomFields { get; set; }
+
+        /// <summary>
+        /// Log: Created date
+        /// </summary>
+        public virtual DateTime? Log_CreatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Created by
+        /// </summary>
+        public virtual string Log_CreatedBy { get; set; }
+
+        /// <summary>
+        /// Log: Updated date
+        /// </summary>
+        public virtual DateTime? Log_UpdatedDate { get; set; }
+
+        /// <summary>
+        /// Log: Updated by
+        /// </summary>
+        public virtual string Log_UpdatedBy { get; set; }
+
+        #region Extensibility Method Definitions
+
+        partial void OnCreated();
+
+        #endregion
     }
 }
-
