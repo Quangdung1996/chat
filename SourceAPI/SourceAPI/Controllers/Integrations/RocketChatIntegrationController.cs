@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Controllers.Integrations
