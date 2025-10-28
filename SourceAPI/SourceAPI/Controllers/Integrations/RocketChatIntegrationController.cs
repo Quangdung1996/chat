@@ -21,15 +21,18 @@ namespace SourceAPI.Controllers.Integrations
     {
         private readonly IRocketChatUserService _userService;
         private readonly IRocketChatRoomService _roomService;
+        private readonly IRocketChatAutoLoginService _autoLoginService;
         private readonly ILogger<RocketChatIntegrationController> _logger;
 
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
+            IRocketChatAutoLoginService autoLoginService,
             ILogger<RocketChatIntegrationController> logger)
         {
             _userService = userService;
             _roomService = roomService;
+            _autoLoginService = autoLoginService;
             _logger = logger;
         }
 
@@ -103,6 +106,69 @@ namespace SourceAPI.Controllers.Integrations
             {
                 _logger.LogError(ex, $"Error getting user info {userId}");
                 return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Get Rocket.Chat auto-login token for current user
+        /// Allows seamless login to Rocket.Chat without password
+        /// </summary>
+        [HttpPost("get-login-token")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> GetLoginToken([FromBody] GetLoginTokenRequest request)
+        {
+            try
+            {
+                var token = await _autoLoginService.GetLoginTokenAsync(request.UserId);
+                
+                return Ok(new
+                {
+                    success = true,
+                    authToken = token.AuthToken,
+                    userId = token.UserId,
+                    expiresAt = token.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting login token for user {request.UserId}");
+                
+                if (ex.Message.Contains("not synced"))
+                {
+                    return NotFound(new { success = false, message = ex.Message });
+                }
+                
+                return StatusCode(500, new { success = false, message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Get Rocket.Chat auto-login URL for current user
+        /// </summary>
+        [HttpPost("get-login-url")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetLoginUrl([FromBody] GetLoginUrlRequest request)
+        {
+            try
+            {
+                var url = await _autoLoginService.GetAutoLoginUrlAsync(
+                    request.UserId, 
+                    request.RedirectPath ?? "/home"
+                );
+                
+                return Ok(new
+                {
+                    success = true,
+                    loginUrl = url
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting login URL for user {request.UserId}");
+                return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
 
@@ -637,6 +703,17 @@ namespace SourceAPI.Controllers.Integrations
     {
         public string Topic { get; set; } = string.Empty;
         public string? RoomType { get; set; } = "group";
+    }
+
+    public class GetLoginTokenRequest
+    {
+        public int UserId { get; set; }
+    }
+
+    public class GetLoginUrlRequest
+    {
+        public int UserId { get; set; }
+        public string? RedirectPath { get; set; }
     }
 
     #endregion

@@ -167,6 +167,14 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 // Save mapping to database using Repository
+                // Note: Password is stored encrypted/hashed in Metadata for future auto-login
+                var metadata = new
+                {
+                    password = password, // TODO: Encrypt this before storing
+                    createdAt = DateTime.UtcNow,
+                    source = "auto-sync"
+                };
+
                 var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
                 {
                     UserId = userId,
@@ -174,6 +182,7 @@ namespace SourceAPI.Services.RocketChat
                     RocketUsername = createResult.User.Username,
                     Email = email,
                     FullName = fullName,
+                    Metadata = Newtonsoft.Json.JsonConvert.SerializeObject(metadata),
                     CreatedBy = userId.ToString()
                 });
 

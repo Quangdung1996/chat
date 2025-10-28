@@ -42,6 +42,10 @@ namespace SourceAPI.Extensions
             services.AddScoped<IRocketChatAuthService, RocketChatAuthService>();
             services.AddScoped<IRocketChatUserService, RocketChatUserService>();
             services.AddScoped<IRocketChatRoomService, RocketChatRoomService>();
+            services.AddScoped<IRocketChatAutoLoginService, RocketChatAutoLoginService>();
+
+            // Register background service for auto-sync
+            services.AddHostedService<RocketChatSyncBackgroundService>();
 
             // Register memory cache if not already registered
             services.AddMemoryCache();

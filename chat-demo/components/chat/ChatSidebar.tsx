@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import UserMenu from '@/components/UserMenu';
+import CreateRoomModal from './CreateRoomModal';
 import type { Room } from '@/types/rocketchat';
 
 interface ChatSidebarProps {
@@ -21,6 +22,7 @@ export default function ChatSidebar({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadRooms();
@@ -168,14 +170,27 @@ export default function ChatSidebar({
         {/* Footer - User Menu & Refresh */}
         <div className="p-4 border-t dark:border-gray-700 space-y-3">
           <button
+            onClick={() => setShowCreateModal(true)}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+          >
+            ➕ Create New Room
+          </button>
+          <button
             onClick={loadRooms}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
           >
-            🔄 Tải lại danh sách
+            🔄 Refresh Rooms
           </button>
           <UserMenu />
         </div>
       </div>
+
+      {/* Create Room Modal */}
+      <CreateRoomModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadRooms}
+      />
     </>
   );
 }

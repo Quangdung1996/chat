@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
+import RoomSettingsMenu from './RoomSettingsMenu';
+import InviteMembersModal from './InviteMembersModal';
 import type { Room, RoomMember } from '@/types/rocketchat';
 
 interface RoomHeaderProps {
@@ -11,6 +13,7 @@ interface RoomHeaderProps {
 
 export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [showMembers, setShowMembers] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
@@ -67,9 +70,24 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowInviteModal(true)}
+              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Invite Members"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                />
+              </svg>
+            </button>
+
+            <button
               onClick={onRefresh}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Tải lại tin nhắn"
+              title="Refresh Messages"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -81,22 +99,21 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               </svg>
             </button>
 
-            <button
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Cài đặt"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                />
-              </svg>
-            </button>
+            <RoomSettingsMenu room={room} onUpdate={onRefresh} />
           </div>
         </div>
       </div>
+
+      {/* Invite Members Modal */}
+      <InviteMembersModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        roomId={room.rocketRoomId}
+        onSuccess={() => {
+          loadMembers();
+          onRefresh();
+        }}
+      />
 
       {/* Members Sidebar */}
       {showMembers && (
