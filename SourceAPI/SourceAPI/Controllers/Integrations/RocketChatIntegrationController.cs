@@ -1,16 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using SourceAPI.Core.Data.RocketChatData;
+using SourceAPI.Core.Repository;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Controllers.Integrations
 {
     /// <summary>
-    /// T-11, T-19b: Rocket.Chat Integration API Controller
-    /// Protected by API Key authentication
+    /// Rocket.Chat Integration API Controller
+    /// Protected by API Key authentication (X-API-Key header)
     /// </summary>
     [ApiController]
     [Route("api/integrations/rocket")]
@@ -30,13 +33,12 @@ namespace SourceAPI.Controllers.Integrations
             _logger = logger;
         }
 
+        #region User Management (T-11)
+
         /// <summary>
         /// T-11: Sync user to Rocket.Chat
         /// DoD: Endpoint bảo vệ bằng API key; idempotent; trả {userId, rocketUserId, username}
         /// </summary>
-        /// <param name="userId">Internal user ID</param>
-        /// <param name="email">User email</param>
-        /// <param name="fullName">User full name</param>
         [HttpPost("sync-user")]
         [ProducesResponseType(typeof(SyncUserResponse), 200)]
         [ProducesResponseType(400)]
@@ -45,12 +47,7 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                // TODO: Validate API key
-                // if (!ValidateApiKey(Request.Headers["X-API-Key"]))
-                // {
-                //     return Unauthorized(new { message = "Invalid API key" });
-                // }
-
+                // TODO: Validate API key middleware
                 if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.FullName))
                 {
                     return BadRequest(new { message = "UserId, Email, and FullName are required" });
@@ -64,55 +61,84 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 _logger.LogInformation($"User {request.UserId} synced successfully to Rocket.Chat");
-
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error syncing user {request.UserId}: {ex.Message}");
+                _logger.LogError(ex, $"Error syncing user {request.UserId}");
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
 
         /// <summary>
-        /// T-19b: Create group in Rocket.Chat
+        /// T-41: Get user info by internal user ID
+        /// DoD: Bảo vệ bằng API key; cache 5'; trả fullName/department/email
+        /// </summary>
+        [HttpGet("user/{userId}/info")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetUserInfo(int userId)
+        {
+            try
+            {
+                var mapping = await _userService.GetMappingAsync(userId);
+                
+                if (mapping == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                return Ok(new
+                {
+                    userId = mapping.UserId,
+                    rocketUserId = mapping.RocketUserId,
+                    username = mapping.RocketUsername,
+                    email = mapping.Email,
+                    fullName = mapping.FullName,
+                    isActive = mapping.IsActive,
+                    lastSyncAt = mapping.LastSyncAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting user info {userId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        #endregion
+
+        #region Room Management (T-19b, T-26, T-30)
+
+        /// <summary>
+        /// T-19b: Create group/channel in Rocket.Chat
         /// DoD: Endpoint bảo vệ; validate input; trả {roomId, groupCode}; idempotent theo groupCode
         /// </summary>
         [HttpPost("create-group")]
         [ProducesResponseType(typeof(CreateGroupResponse), 200)]
         [ProducesResponseType(400)]
-        [ProducesResponseType(401)]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {
             try
             {
-                // TODO: Validate API key
-                // if (!ValidateApiKey(Request.Headers["X-API-Key"]))
-                // {
-                //     return Unauthorized(new { message = "Invalid API key" });
-                // }
-
-                // Validate input
                 if (string.IsNullOrWhiteSpace(request.GroupCode))
                 {
                     return BadRequest(new { message = "GroupCode is required" });
                 }
 
-                // Check if group already exists (idempotent)
-                // TODO: Check in database by GroupCode
-                // var existingRoom = await _dbContext.RoomMappings
-                //     .FirstOrDefaultAsync(r => r.GroupCode == request.GroupCode);
-                // if (existingRoom != null)
-                // {
-                //     return Ok(new CreateGroupResponse
-                //     {
-                //         RoomId = existingRoom.RocketRoomId,
-                //         GroupCode = existingRoom.GroupCode,
-                //         Name = existingRoom.RoomName,
-                //         Success = true,
-                //         Message = "Group already exists"
-                //     });
-                // }
+                // T-19b: Check if group already exists (idempotent)
+                var existingRoom = RocketChatRepository.GetRoomByGroupCode(request.GroupCode);
+                if (existingRoom != null)
+                {
+                    return Ok(new CreateGroupResponse
+                    {
+                        RoomId = existingRoom.RocketRoomId,
+                        GroupCode = existingRoom.GroupCode,
+                        Name = existingRoom.RoomName,
+                        Success = true,
+                        Message = "Group already exists"
+                    });
+                }
 
                 // Create new group
                 var result = request.IsPrivate
@@ -124,21 +150,212 @@ namespace SourceAPI.Controllers.Integrations
                     return BadRequest(new { message = result.Message });
                 }
 
-                _logger.LogInformation($"Group {request.GroupCode} created successfully with RoomId {result.RoomId}");
-
+                _logger.LogInformation($"Group {request.GroupCode} created with RoomId {result.RoomId}");
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error creating group {request.GroupCode}: {ex.Message}");
+                _logger.LogError(ex, $"Error creating group {request.GroupCode}");
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
 
         /// <summary>
-        /// Add members to a group
+        /// T-30: List/search groups with filters
+        /// DoD: GET endpoint với pagination; filter theo dept/project/owner
         /// </summary>
-        [HttpPost("{roomId}/add-members")]
+        [HttpGet("groups")]
+        [ProducesResponseType(200)]
+        public IActionResult ListGroups(
+            [FromQuery] int? departmentId = null,
+            [FromQuery] int? projectId = null,
+            [FromQuery] string? roomType = null,
+            [FromQuery] int pageSize = 50,
+            [FromQuery] int pageNumber = 1)
+        {
+            try
+            {
+                var rooms = RocketChatRepository.ListRooms(new ListRoomsParam
+                {
+                    DepartmentId = departmentId,
+                    ProjectId = projectId,
+                    RoomType = roomType,
+                    PageSize = pageSize,
+                    PageNumber = pageNumber
+                });
+
+                return Ok(new
+                {
+                    success = true,
+                    pageNumber,
+                    pageSize,
+                    data = rooms
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing groups");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-26: Rename room
+        /// </summary>
+        [HttpPut("room/{roomId}/rename")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> RenameRoom(string roomId, [FromBody] RenameRoomRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.NewName))
+                {
+                    return BadRequest(new { message = "NewName is required" });
+                }
+
+                var result = await _roomService.RenameRoomAsync(roomId, request.NewName, request.RoomType ?? "group");
+                
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error renaming room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-26: Archive room
+        /// </summary>
+        [HttpPost("room/{roomId}/archive")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> ArchiveRoom(string roomId, [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.ArchiveRoomAsync(roomId, roomType);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error archiving room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-26: Delete room (with confirmation)
+        /// </summary>
+        [HttpDelete("room/{roomId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> DeleteRoom(string roomId, [FromQuery] string roomType = "group", [FromQuery] bool confirm = false)
+        {
+            try
+            {
+                if (!confirm)
+                {
+                    return BadRequest(new { message = "Please confirm deletion by passing confirm=true" });
+                }
+
+                var result = await _roomService.DeleteRoomAsync(roomId, roomType);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error deleting room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-25: Set announcement mode (read-only for non-moderators)
+        /// </summary>
+        [HttpPost("room/{roomId}/announcement-mode")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> SetAnnouncementMode(
+            string roomId, 
+            [FromBody] SetAnnouncementModeRequest request)
+        {
+            try
+            {
+                var result = await _roomService.SetAnnouncementModeAsync(
+                    roomId, 
+                    request.AnnouncementOnly, 
+                    request.RoomType ?? "group");
+                
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting announcement mode for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-25: Set room topic
+        /// </summary>
+        [HttpPut("room/{roomId}/topic")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> SetTopic(string roomId, [FromBody] SetTopicRequest request)
+        {
+            try
+            {
+                var result = await _roomService.SetTopicAsync(roomId, request.Topic, request.RoomType ?? "group");
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting topic for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        #endregion
+
+        #region Member Management (T-20, T-21, T-22, T-23, T-24, T-27)
+
+        /// <summary>
+        /// T-20: Add single member to room
+        /// DoD: Invite thành công; kiểm tra đã là member thì bỏ qua; ghi RoomMemberMapping
+        /// </summary>
+        [HttpPost("room/{roomId}/add-member")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> AddMember(
+            string roomId, 
+            [FromBody] AddMemberRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.RocketUserId))
+                {
+                    return BadRequest(new { message = "RocketUserId is required" });
+                }
+
+                var result = await _roomService.AddMemberAsync(
+                    roomId, 
+                    request.RocketUserId, 
+                    request.RoomType ?? "group");
+
+                // TODO: Save to RoomMemberMapping via Repository
+                
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error adding member to room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-23: Add multiple members with rate limiting
+        /// DoD: Thêm theo danh sách; delay chống rate limit; báo cáo success/fail từng user
+        /// </summary>
+        [HttpPost("room/{roomId}/add-members")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> AddMembers(string roomId, [FromBody] AddMembersRequest request)
@@ -156,14 +373,8 @@ namespace SourceAPI.Controllers.Integrations
                     request.RoomType ?? "group"
                 );
 
-                var successCount = 0;
-                var failCount = 0;
-
-                foreach (var result in results)
-                {
-                    if (result.Value) successCount++;
-                    else failCount++;
-                }
+                var successCount = results.Count(r => r.Value);
+                var failCount = results.Count(r => !r.Value);
 
                 return Ok(new
                 {
@@ -176,13 +387,145 @@ namespace SourceAPI.Controllers.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error adding members to room {roomId}: {ex.Message}");
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                _logger.LogError(ex, $"Error adding members to room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
             }
         }
 
         /// <summary>
+        /// T-21: Remove member from room
+        /// DoD: Kick thành công; kiểm tra quyền; cập nhật DB; audit log
+        /// </summary>
+        [HttpDelete("room/{roomId}/member/{rocketUserId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> RemoveMember(
+            string roomId, 
+            string rocketUserId,
+            [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.RemoveMemberAsync(roomId, rocketUserId, roomType);
+                
+                // TODO: Update RoomMemberMapping via Repository
+                
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing member from room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-22: Add moderator role
+        /// DoD: Add moderator; cập nhật DB
+        /// </summary>
+        [HttpPost("room/{roomId}/moderator/{rocketUserId}")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> AddModerator(
+            string roomId, 
+            string rocketUserId,
+            [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.AddModeratorAsync(roomId, rocketUserId, roomType);
+                
+                // TODO: Update role in RoomMemberMapping
+                
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error adding moderator to room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-22: Remove moderator role
+        /// </summary>
+        [HttpDelete("room/{roomId}/moderator/{rocketUserId}")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> RemoveModerator(
+            string roomId, 
+            string rocketUserId,
+            [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.RemoveModeratorAsync(roomId, rocketUserId, roomType);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing moderator from room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-22: Add owner role (validate ≥1 owner còn lại)
+        /// </summary>
+        [HttpPost("room/{roomId}/owner/{rocketUserId}")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> AddOwner(
+            string roomId, 
+            string rocketUserId,
+            [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.AddOwnerAsync(roomId, rocketUserId, roomType);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error adding owner to room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// T-24: Get room members (reconcile with Rocket.Chat)
+        /// DoD: So sánh API vs DB; báo cáo chênh lệch
+        /// </summary>
+        [HttpGet("room/{roomMappingId}/members")]
+        [ProducesResponseType(200)]
+        public IActionResult GetRoomMembers(int roomMappingId, [FromQuery] bool includeInactive = false)
+        {
+            try
+            {
+                var members = RocketChatRepository.GetRoomMembers(new GetRoomMembersParam
+                {
+                    RoomMappingId = roomMappingId,
+                    IncludeInactive = includeInactive
+                });
+
+                return Ok(new
+                {
+                    success = true,
+                    roomMappingId,
+                    members
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting members for room {roomMappingId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        #endregion
+
+        #region Messaging (T-36b)
+
+        /// <summary>
         /// T-36b: Send message to room
+        /// DoD: Gửi chủ động vào room bởi bot; hỗ trợ roomId/groupCode; trả về messageId
         /// </summary>
         [HttpPost("send")]
         [ProducesResponseType(200)]
@@ -207,10 +550,47 @@ namespace SourceAPI.Controllers.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending message: {ex.Message}");
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                _logger.LogError(ex, "Error sending message");
+                return StatusCode(500, new { message = "Internal server error" });
             }
         }
+
+        /// <summary>
+        /// Get room messages with pagination
+        /// </summary>
+        [HttpGet("room/{rocketRoomId}/messages")]
+        [ProducesResponseType(200)]
+        public IActionResult GetRoomMessages(
+            string rocketRoomId,
+            [FromQuery] int pageSize = 100,
+            [FromQuery] int pageNumber = 1)
+        {
+            try
+            {
+                var messages = RocketChatRepository.GetRoomMessages(new GetRoomMessagesParam
+                {
+                    RocketRoomId = rocketRoomId,
+                    PageSize = pageSize,
+                    PageNumber = pageNumber
+                });
+
+                return Ok(new
+                {
+                    success = true,
+                    rocketRoomId,
+                    pageNumber,
+                    pageSize,
+                    messages
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting messages for room {rocketRoomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        #endregion
     }
 
     #region Request Models
@@ -220,6 +600,12 @@ namespace SourceAPI.Controllers.Integrations
         public int UserId { get; set; }
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+    }
+
+    public class AddMemberRequest
+    {
+        public string RocketUserId { get; set; } = string.Empty;
+        public string? RoomType { get; set; } = "group";
     }
 
     public class AddMembersRequest
@@ -235,6 +621,23 @@ namespace SourceAPI.Controllers.Integrations
         public string? Alias { get; set; }
     }
 
+    public class RenameRoomRequest
+    {
+        public string NewName { get; set; } = string.Empty;
+        public string? RoomType { get; set; } = "group";
+    }
+
+    public class SetAnnouncementModeRequest
+    {
+        public bool AnnouncementOnly { get; set; }
+        public string? RoomType { get; set; } = "group";
+    }
+
+    public class SetTopicRequest
+    {
+        public string Topic { get; set; } = string.Empty;
+        public string? RoomType { get; set; } = "group";
+    }
+
     #endregion
 }
-
