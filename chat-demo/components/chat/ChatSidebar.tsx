@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
+import UserMenu from '@/components/UserMenu';
 import type { Room } from '@/types/rocketchat';
 
 interface ChatSidebarProps {
@@ -168,14 +169,15 @@ export default function ChatSidebar({
           )}
         </div>
 
-        {/* Footer - Refresh Button */}
-        <div className="p-4 border-t dark:border-gray-700">
+        {/* Footer - User Menu & Refresh */}
+        <div className="p-4 border-t dark:border-gray-700 space-y-3">
           <button
             onClick={loadRooms}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
           >
             🔄 Tải lại danh sách
           </button>
+          <UserMenu />
         </div>
       </div>
     </>

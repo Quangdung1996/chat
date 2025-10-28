@@ -5,7 +5,7 @@
 
 export const API_CONFIG = {
   // URL của backend API
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:12391',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://8637f2ef4fa3.ngrok-free.app',
   
   // Timeout cho API requests (ms)
   timeout: 30000,

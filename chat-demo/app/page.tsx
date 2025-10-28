@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import type { Room } from '@/types/rocketchat';
@@ -10,7 +11,8 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
+    <ProtectedRoute>
+      <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
       {/* Sidebar - Danh sách rooms */}
       <ChatSidebar
         selectedRoom={selectedRoom}
@@ -51,5 +53,6 @@ export default function Home() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -1,96 +1,109 @@
 /**
- * API Client
- * Thư viện gọi API đến backend
+ * API Client - Axios version
+ * Thư viện gọi API đến backend với authentication
  */
 
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '@/config/api.config';
-
-interface RequestOptions extends RequestInit {
-  params?: Record<string, string | number>;
-}
+import { useAuthStore } from '@/store/authStore';
 
 class ApiClient {
-  private baseURL: string;
+  private axiosInstance: AxiosInstance;
 
   constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
+    this.axiosInstance = axios.create({
+      baseURL,
+      timeout: API_CONFIG.timeout,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  /**
-   * Thực hiện request đến API
-   */
-  private async request<T>(
-    endpoint: string,
-    options: RequestOptions = {}
-  ): Promise<T> {
-    const { params, ...fetchOptions } = options;
-
-    // Build URL với query parameters
-    let url = `${this.baseURL}${endpoint}`;
-    if (params) {
-      const queryString = new URLSearchParams(
-        Object.entries(params).map(([key, value]) => [key, String(value)])
-      ).toString();
-      url += `?${queryString}`;
-    }
-
-    // Default headers
-    const headers = {
-      'Content-Type': 'application/json',
-      ...fetchOptions.headers,
-    };
-
-    try {
-      const response = await fetch(url, {
-        ...fetchOptions,
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Request interceptor - Thêm token vào mọi request
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
       }
+    );
 
-      return await response.json();
-    } catch (error) {
-      console.error('API Request Error:', error);
-      throw error;
-    }
+    // Response interceptor - Xử lý lỗi 401 (unauthorized)
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        // Nếu 401 và chưa retry
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            // Thử refresh token
+            const { refreshToken } = useAuthStore.getState();
+            if (refreshToken) {
+              // TODO: Gọi refresh token endpoint
+              // const newToken = await authService.refreshToken(refreshToken);
+              // useAuthStore.getState().setAuth(newToken, refreshToken, user);
+              // return this.axiosInstance(originalRequest);
+            }
+          } catch (refreshError) {
+            // Refresh thất bại -> logout
+            useAuthStore.getState().clearAuth();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            return Promise.reject(refreshError);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
   }
 
   /**
    * GET request
    */
-  async get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.get<T>(endpoint, config);
+    return response.data;
   }
 
   /**
    * POST request
    */
-  async post<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
-    return this.request<T>(endpoint, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async post<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.post<T>(endpoint, data, config);
+    return response.data;
   }
 
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
-    return this.request<T>(endpoint, {
-      ...options,
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async put<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.put<T>(endpoint, data, config);
+    return response.data;
   }
 
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.delete<T>(endpoint, config);
+    return response.data;
+  }
+
+  /**
+   * Get axios instance (để customize nếu cần)
+   */
+  getAxiosInstance(): AxiosInstance {
+    return this.axiosInstance;
   }
 }
 
