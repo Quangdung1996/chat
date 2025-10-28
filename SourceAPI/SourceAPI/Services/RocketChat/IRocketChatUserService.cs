@@ -1,3 +1,4 @@
+using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Threading.Tasks;
 
@@ -28,12 +29,12 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get mapping for internal user ID
         /// </summary>
-        Task<Data.Entities.UserRocketChatMapping?> GetMappingAsync(int userId);
+        Task<UserRocketChatMapping?> GetMappingAsync(int userId);
 
         /// <summary>
         /// Get mapping by Rocket.Chat user ID
         /// </summary>
-        Task<Data.Entities.UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId);
+        Task<UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId);
 
         /// <summary>
         /// Update user active status
