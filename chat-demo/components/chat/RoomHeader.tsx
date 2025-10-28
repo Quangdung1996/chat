@@ -17,9 +17,9 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
-      const response = await rocketChatService.getRoomMembers(room.roomId);
+      const response = await rocketChatService.getRoomMembers(room.rocketRoomId);
       if (response.success && response.data) {
-        setMembers(response.data);
+        setMembers(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load members:', error);
@@ -41,11 +41,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           {/* Room Info */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-lg">
-              {room.isPrivate ? '🔒' : '📢'}
+              {room.roomType === 'group' ? '🔒' : '📢'}
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {room.name}
+                {room.roomName}
               </h2>
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <button
@@ -53,9 +53,9 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
                 >
                   <span>👥</span>
-                  <span>{room.memberCount} thành viên</span>
+                  <span>{members.length} thành viên</span>
                 </button>
-                {room.readOnly && (
+                {room.isReadOnly && (
                   <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">
                     📢 Chỉ đọc
                   </span>

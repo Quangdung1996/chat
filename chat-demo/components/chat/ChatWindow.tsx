@@ -24,7 +24,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
       const interval = setInterval(loadMessages, 5000);
       return () => clearInterval(interval);
     }
-  }, [room.roomId]);
+  }, [room.rocketRoomId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -36,12 +36,12 @@ export default function ChatWindow({ room }: ChatWindowProps) {
 
   const loadMessages = async () => {
     try {
-      const response = await rocketChatService.getMessages(room.roomId, {
-        page: 1,
+      const response = await rocketChatService.getMessages(room.rocketRoomId, {
+        pageNumber: 1,
         pageSize: 100,
       });
       if (response.success && response.data) {
-        setMessages(response.data.data);
+        setMessages(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -55,7 +55,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
     setSending(true);
     try {
       const request: SendMessageRequest = {
-        roomId: room.roomId,
+        roomId: room.rocketRoomId,
         text: messageText.trim(),
       };
       const response = await rocketChatService.sendMessage(request);
@@ -111,7 +111,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
 
       {/* Message Input */}
       <div className="border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        {room.readOnly ? (
+        {room.isReadOnly ? (
           <div className="text-center py-4 text-gray-500 dark:text-gray-400">
             <p className="text-sm">
               📢 Phòng này ở chế độ chỉ đọc. Chỉ owner/moderator mới có thể gửi tin nhắn.

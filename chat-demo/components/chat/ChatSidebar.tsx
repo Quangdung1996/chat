@@ -29,19 +29,20 @@ export default function ChatSidebar({
   const loadRooms = async () => {
     setLoading(true);
     try {
-      const response = await rocketChatService.getRooms({}, { page: 1, pageSize: 100 });
+      const response = await rocketChatService.getRooms({}, { pageNumber: 1, pageSize: 100 });
       if (response.success && response.data) {
-        setRooms(response.data.data);
+        setRooms(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load rooms:', error);
+      setRooms([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRooms = rooms.filter((room) =>
-    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRooms = (rooms || []).filter((room) =>
+    room.roomName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -118,44 +119,39 @@ export default function ChatSidebar({
             <div className="divide-y dark:divide-gray-700">
               {filteredRooms.map((room) => (
                 <button
-                  key={room.roomId}
+                  key={room.rocketRoomId}
                   onClick={() => {
                     onSelectRoom(room);
                     onCloseMobile();
                   }}
                   className={`
                     w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-                    ${selectedRoom?.roomId === room.roomId ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
+                    ${selectedRoom?.rocketRoomId === room.rocketRoomId ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
                   `}
                 >
                   <div className="flex items-start gap-3">
                     {/* Room Icon */}
                     <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl">
-                      {room.isPrivate ? '🔒' : '📢'}
+                      {room.roomType === 'group' ? '🔒' : '📢'}
                     </div>
 
                     {/* Room Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                          {room.name}
+                          {room.roomName}
                         </h3>
-                        {room.memberCount > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                            {room.memberCount}
-                          </span>
-                        )}
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                         {room.groupCode}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        {room.readOnly && (
+                        {room.isReadOnly && (
                           <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">
                             Read-only
                           </span>
                         )}
-                        {room.archived && (
+                        {room.isArchived && (
                           <span className="text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400 px-2 py-0.5 rounded">
                             Archived
                           </span>
