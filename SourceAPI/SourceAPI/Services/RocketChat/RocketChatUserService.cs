@@ -96,8 +96,15 @@ namespace SourceAPI.Services.RocketChat
                 // Generate fake email if not provided
                 if (string.IsNullOrWhiteSpace(email))
                 {
-                    email = $"{username}@noemail.local";
-                    _logger.LogInformation($"Generated fake email for user {username}: {email}");
+                    if (EmailValidator.IsValidEmail(username))
+                    {
+                        email = username;
+                    }
+                    else
+                    {
+                        email = $"{username}@noemail.local";
+                        _logger.LogInformation($"Generated fake email for user {username}: {email}");
+                    }
                 }
 
                 // Generate password if not provided
@@ -106,11 +113,14 @@ namespace SourceAPI.Services.RocketChat
                     password = PasswordGenerator.GenerateStrongPassword();
                 }
 
+                if (username == "thaisonlnts2001@gmail.com")
+                {
+                }
                 var createRequest = new CreateUserRequest
                 {
                     Email = email,
                     Name = string.IsNullOrEmpty(fullName) ? username : fullName,
-                    Username = username,
+                    Username = username.Replace("@", ""),
                     Password = password,
                     Verified = true,
                     SendWelcomeEmail = false,
@@ -150,7 +160,6 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                // Check if mapping already exists in local DB
                 var existingMapping = await GetMappingAsync(userId);
 
                 if (existingMapping != null)
@@ -166,10 +175,8 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                // Check if user already exists in Rocket.Chat
-                // Handler tự động xử lý "User not found" → return { success: true, user: null }
                 var existingUser = await _rocketChatApi.GetUserInfoAsync(username);
-                
+
                 string? password = null;
                 bool isNewUser = false;
                 string rocketUserId;
@@ -177,7 +184,6 @@ namespace SourceAPI.Services.RocketChat
 
                 if (existingUser != null && existingUser.Success && existingUser.User != null)
                 {
-                    // User đã tồn tại trong Rocket.Chat → chỉ tạo mapping, KHÔNG lưu password
                     _logger.LogInformation($"User {username} already exists in Rocket.Chat, creating mapping only");
                     rocketUserId = existingUser.User.Id;
                     rocketUsername = existingUser.User.Username;
@@ -185,17 +191,16 @@ namespace SourceAPI.Services.RocketChat
                 }
                 else
                 {
-                    // User chưa tồn tại (user == null) → tạo mới với password
                     _logger.LogInformation($"Creating new user {username} in Rocket.Chat");
                     password = PasswordGenerator.GenerateStrongPassword();
-                    
+
                     var createResult = await CreateUserInternalAsync(username, fullName, email, password);
-                    
+
                     if (!createResult.Success)
                     {
                         throw new Exception($"Failed to create user in Rocket.Chat: {createResult.Error}");
                     }
-                    
+
                     rocketUserId = createResult.User.Id;
                     rocketUsername = createResult.User.Username;
                     isNewUser = true;
@@ -372,4 +377,3 @@ namespace SourceAPI.Services.RocketChat
         }
     }
 }
-
