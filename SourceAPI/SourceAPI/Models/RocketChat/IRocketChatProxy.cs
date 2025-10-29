@@ -141,6 +141,12 @@ namespace SourceAPI.Models.RocketChat
         public UserData User { get; set; } = new();
     }
 
+    public class CreateRoomResponse : ApiResponse
+    {
+        public RoomData Group { get; set; } = new();
+        public RoomData Channel { get; set; } = new();
+    }
+
     public class RoomInfoResponse : ApiResponse
     {
         public RoomData Group { get; set; } = new();
@@ -161,7 +167,8 @@ namespace SourceAPI.Models.RocketChat
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
+        public string T { get; set; } = string.Empty; // Type field from RocketChat
+        public string Fname { get; set; } = string.Empty; // Full name
     }
 
     public class MessageData
