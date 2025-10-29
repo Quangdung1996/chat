@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Refit;
+using Refit.Newtonsoft.Json;
 using SourceAPI.Handlers;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Services.RocketChat;
@@ -35,8 +38,23 @@ namespace SourceAPI.Extensions
             services.AddTransient<LoggingDelegatingHandler>();
             services.AddTransient<RocketChatAuthDelegatingHandler>();
 
-            // Register Refit HttpClient with DelegatingHandlers
-            services.AddRefitClient<IRocketChatProxy>()
+            // Configure Newtonsoft.Json settings for Refit
+            var refitSettings = new RefitSettings
+            {
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings
+                    {
+                        ContractResolver = new DefaultContractResolver
+                        {
+                            NamingStrategy = new CamelCaseNamingStrategy()
+                        },
+                        NullValueHandling = NullValueHandling.Ignore
+                    }
+                )
+            };
+
+            // Register Refit HttpClient with DelegatingHandlers and JSON settings
+            services.AddRefitClient<IRocketChatProxy>(refitSettings)
                 .ConfigureHttpClient(client =>
                 {
                     client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
