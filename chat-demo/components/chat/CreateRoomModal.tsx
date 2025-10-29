@@ -27,21 +27,16 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     setError(null);
 
     try {
-      // Validate
-      if (!formData.groupCode) {
-        setError('Group Code is required');
+      // Validate - at least one of name or groupCode is required
+      if (!formData.name && !formData.groupCode) {
+        setError('Vui lòng nhập ít nhất tên phòng hoặc mã nhóm');
         setLoading(false);
         return;
       }
 
-      // Auto-fill name with groupCode if empty
-      const submitData = {
-        ...formData,
-        name: formData.name || formData.groupCode,
-      };
-
-      // Create room
-      const response = await rocketChatService.createGroup(submitData);
+      // Create room with current data
+      // Backend will auto-generate groupCode from name if needed
+      const response = await rocketChatService.createGroup(formData);
 
       if (response.success) {
         // Success
@@ -83,7 +78,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
           <div className="p-6 border-b dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                🏠 Create New Room
+                🏠 Tạo phòng mới
               </h2>
               <button
                 onClick={onClose}
@@ -103,50 +98,49 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
               </div>
             )}
 
-            {/* Group Code */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Group Code <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.groupCode}
-                onChange={(e) => setFormData({ ...formData, groupCode: e.target.value })}
-                placeholder="e.g. DEPT-PROJ-001"
-                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                required
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Unique identifier for the room
-              </p>
-            </div>
-
             {/* Room Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Room Name
+                Tên phòng <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="留空则使用 Group Code"
+                placeholder="Ví dụ: Phòng dự án website"
                 className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                如果留空，将自动使用 Group Code 作为房间名称
+                Tên hiển thị của phòng chat
+              </p>
+            </div>
+
+            {/* Group Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Mã nhóm (tùy chọn)
+              </label>
+              <input
+                type="text"
+                value={formData.groupCode}
+                onChange={(e) => setFormData({ ...formData, groupCode: e.target.value })}
+                placeholder="Ví dụ: DEPT-PROJ-001"
+                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Để trống sẽ tự động sinh mã duy nhất
               </p>
             </div>
 
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description
+                Mô tả
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="What is this room about?"
+                placeholder="Phòng này dùng để làm gì?"
                 rows={3}
                 className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
               />
@@ -155,7 +149,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
             {/* Room Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Room Type
+                Loại phòng
               </label>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -166,7 +160,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                     className="text-blue-600"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    🔒 Private Group (invite only)
+                    🔒 Nhóm riêng tư (chỉ mời)
                   </span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -177,7 +171,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                     className="text-blue-600"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    📢 Public Channel (anyone can join)
+                    📢 Kênh công khai (ai cũng tham gia được)
                   </span>
                 </label>
               </div>
@@ -193,7 +187,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                   className="rounded text-blue-600"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  📢 Read-only (only moderators can post)
+                  📢 Chỉ đọc (chỉ quản trị viên được đăng)
                 </span>
               </label>
             </div>
@@ -202,25 +196,25 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Department ID
+                  ID Phòng ban
                 </label>
                 <input
                   type="number"
                   value={formData.departmentId || ''}
                   onChange={(e) => setFormData({ ...formData, departmentId: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Optional"
+                  placeholder="Tùy chọn"
                   className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Project ID
+                  ID Dự án
                 </label>
                 <input
                   type="number"
                   value={formData.projectId || ''}
                   onChange={(e) => setFormData({ ...formData, projectId: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Optional"
+                  placeholder="Tùy chọn"
                   className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -234,14 +228,14 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                 className="flex-1 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                 disabled={loading}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Creating...' : 'Create Room'}
+                {loading ? 'Đang tạo...' : 'Tạo phòng'}
               </button>
             </div>
           </form>

@@ -57,6 +57,13 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
+                // Auto-generate GroupCode if not provided
+                if (string.IsNullOrWhiteSpace(request.GroupCode))
+                {
+                    // Generate unique group code from timestamp
+                    request.GroupCode = $"ROOM-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+                }
+
                 // T-15: Generate room name based on convention
                 string roomName;
                 if (!string.IsNullOrWhiteSpace(request.Name))
