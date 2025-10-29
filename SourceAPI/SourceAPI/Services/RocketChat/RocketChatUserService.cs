@@ -214,8 +214,8 @@ namespace SourceAPI.Services.RocketChat
                     UserId = userId,
                     RocketUserId = rocketUserId,
                     RocketUsername = rocketUsername,
-                    Email = email ?? string.Empty,
-                    FullName = fullName,
+                    Email = string.IsNullOrWhiteSpace(email) ? null : email,
+                    FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName,
                     Metadata = Newtonsoft.Json.JsonConvert.SerializeObject(metadata),
                     CreatedBy = userId.ToString()
                 });
@@ -352,8 +352,8 @@ namespace SourceAPI.Services.RocketChat
                     UserId = userId,
                     RocketUserId = mapping.RocketUserId,
                     RocketUsername = mapping.RocketUsername,
-                    Email = mapping.Email,
-                    FullName = mapping.FullName,
+                    Email = string.IsNullOrWhiteSpace(mapping.Email) ? null : mapping.Email,
+                    FullName = string.IsNullOrWhiteSpace(mapping.FullName) ? null : mapping.FullName,
                     CreatedBy = userId.ToString()
                 });
 

@@ -94,12 +94,17 @@ BEGIN
     v_user_id := (p_json::json->>'UserId')::INTEGER;
     v_rocket_user_id := p_json::json->>'RocketUserId';
     v_rocket_username := p_json::json->>'RocketUsername';
-    v_email := p_json::json->>'Email';
-    v_full_name := p_json::json->>'FullName';
-    v_metadata := p_json::json->>'Metadata';
-    v_created_by := p_json::json->>'CreatedBy';
+    v_email := NULLIF(TRIM(p_json::json->>'Email'), '');
+    v_full_name := NULLIF(TRIM(p_json::json->>'FullName'), '');
+    v_metadata := NULLIF(TRIM(p_json::json->>'Metadata'), '');
+    v_created_by := COALESCE(NULLIF(TRIM(p_json::json->>'CreatedBy'), ''), 'system');
     
-    -- Upsert
+    -- Validate required fields
+    IF v_user_id IS NULL OR v_rocket_user_id IS NULL OR v_rocket_username IS NULL THEN
+        RAISE EXCEPTION 'UserId, RocketUserId, and RocketUsername are required';
+    END IF;
+    
+    -- Upsert (ON CONFLICT on unique index)
     INSERT INTO dbo."UserRocketChatMapping" (
         "UserId", "RocketUserId", "RocketUsername", 
         "Email", "FullName", "IsActive", 
@@ -115,8 +120,8 @@ BEGIN
     ON CONFLICT ("UserId", "RocketUserId") 
     DO UPDATE SET
         "RocketUsername" = EXCLUDED."RocketUsername",
-        "Email" = EXCLUDED."Email",
-        "FullName" = EXCLUDED."FullName",
+        "Email" = COALESCE(EXCLUDED."Email", dbo."UserRocketChatMapping"."Email"),
+        "FullName" = COALESCE(EXCLUDED."FullName", dbo."UserRocketChatMapping"."FullName"),
         "LastSyncAt" = NOW(),
         "Metadata" = COALESCE(EXCLUDED."Metadata", dbo."UserRocketChatMapping"."Metadata"),
         "IsActive" = true,

@@ -26,12 +26,17 @@ CREATE TABLE IF NOT EXISTS dbo."UserRocketChatMapping" (
     "Log_CreatedDate" TIMESTAMP DEFAULT NOW(),
     "Log_CreatedBy" VARCHAR(100),
     "Log_UpdatedDate" TIMESTAMP,
-    "Log_UpdatedBy" VARCHAR(100)
+    "Log_UpdatedBy" VARCHAR(100),
+    
+    -- Unique constraint for ON CONFLICT
+    CONSTRAINT "UQ_UserRocketMapping_UserId_RocketUserId" 
+        UNIQUE ("UserId", "RocketUserId")
 );
 
--- Unique index: One UserId can map to one RocketUserId
+-- Additional unique index (optional, for performance)
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_UserRocketMapping_UserId_RocketUserId" 
-    ON dbo."UserRocketChatMapping"("UserId", "RocketUserId");
+    ON dbo."UserRocketChatMapping"("UserId", "RocketUserId")
+    WHERE "IsDeleted" = false;
 
 -- Index for quick lookup by RocketUserId
 CREATE INDEX IF NOT EXISTS "IX_UserRocketMapping_RocketUserId" 

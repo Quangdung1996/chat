@@ -245,12 +245,12 @@ namespace SourceAPI.Core.Repository
     public class UpsertUserMappingParam
     {
         public int UserId { get; set; }
-        public string RocketUserId { get; set; }
-        public string RocketUsername { get; set; }
-        public string Email { get; set; }
-        public string FullName { get; set; }
-        public string Metadata { get; set; }
-        public string CreatedBy { get; set; }
+        public string RocketUserId { get; set; } = string.Empty;
+        public string RocketUsername { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? FullName { get; set; }
+        public string? Metadata { get; set; }
+        public string? CreatedBy { get; set; }
     }
 
     #endregion
