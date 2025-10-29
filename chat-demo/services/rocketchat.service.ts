@@ -7,8 +7,6 @@
 import { apiClient } from '@/lib/api-client';
 import { API_CONFIG } from '@/config/api.config';
 import type {
-  SyncUserRequest,
-  SyncUserResponse,
   CreateGroupRequest,
   CreateGroupResponse,
   AddMembersRequest,
