@@ -53,6 +53,18 @@ namespace SourceAPI.Extensions
                 )
             };
 
+            // Register Public Proxy WITHOUT auth handler (for login, public endpoints)
+            services.AddRefitClient<IRocketChatPublicProxy>(refitSettings)
+                .ConfigureHttpClient(client =>
+                {
+                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                })
+                .AddHttpMessageHandler<LoggingDelegatingHandler>()
+                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>(); // NO Auth Handler!
+
             // Register Admin Proxy with admin token (via DelegatingHandlers)
             // Order: Logging → Auth → ErrorHandling (cuối cùng, gần InnerHandler nhất)
             services.AddRefitClient<IRocketChatAdminProxy>(refitSettings)

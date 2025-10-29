@@ -7,19 +7,10 @@ namespace SourceAPI.Models.RocketChat
     /// <summary>
     /// Refit interface for RocketChat REST API - Admin Operations
     /// Uses admin token for all operations (injected via DelegatingHandler)
+    /// For login operations, use IRocketChatPublicProxy instead
     /// </summary>
     public interface IRocketChatAdminProxy
     {
-        // =====================================================
-        // Authentication
-        // =====================================================
-
-        [Post("/api/v1/login")]
-        Task<RocketChatLoginResponse> LoginAsync([Body] LoginRequest request);
-
-        [Post("/api/v1/logout")]
-        Task<ApiResponse> LogoutAsync();
-
         // =====================================================
         // Users Management (Admin)
         // =====================================================

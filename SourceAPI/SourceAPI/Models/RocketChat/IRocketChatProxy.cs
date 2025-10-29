@@ -8,20 +8,12 @@ namespace SourceAPI.Models.RocketChat
 {
     /// <summary>
     /// Refit interface for RocketChat REST API
-    /// Auto-generates HTTP client implementation
+    /// LEGACY - Use IRocketChatAdminProxy instead
+    /// Kept for backward compatibility only
     /// </summary>
+    [System.Obsolete("Use IRocketChatAdminProxy for admin operations or IRocketChatPublicProxy for login")]
     public interface IRocketChatProxy
     {
-        // =====================================================
-        // Authentication
-        // =====================================================
-
-        [Post("/api/v1/login")]
-        Task<RocketChatLoginResponse> LoginAsync([Body] LoginRequest request);
-
-        [Post("/api/v1/logout")]
-        Task<ApiResponse> LogoutAsync();
-
         // =====================================================
         // Users
         // =====================================================

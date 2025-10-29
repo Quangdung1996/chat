@@ -23,18 +23,18 @@ namespace SourceAPI.Services.RocketChat
 
     public class RocketChatUserTokenService : IRocketChatUserTokenService
     {
-        private readonly IRocketChatAdminProxy _adminApi;
+        private readonly IRocketChatPublicProxy _publicApi;
         private readonly IMemoryCache _cache;
         private readonly ILogger<RocketChatUserTokenService> _logger;
         private const string CACHE_KEY_PREFIX = "RocketChatUserToken_";
         private static readonly TimeSpan CACHE_DURATION = TimeSpan.FromHours(23); // Token valid 24h, cache 23h
 
         public RocketChatUserTokenService(
-            IRocketChatAdminProxy adminApi,
+            IRocketChatPublicProxy publicApi,
             IMemoryCache cache,
             ILogger<RocketChatUserTokenService> logger)
         {
-            _adminApi = adminApi;
+            _publicApi = publicApi;
             _cache = cache;
             _logger = logger;
         }
@@ -74,7 +74,7 @@ namespace SourceAPI.Services.RocketChat
                     Password = password
                 };
 
-                var loginResponse = await _adminApi.LoginAsync(loginRequest);
+                var loginResponse = await _publicApi.LoginAsync(loginRequest);
 
                 if (loginResponse == null || string.IsNullOrEmpty(loginResponse.Data?.AuthToken))
                 {

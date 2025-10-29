@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SourceAPI.Models.RocketChat;
@@ -17,22 +18,25 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatAuthService : IRocketChatAuthService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IRocketChatPublicProxy _publicApi;
         private readonly IMemoryCache _cache;
         private readonly RocketChatConfig _config;
+        private readonly ILogger<RocketChatAuthService> _logger;
         private readonly SemaphoreSlim _tokenRefreshLock = new(1, 1);
 
         private const string ADMIN_TOKEN_KEY = "RocketChat_AdminToken";
         private const string BOT_TOKEN_KEY = "RocketChat_BotToken";
 
         public RocketChatAuthService(
-            IHttpClientFactory httpClientFactory,
+            IRocketChatPublicProxy publicApi,
             IMemoryCache cache,
-            IOptions<RocketChatConfig> config)
+            IOptions<RocketChatConfig> config,
+            ILogger<RocketChatAuthService> logger)
         {
-            _httpClient = httpClientFactory.CreateClient("RocketChat");
+            _publicApi = publicApi;
             _cache = cache;
             _config = config.Value;
+            _logger = logger;
         }
 
         /// <summary>
@@ -41,34 +45,21 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<AuthTokenDto> LoginAsync(string username, string password)
         {
-            var loginData = new
-            {
-                user = username,
-                password = password
-            };
-
-            var content = new StringContent(
-                JsonConvert.SerializeObject(loginData),
-                Encoding.UTF8,
-                "application/json"
-            );
-
             try
             {
-                var response = await _httpClient.PostAsync("/api/v1/login", content);
+                _logger.LogInformation($"Logging in user: {username}");
 
-                if (!response.IsSuccessStatusCode)
+                var loginRequest = new LoginRequest
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Login failed: {response.StatusCode} - {errorContent}");
-                }
+                    User = username,
+                    Password = password
+                };
 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var loginResponse = JsonConvert.DeserializeObject<RocketChatLoginResponse>(responseContent);
+                var loginResponse = await _publicApi.LoginAsync(loginRequest);
 
-                if (loginResponse == null || !loginResponse.Success)
+                if (loginResponse == null || string.IsNullOrEmpty(loginResponse.Data?.AuthToken))
                 {
-                    throw new Exception("Login failed: Invalid response from Rocket.Chat");
+                    throw new Exception("Login failed: No auth token returned");
                 }
 
                 var token = new AuthTokenDto
@@ -78,15 +69,23 @@ namespace SourceAPI.Services.RocketChat
                     ExpiresAt = DateTime.UtcNow.AddSeconds(_config.TokenCacheTTL)
                 };
 
+                _logger.LogInformation($"Successfully logged in user: {username}");
                 return token;
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, $"Network error during login: {ex.Message}");
                 throw new Exception($"Network error during login: {ex.Message}", ex);
             }
             catch (TaskCanceledException ex)
             {
+                _logger.LogError(ex, "Login request timeout");
                 throw new Exception("Login request timeout", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error during login: {ex.Message}");
+                throw;
             }
         }
 
