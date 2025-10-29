@@ -25,6 +25,10 @@ namespace SourceAPI.Models.RocketChat.DTOs
         public bool Success { get; set; }
         public UserData User { get; set; } = new();
         public string Error { get; set; } = string.Empty;
+        /// <summary>
+        /// True if user already existed in Rocket.Chat, False if newly created
+        /// </summary>
+        public bool IsExistingUser { get; set; }
     }
 
     public class UserData
