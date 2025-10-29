@@ -160,14 +160,29 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                //// Gọi stored procedure để lấy users chưa sync
-                //var users = RocketChatRepository.ExecuteStoredProcedure<UserToSyncDto>(
-                //    "sp_GetUsersForRocketChatSync",
-                //    new { } // Empty param
-                //);
+                // Gọi stored procedure để lấy users chưa sync
+                var results = SourceAPI.Core.Repository.RocketChatRepository.GetUsersForRocketChatSync();
+
+                if (results == null || results.Length == 0)
+                {
+                    return Array.Empty<UserToSyncDto>();
+                }
+
+                // Map from UserToSyncResult to UserToSyncDto
+                var users = new UserToSyncDto[results.Length];
+                for (int i = 0; i < results.Length; i++)
+                {
+                    users[i] = new UserToSyncDto
+                    {
+                        UserId = results[i].UserId,
+                        Email = results[i].Email,
+                        FullName = results[i].FullName,
+                        Username = results[i].Username
+                    };
+                }
 
                 await Task.CompletedTask;
-                return Array.Empty<UserToSyncDto>();
+                return users;
             }
             catch (Exception ex)
             {

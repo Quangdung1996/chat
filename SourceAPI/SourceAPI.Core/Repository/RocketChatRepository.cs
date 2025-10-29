@@ -47,6 +47,18 @@ namespace SourceAPI.Core.Repository
                 ERocketChatStoredProcedureNames.sp_UpsertUserRocketMapping);
         }
 
+        /// <summary>
+        /// Get list of users that need to be synced to Rocket.Chat
+        /// Returns users that are active but don't have a mapping yet
+        /// </summary>
+        public static UserToSyncResult[] GetUsersForRocketChatSync()
+        {
+            var param = new { }; // Empty param
+            return Exec_JsonStoredProceduce_GetArray<UserToSyncResult>(
+                param,
+                ERocketChatStoredProcedureNames.sp_GetUsersForRocketChatSync);
+        }
+
         // =====================================================
         // RoomMapping Operations
         // =====================================================
@@ -355,6 +367,14 @@ namespace SourceAPI.Core.Repository
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSyncAt { get; set; }
         public string Metadata { get; set; }
+    }
+
+    public class UserToSyncResult
+    {
+        public int UserId { get; set; }
+        public string Email { get; set; }
+        public string FullName { get; set; }
+        public string Username { get; set; }
     }
 
     #endregion
