@@ -1,13 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
+using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat

@@ -32,7 +32,7 @@ namespace SourceAPI.Models.RocketChat
         Task<UserInfoResponse> GetUserInfoAsync([Query] string username);
 
         [Get("/api/v1/users.info")]
-        Task<UserInfoResponse> GetUserInfoByIdAsync([Query(Name = "userId")] string userId);
+        Task<UserInfoResponse> GetUserInfoByIdAsync([Query("userId")] string userId);
 
         // =====================================================
         // Rooms/Channels
