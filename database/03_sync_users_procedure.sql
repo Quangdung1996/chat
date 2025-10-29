@@ -5,10 +5,12 @@
 -- =====================================================
 
 -- TODO: CUSTOMIZE procedure này theo cấu trúc DB của bạn
--- Ví dụ này giả định bạn có:
--- - Bảng Users: Id, FullName, Email (optional), IsActive, IsDeleted
--- - Bảng UserLogin: UserId, Username (from OAuth2 provider - REQUIRED)
--- Username lấy từ UserLogin, Email có thể null (sẽ generate fake email nếu null)
+-- Sử dụng table UserLogin có đủ các fields:
+-- - Id (UserId)
+-- - Username (from OAuth2 provider - REQUIRED)
+-- - EmailAddress (optional - có thể null)
+-- - FullName
+-- - IsActive, IsDeleted
 
 -- OPTION 1: PostgreSQL Function (với Username từ UserLogin)
 CREATE OR REPLACE FUNCTION dbo."sp_GetUsersForRocketChatSync"(
@@ -19,20 +21,19 @@ DECLARE
     v_result TEXT;
 BEGIN
     -- Lấy tất cả users active mà chưa có trong UserRocketChatMapping
-    -- JOIN với UserLogin table để lấy Username
+    -- Query trực tiếp từ UserLogin (đã có đủ Username, Email, FullName)
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),  -- Email có thể null
             'FullName', u."FullName",
-            'Username', ul."Username"  -- Username từ UserLogin (REQUIRED)
+            'Username', u."Username"  -- Username từ UserLogin (REQUIRED)
         )
     )::TEXT INTO v_result
     FROM "UserLogin" u
-    INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
-        AND ul."Username" IS NOT NULL  -- Chỉ lấy users có username
+        AND u."Username" IS NOT NULL  -- Chỉ lấy users có username
         AND NOT EXISTS (
             SELECT 1 
             FROM dbo."UserRocketChatMapping" m
@@ -60,14 +61,13 @@ BEGIN
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),
             'FullName', u."FullName",
-            'Username', ul."Username"  -- Username từ UserLogin
+            'Username', u."Username"  -- Username từ UserLogin
         )
     )::TEXT INTO v_result
     FROM "UserLogin" u
-    INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
-        AND ul."Username" IS NOT NULL;
+        AND u."Username" IS NOT NULL;
     
     RETURN COALESCE(v_result, '[]');
 END;
@@ -85,12 +85,15 @@ $$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- Notes:
--- 1. Sử dụng table "UserLogin" để lấy Username (từ OAuth2)
--- 2. Email có thể NULL - code sẽ tự generate fake email: username@noemail.local
+-- 1. Query trực tiếp từ table "UserLogin" (đã có đủ tất cả fields)
+-- 2. EmailAddress có thể NULL - code sẽ tự generate fake email: username@noemail.local
 -- 3. Username từ UserLogin là BẮT BUỘC
 -- 4. Có thể thêm filters: department, role, created date, etc.
--- 5. Kiểm tra column names trong UserLogin table:
---    - UserId (FK to Users.Id)
+-- 5. Column names trong UserLogin table:
+--    - Id (UserId)
 --    - Username (from OAuth2 provider)
+--    - EmailAddress (optional)
+--    - FullName
+--    - IsActive, IsDeleted
 -- =====================================================
 
