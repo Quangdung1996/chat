@@ -108,29 +108,7 @@ class RocketChatService {
   }
 
   /**
-   * Delete room
-   * DELETE /api/integrations/rocket/room/{roomId}?confirm=true
-   */
-  async deleteRoom(roomId: string, confirm: boolean = false, roomType: string = 'group'): Promise<{ success: boolean }> {
-    const endpoint = this.endpoints.deleteRoom.replace('{roomId}', roomId);
-    return apiClient.delete(`${endpoint}?roomType=${roomType}&confirm=${confirm}`);
-  }
-
-  /**
-   * Set announcement mode (read-only for non-moderators)
-   * POST /api/integrations/rocket/room/{roomId}/announcement-mode
-   */
-  async setAnnouncementMode(
-    roomId: string,
-    announcementOnly: boolean,
-    roomType: string = 'group'
-  ): Promise<{ success: boolean }> {
-    const endpoint = this.endpoints.setAnnouncementMode.replace('{roomId}', roomId);
-    return apiClient.post(endpoint, { announcementOnly, roomType });
-  }
-
-  /**
-   * Xóa room (cần confirm)
+   * Delete room (cần confirm)
    * DELETE /api/integrations/rocket/room/{roomId}?roomType=group&confirm=true
    */
   async deleteRoom(roomId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
@@ -139,7 +117,7 @@ class RocketChatService {
   }
 
   /**
-   * Bật/tắt announcement mode
+   * Set announcement mode (read-only for non-moderators)
    * POST /api/integrations/rocket/room/{roomId}/announcement-mode
    */
   async setAnnouncementMode(roomId: string, announcementOnly: boolean, roomType: string = 'group'): Promise<{ success: boolean }> {
