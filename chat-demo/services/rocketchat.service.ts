@@ -61,6 +61,16 @@ class RocketChatService {
   }
 
   /**
+   * Tạo direct message room (1-on-1 chat)
+   * POST /api/integrations/rocket/dm/create?username=john.doe
+   */
+  async createDirectMessage(username: string): Promise<{ success: boolean; roomId: string; username: string }> {
+    return apiClient.post(this.endpoints.createDirectMessage, null, {
+      params: { username }
+    });
+  }
+
+  /**
    * Lấy danh sách rooms với filter và pagination
    * GET /api/integrations/rocket/groups?departmentId=1&pageSize=50&pageNumber=1
    */

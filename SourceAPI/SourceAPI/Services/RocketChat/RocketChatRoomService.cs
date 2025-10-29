@@ -47,6 +47,46 @@ namespace SourceAPI.Services.RocketChat
         }
 
         /// <summary>
+        /// Create direct message room (1-on-1 chat)
+        /// Returns existing DM if already exists (idempotent)
+        /// </summary>
+        public async Task<string> CreateDirectMessageAsync(string username)
+        {
+            try
+            {
+                _logger.LogInformation($"Creating DM with user: {username}");
+
+                var request = new CreateDMRequest
+                {
+                    Username = username
+                };
+
+                var response = await _rocketChatApi.CreateDirectMessageAsync(request);
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogError($"Failed to create DM: {response?.Error}");
+                    throw new Exception($"Failed to create DM: {response?.Error}");
+                }
+
+                var roomId = response.Room?.Rid ?? response.Room?.Id ?? string.Empty;
+                
+                if (string.IsNullOrEmpty(roomId))
+                {
+                    throw new Exception("DM room ID is empty");
+                }
+
+                _logger.LogInformation($"DM created/retrieved successfully. RoomId: {roomId}");
+                return roomId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error creating DM with {username}: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Internal method to create room (group or channel)
         /// T-15: Apply naming convention and metadata
         /// </summary>

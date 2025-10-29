@@ -30,6 +30,7 @@ export const API_CONFIG = {
 
       // Room Management
       createGroup: '/api/integrations/rocket/create-group',
+      createDirectMessage: '/api/integrations/rocket/dm/create',
       listGroups: '/api/integrations/rocket/groups',
       renameRoom: '/api/integrations/rocket/room/{roomId}/rename',
       archiveRoom: '/api/integrations/rocket/room/{roomId}/archive',

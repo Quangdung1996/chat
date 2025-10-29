@@ -105,6 +105,13 @@ namespace SourceAPI.Models.RocketChat
         Task<ApiResponse> DeleteChannelAsync([Body] RoomActionRequest request);
 
         // =====================================================
+        // Direct Messages (DM)
+        // =====================================================
+
+        [Post("/api/v1/im.create")]
+        Task<CreateDMResponse> CreateDirectMessageAsync([Body] CreateDMRequest request);
+
+        // =====================================================
         // Messages
         // =====================================================
 
@@ -193,6 +200,23 @@ namespace SourceAPI.Models.RocketChat
     {
         public string UserId { get; set; } = string.Empty;
         public bool ActiveStatus { get; set; }
+    }
+
+    public class CreateDMRequest
+    {
+        public string Username { get; set; } = string.Empty;
+    }
+
+    public class CreateDMResponse : ApiResponse
+    {
+        public DMRoomData Room { get; set; } = new();
+    }
+
+    public class DMRoomData
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Rid { get; set; } = string.Empty;
+        public string T { get; set; } = string.Empty; // "d" for direct message
     }
 
     public class ApiResponse

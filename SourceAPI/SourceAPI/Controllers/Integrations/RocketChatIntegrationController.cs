@@ -165,6 +165,43 @@ namespace SourceAPI.Controllers.Integrations
 
         #endregion
 
+        #region Direct Messages
+
+        /// <summary>
+        /// Create direct message room with a user
+        /// Returns existing DM if already exists (idempotent)
+        /// GET /api/integrations/rocket/dm/create?username=john.doe
+        /// </summary>
+        [HttpPost("dm/create")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> CreateDirectMessage([FromQuery] string username)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    return BadRequest(new { message = "Username is required" });
+                }
+
+                var roomId = await _roomService.CreateDirectMessageAsync(username);
+
+                return Ok(new
+                {
+                    success = true,
+                    roomId = roomId,
+                    username = username
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error creating DM with {username}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        #endregion
+
         #region Room Management (T-19b, T-26, T-30)
 
         /// <summary>
