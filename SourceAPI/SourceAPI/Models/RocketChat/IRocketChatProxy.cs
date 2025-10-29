@@ -155,8 +155,11 @@ namespace SourceAPI.Models.RocketChat
 
     public class PostMessageRequest
     {
+        [JsonProperty("roomId")]
         public string RoomId { get; set; } = string.Empty;
+        [JsonProperty("text")]
         public string Text { get; set; } = string.Empty;
+        [JsonProperty("alias")]
         public string? Alias { get; set; }
     }
 

@@ -1,14 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Refit;
 using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -19,23 +16,28 @@ namespace SourceAPI.Services.RocketChat
     public class RocketChatRoomService : IRocketChatRoomService
     {
         private readonly IRocketChatAdminProxy _adminApi;
+        private readonly IRocketChatProxy _userProxy;
         private readonly IRocketChatUserProxyFactory _userProxyFactory;
         private readonly IRocketChatUserTokenService _userTokenService;
         private readonly RocketChatConfig _config;
         private readonly ILogger<RocketChatRoomService> _logger;
-
+        private readonly IRocketChatUserService _userService;
         public RocketChatRoomService(
             IRocketChatAdminProxy adminApi,
             IRocketChatUserProxyFactory userProxyFactory,
             IRocketChatUserTokenService userTokenService,
             IOptions<RocketChatConfig> config,
-            ILogger<RocketChatRoomService> logger)
+            ILogger<RocketChatRoomService> logger,
+            IRocketChatUserService service,
+            IRocketChatProxy userProxy)
         {
             _adminApi = adminApi;
             _userProxyFactory = userProxyFactory;
             _userTokenService = userTokenService;
             _config = config.Value;
             _logger = logger;
+            _userService = service;
+            _userProxy = userProxy;
         }
 
         /// <summary>
@@ -68,7 +70,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Get user mapping to get username
                 var userMapping = RocketChatRepository.GetUserMappingByUserId(currentUserId);
-                
+
                 if (userMapping == null || string.IsNullOrEmpty(userMapping.RocketUsername))
                 {
                     throw new Exception($"User {currentUserId} not synced to Rocket.Chat");
@@ -76,7 +78,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Get or create token for current user (login with deterministic password)
                 var userToken = await _userTokenService.GetOrCreateUserTokenAsync(currentUserId, userMapping.RocketUsername);
-                
+
                 if (userToken == null || string.IsNullOrEmpty(userToken.AuthToken))
                 {
                     throw new Exception($"Cannot get auth token for user {currentUserId}");
@@ -100,7 +102,7 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 var roomId = response.Room?.Rid ?? response.Room?.Id ?? string.Empty;
-                
+
                 if (string.IsNullOrEmpty(roomId))
                 {
                     throw new Exception("DM room ID is empty");
@@ -163,8 +165,8 @@ namespace SourceAPI.Services.RocketChat
                 if (request.DepartmentId.HasValue || request.ProjectId.HasValue)
                 {
                     var metadata = $"Dept: {request.DepartmentId}, Project: {request.ProjectId}";
-                    description = string.IsNullOrWhiteSpace(description) 
-                        ? metadata 
+                    description = string.IsNullOrWhiteSpace(description)
+                        ? metadata
                         : $"{description} ({metadata})";
                 }
 
@@ -235,7 +237,7 @@ namespace SourceAPI.Services.RocketChat
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Exception creating {roomType}: {ex.Message}");
-                
+
                 return new CreateGroupResponse
                 {
                     Success = false,
@@ -424,7 +426,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// T-36b: Send message to room
         /// </summary>
-        public async Task<string?> SendMessageAsync(string roomId, string text, string? alias = null)
+        public async Task<string?> SendMessageAsync(string userId, string roomId, string text, string? alias = null)
         {
             try
             {
@@ -434,10 +436,21 @@ namespace SourceAPI.Services.RocketChat
                     Text = text,
                     Alias = alias
                 };
+                // Get user mapping to retrieve username
+                var mapping = await _userService.GetMappingAsync(int.Parse(userId));
+                if (mapping == null)
+                {
+                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
+                    return default;
+                }
+
+                // Get user token and create user-specific proxy
+                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(int.Parse(userId), mapping.RocketUsername);
+                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
 
                 // Use Refit - DelegatingHandler auto adds auth headers
-                var response = await _adminApi.PostMessageAsync(request);
-                
+                var response = await _userProxy.PostMessageAsync(request);
+
                 if (!response.Success)
                     return null;
 
@@ -508,7 +521,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                
+
                 switch (endpoint)
                 {
                     case "groups.archive":

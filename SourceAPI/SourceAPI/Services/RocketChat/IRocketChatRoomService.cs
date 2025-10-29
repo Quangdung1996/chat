@@ -1,3 +1,4 @@
+using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -86,7 +87,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// T-36b: Send message to room
         /// </summary>
-        Task<string?> SendMessageAsync(string roomId, string text, string? alias = null);
+        Task<string?> SendMessageAsync(string userId, string roomId, string text, string? alias = null);
 
         /// <summary>
         /// Get messages from room (real-time from Rocket.Chat)

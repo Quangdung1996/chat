@@ -124,9 +124,10 @@ namespace SourceAPI.Services.RocketChat
                     Name = string.IsNullOrEmpty(fullName) ? username : fullName,
                     Username = username.Replace("@", ""),
                     Password = password,
-                    Verified = true,
-                    SendWelcomeEmail = true,
-                    RequirePasswordChange = false
+                    Verified = false,
+                    SendWelcomeEmail = false,
+                    RequirePasswordChange = false,
+                    Active = true
                 };
 
                 // Use Refit - DelegatingHandler auto adds auth headers & logging
@@ -151,21 +152,21 @@ namespace SourceAPI.Services.RocketChat
                 // Set user as active after successful creation
                 try
                 {
-                    var setActiveRequest = new SetUserActiveStatusRequest
-                    {
-                        UserId = createResponse.User.Id,
-                        ActiveStatus = true
-                    };
-                    var activeResponse = await _adminApi.SetUserActiveStatusAsync(setActiveRequest);
+                    //var setActiveRequest = new SetUserActiveStatusRequest
+                    //{
+                    //    UserId = createResponse.User.Id,
+                    //    ActiveStatus = true
+                    //};
+                    //var activeResponse = await _adminApi.SetUserActiveStatusAsync(setActiveRequest);
 
-                    if (activeResponse != null && activeResponse.Success)
-                    {
-                        _logger.LogInformation($"Successfully set user {username} as active in Rocket.Chat");
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Failed to set user {username} as active: {activeResponse?.Error}");
-                    }
+                    //if (activeResponse != null && activeResponse.Success)
+                    //{
+                    //    _logger.LogInformation($"Successfully set user {username} as active in Rocket.Chat");
+                    //}
+                    //else
+                    //{
+                    //    _logger.LogWarning($"Failed to set user {username} as active: {activeResponse?.Error}");
+                    //}
                 }
                 catch (Exception ex)
                 {
@@ -206,6 +207,10 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
+                if (username == "tnguyen")
+                {
+
+                }
                 // Create or get existing user in Rocket.Chat
                 // CreateUserAsync handles duplicate check internally
                 // Generate deterministic password from userId + salt

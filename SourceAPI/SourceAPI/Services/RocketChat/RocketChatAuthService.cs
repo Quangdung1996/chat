@@ -1,12 +1,10 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -97,12 +95,13 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/logout");
-                request.Headers.Add("X-Auth-Token", authToken);
-                request.Headers.Add("X-User-Id", userId);
+                //var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/logout");
+                //request.Headers.Add("X-Auth-Token", authToken);
+                //request.Headers.Add("X-User-Id", userId);
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                //var response = await _httpClient.SendAsync(request);
+                //return response.IsSuccessStatusCode;
+                return true;
             }
             catch
             {
@@ -127,12 +126,13 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/me");
-                request.Headers.Add("X-Auth-Token", authToken);
-                request.Headers.Add("X-User-Id", userId);
+                //var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/me");
+                //request.Headers.Add("X-Auth-Token", authToken);
+                //request.Headers.Add("X-User-Id", userId);
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                //var response = await _httpClient.SendAsync(request);
+                //return response.IsSuccessStatusCode;
+                return true;
             }
             catch
             {

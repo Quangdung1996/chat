@@ -1,5 +1,7 @@
 using Refit;
 using SourceAPI.Models.RocketChat.DTOs;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Models.RocketChat

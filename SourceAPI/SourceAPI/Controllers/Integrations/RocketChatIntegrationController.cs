@@ -1,6 +1,6 @@
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Core.Repository;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
@@ -50,7 +50,7 @@ namespace SourceAPI.Controllers.Integrations
             try
             {
                 var mapping = await _userService.GetMappingAsync(userId);
-                
+
                 if (mapping == null)
                 {
                     return NotFound(new { message = "User not found" });
@@ -113,7 +113,7 @@ namespace SourceAPI.Controllers.Integrations
             try
             {
                 var token = await _autoLoginService.GetLoginTokenAsync(request.UserId);
-                
+
                 return Ok(new
                 {
                     success = true,
@@ -125,12 +125,12 @@ namespace SourceAPI.Controllers.Integrations
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting login token for user {request.UserId}");
-                
+
                 if (ex.Message.Contains("not synced"))
                 {
                     return NotFound(new { success = false, message = ex.Message });
                 }
-                
+
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
@@ -146,10 +146,10 @@ namespace SourceAPI.Controllers.Integrations
             try
             {
                 var url = await _autoLoginService.GetAutoLoginUrlAsync(
-                    request.UserId, 
+                    request.UserId,
                     request.RedirectPath ?? "/home"
                 );
-                
+
                 return Ok(new
                 {
                     success = true,
@@ -176,7 +176,7 @@ namespace SourceAPI.Controllers.Integrations
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateDirectMessage(
-            [FromQuery] int currentUserId, 
+            [FromQuery] int currentUserId,
             [FromQuery] string targetUsername)
         {
             try
@@ -351,7 +351,7 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 var result = await _roomService.RenameRoomAsync(roomId, request.NewName, request.RoomType ?? "group");
-                
+
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -411,16 +411,16 @@ namespace SourceAPI.Controllers.Integrations
         [HttpPost("room/{roomId}/announcement-mode")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> SetAnnouncementMode(
-            string roomId, 
+            string roomId,
             [FromBody] SetAnnouncementModeRequest request)
         {
             try
             {
                 var result = await _roomService.SetAnnouncementModeAsync(
-                    roomId, 
-                    request.AnnouncementOnly, 
+                    roomId,
+                    request.AnnouncementOnly,
                     request.RoomType ?? "group");
-                
+
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -461,7 +461,7 @@ namespace SourceAPI.Controllers.Integrations
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> AddMember(
-            string roomId, 
+            string roomId,
             [FromBody] AddMemberRequest request)
         {
             try
@@ -472,12 +472,12 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 var result = await _roomService.AddMemberAsync(
-                    roomId, 
-                    request.RocketUserId, 
+                    roomId,
+                    request.RocketUserId,
                     request.RoomType ?? "group");
 
                 // TODO: Save to RoomMemberMapping via Repository
-                
+
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -536,16 +536,16 @@ namespace SourceAPI.Controllers.Integrations
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> RemoveMember(
-            string roomId, 
+            string roomId,
             string rocketUserId,
             [FromQuery] string roomType = "group")
         {
             try
             {
                 var result = await _roomService.RemoveMemberAsync(roomId, rocketUserId, roomType);
-                
+
                 // TODO: Update RoomMemberMapping via Repository
-                
+
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -562,16 +562,16 @@ namespace SourceAPI.Controllers.Integrations
         [HttpPost("room/{roomId}/moderator/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> AddModerator(
-            string roomId, 
+            string roomId,
             string rocketUserId,
             [FromQuery] string roomType = "group")
         {
             try
             {
                 var result = await _roomService.AddModeratorAsync(roomId, rocketUserId, roomType);
-                
+
                 // TODO: Update role in RoomMemberMapping
-                
+
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -587,7 +587,7 @@ namespace SourceAPI.Controllers.Integrations
         [HttpDelete("room/{roomId}/moderator/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> RemoveModerator(
-            string roomId, 
+            string roomId,
             string rocketUserId,
             [FromQuery] string roomType = "group")
         {
@@ -609,7 +609,7 @@ namespace SourceAPI.Controllers.Integrations
         [HttpPost("room/{roomId}/owner/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> AddOwner(
-            string roomId, 
+            string roomId,
             string rocketUserId,
             [FromQuery] string roomType = "group")
         {
@@ -674,8 +674,9 @@ namespace SourceAPI.Controllers.Integrations
                 {
                     return BadRequest(new { message = "RoomId and Text are required" });
                 }
+                string sUserId = User.Identity.GetUserId();
 
-                var messageId = await _roomService.SendMessageAsync(request.RoomId, request.Text, request.Alias);
+                var messageId = await _roomService.SendMessageAsync(sUserId, request.RoomId, request.Text, request.Alias);
 
                 if (string.IsNullOrWhiteSpace(messageId))
                 {
