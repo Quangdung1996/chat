@@ -201,7 +201,7 @@ namespace SourceAPI.Core.Repository
         {
             TResult resultData = null;
             string paramJson = JsonHelper.SerializeObject(param);
-            string storedProcedureName = $"chat.\"{Enum.GetName(typeof(ERocketChatStoredProcedureNames), procedureName)}\"";
+            string storedProcedureName = $"{Enum.GetName(typeof(ERocketChatStoredProcedureNames), procedureName)}";
 
             string jsonOutput = Exec_JsonStored_RAW_AnySP(
                 connectionString,
