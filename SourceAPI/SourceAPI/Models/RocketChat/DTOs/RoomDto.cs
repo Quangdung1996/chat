@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace SourceAPI.Models.RocketChat.DTOs
 {
@@ -22,10 +23,19 @@ namespace SourceAPI.Models.RocketChat.DTOs
     /// </summary>
     public class CreateGroupResponse
     {
+        [JsonProperty("roomId")]
         public string RoomId { get; set; } = string.Empty;
+        
+        [JsonProperty("groupCode")]
         public string GroupCode { get; set; } = string.Empty;
+        
+        [JsonProperty("name")]
         public string Name { get; set; } = string.Empty;
+        
+        [JsonProperty("success")]
         public bool Success { get; set; }
+        
+        [JsonProperty("message")]
         public string Message { get; set; } = string.Empty;
     }
 
