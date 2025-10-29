@@ -73,12 +73,20 @@ export default function ContactsPage() {
 
   const handleStartChat = async (contact: Contact) => {
     try {
-      // TODO: Create/Get DM room and navigate to chat
       console.log('Starting chat with:', contact.fullName);
-      alert(`Tính năng chat với ${contact.fullName} sẽ được thêm vào sau!`);
-      // Navigate to /messages?dmWith={contact.rocketUserId}
+      
+      // Tạo/lấy DM room
+      const response = await rocketChatService.createDirectMessage(contact.username);
+      
+      if (response.success && response.roomId) {
+        // Navigate đến trang chat
+        window.location.href = `/chat?roomId=${response.roomId}&username=${contact.username}&name=${encodeURIComponent(contact.fullName)}`;
+      } else {
+        alert('Không thể tạo phòng chat!');
+      }
     } catch (error) {
       console.error('Failed to start chat:', error);
+      alert('Lỗi: ' + (error as Error).message);
     }
   };
 
