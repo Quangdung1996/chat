@@ -37,6 +37,9 @@ namespace SourceAPI.Models.RocketChat
         [Get("/api/v1/users.list")]
         Task<UsersListResponse> GetUsersListAsync([Query] int count = 100, [Query] int offset = 0);
 
+        [Post("/api/v1/users.setActiveStatus")]
+        Task<ApiResponse> SetUserActiveStatusAsync([Body] SetUserActiveStatusRequest request);
+
         // =====================================================
         // Rooms/Channels
         // =====================================================
@@ -184,6 +187,12 @@ namespace SourceAPI.Models.RocketChat
     public class RoomActionRequest
     {
         public string RoomId { get; set; } = string.Empty;
+    }
+
+    public class SetUserActiveStatusRequest
+    {
+        public string UserId { get; set; } = string.Empty;
+        public bool ActiveStatus { get; set; }
     }
 
     public class ApiResponse

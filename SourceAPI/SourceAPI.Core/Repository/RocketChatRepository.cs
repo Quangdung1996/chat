@@ -48,6 +48,17 @@ namespace SourceAPI.Core.Repository
         }
 
         /// <summary>
+        /// Insert user mapping (for sync - no conflict handling)
+        /// Caller should check for existing mapping first
+        /// </summary>
+        public static UpsertResult InsertUserMapping(UpsertUserMappingParam param)
+        {
+            return Exec_JsonStoredProceduce<UpsertResult>(
+                param,
+                ERocketChatStoredProcedureNames.sp_InsertUserMapping);
+        }
+
+        /// <summary>
         /// Get list of users that need to be synced to Rocket.Chat
         /// Returns users that are active but don't have a mapping yet
         /// </summary>

@@ -137,6 +137,57 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- SP: Insert user mapping (for sync - no conflict handling)
+CREATE OR REPLACE FUNCTION dbo."sp_InsertUserMapping"(
+    p_json TEXT
+)
+RETURNS TEXT AS $$
+DECLARE
+    v_user_id INTEGER;
+    v_rocket_user_id VARCHAR(50);
+    v_rocket_username VARCHAR(100);
+    v_email VARCHAR(255);
+    v_full_name VARCHAR(200);
+    v_metadata TEXT;
+    v_created_by VARCHAR(100);
+    v_result_id INTEGER;
+BEGIN
+    -- Parse input JSON
+    v_user_id := (p_json::json->>'UserId')::INTEGER;
+    v_rocket_user_id := p_json::json->>'RocketUserId';
+    v_rocket_username := p_json::json->>'RocketUsername';
+    v_email := NULLIF(TRIM(p_json::json->>'Email'), '');
+    v_full_name := NULLIF(TRIM(p_json::json->>'FullName'), '');
+    v_metadata := NULLIF(TRIM(p_json::json->>'Metadata'), '');
+    v_created_by := COALESCE(NULLIF(TRIM(p_json::json->>'CreatedBy'), ''), 'system');
+    
+    -- Validate required fields
+    IF v_user_id IS NULL OR v_rocket_user_id IS NULL OR v_rocket_username IS NULL THEN
+        RAISE EXCEPTION 'UserId, RocketUserId, and RocketUsername are required';
+    END IF;
+    
+    -- Insert only (no ON CONFLICT - caller should check first)
+    INSERT INTO dbo."UserRocketChatMapping" (
+        "UserId", "RocketUserId", "RocketUsername", 
+        "Email", "FullName", "IsActive", 
+        "CreatedAt", "LastSyncAt", "Metadata",
+        "Log_CreatedBy", "Log_CreatedDate"
+    )
+    VALUES (
+        v_user_id, v_rocket_user_id, v_rocket_username,
+        v_email, v_full_name, true,
+        NOW(), NOW(), v_metadata,
+        v_created_by, NOW()
+    )
+    RETURNING "Id" INTO v_result_id;
+    
+    RETURN json_build_object(
+        'Id', v_result_id,
+        'Success', true
+    )::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- RoomMapping Stored Procedures
 -- =====================================================

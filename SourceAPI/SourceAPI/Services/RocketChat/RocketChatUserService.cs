@@ -140,6 +140,30 @@ namespace SourceAPI.Services.RocketChat
 
                 _logger.LogInformation($"Successfully created user {username} in Rocket.Chat with ID {createResponse.User.Id}");
 
+                // Set user as active after successful creation
+                try
+                {
+                    var setActiveRequest = new SetUserActiveStatusRequest
+                    {
+                        UserId = createResponse.User.Id,
+                        ActiveStatus = true
+                    };
+                    var activeResponse = await _rocketChatApi.SetUserActiveStatusAsync(setActiveRequest);
+                    
+                    if (activeResponse != null && activeResponse.Success)
+                    {
+                        _logger.LogInformation($"Successfully set user {username} as active in Rocket.Chat");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Failed to set user {username} as active: {activeResponse?.Error}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, $"Error setting user {username} as active (user created successfully): {ex.Message}");
+                }
+
                 return createResponse;
             }
             catch (Exception ex)
@@ -206,6 +230,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Save mapping to database
                 // Chỉ lưu password nếu là user mới (vừa tạo)
+                // Note: Đã check mapping rồi (line 161) nên chắc chắn chưa có → dùng InsertUserMapping
                 var metadata = new
                 {
                     password = password, // null nếu user đã tồn tại, có giá trị nếu mới tạo
@@ -214,7 +239,7 @@ namespace SourceAPI.Services.RocketChat
                     isNewUser = isNewUser
                 };
 
-                var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
+                var insertResult = RocketChatRepository.InsertUserMapping(new UpsertUserMappingParam
                 {
                     UserId = userId,
                     RocketUserId = rocketUserId,
@@ -225,9 +250,9 @@ namespace SourceAPI.Services.RocketChat
                     CreatedBy = userId.ToString()
                 });
 
-                if (upsertResult == null || !upsertResult.Success)
+                if (insertResult == null || !insertResult.Success)
                 {
-                    _logger.LogWarning($"Failed to save user mapping for user {userId}");
+                    _logger.LogWarning($"Failed to insert user mapping for user {userId}");
                 }
 
                 _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {rocketUserId}");
