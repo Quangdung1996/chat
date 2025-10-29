@@ -83,7 +83,7 @@ namespace SourceAPI.Extensions
             services.AddScoped<IRocketChatAutoLoginService, RocketChatAutoLoginService>();
 
             // Register background service for auto-sync
-            services.AddHostedService<RocketChatSyncBackgroundService>();
+            //services.AddHostedService<RocketChatSyncBackgroundService>();
 
             // Register memory cache if not already registered
             services.AddMemoryCache();

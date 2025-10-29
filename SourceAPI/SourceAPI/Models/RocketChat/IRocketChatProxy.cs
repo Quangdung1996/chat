@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using Refit;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Collections.Generic;
@@ -262,6 +263,7 @@ namespace SourceAPI.Models.RocketChat
 
     public class MessageData
     {
+        [JsonProperty("_id")]
         public string Id { get; set; } = string.Empty;
         public string Rid { get; set; } = string.Empty;
         public string Msg { get; set; } = string.Empty;
