@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Refit;
-using Refit.Newtonsoft.Json;
 using SourceAPI.Handlers;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Services.RocketChat;

@@ -53,12 +53,6 @@ namespace SourceAPI.Services.RocketChat
                     _logger.LogInformation($"Generated fake email for user {username}: {email}");
                 }
 
-                // Generate strong password if not provided (T-09)
-                if (string.IsNullOrWhiteSpace(password))
-                {
-                    password = PasswordGenerator.GenerateStrongPassword();
-                }
-
                 var createRequest = new CreateUserRequest
                 {
                     Email = email,
@@ -69,6 +63,24 @@ namespace SourceAPI.Services.RocketChat
                     SendWelcomeEmail = false,
                     RequirePasswordChange = false
                 };
+
+                var user = await _rocketChatApi.GetUserInfoAsync(username);
+                if (user != null && user.Success)
+                {
+                    return new CreateUserResponse
+                    {
+                        Success = true,
+                        User = new UserData
+                        {
+                            Active = true,
+                            CreatedAt = user.User.CreatedAt,
+                            Email = email,
+                            Id = user.User.Id,
+                            Name = user.User.Name,
+                            Username = user.User.Username
+                        }
+                    };
+                }
 
                 // Use Refit - DelegatingHandler auto adds auth headers & logging
                 var createResponse = await _rocketChatApi.CreateUserAsync(createRequest);
@@ -119,8 +131,9 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                // Create new user in Rocket.Chat (username is primary, email is optional)
-                var createResult = await CreateUserAsync(username, fullName, email);
+
+                var password = PasswordGenerator.GenerateStrongPassword();
+                var createResult = await CreateUserAsync(username, fullName, email, password);
 
                 if (!createResult.Success)
                 {
@@ -131,7 +144,7 @@ namespace SourceAPI.Services.RocketChat
                 // Note: Password is stored encrypted/hashed in Metadata for future auto-login
                 var metadata = new
                 {
-                    password = "Action123", // TODO: Encrypt this before storing
+                    password = password, // TODO: Encrypt this before storing
                     createdAt = DateTime.UtcNow,
                     source = "auto-sync"
                 };
