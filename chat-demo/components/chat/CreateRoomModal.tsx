@@ -28,13 +28,20 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
     try {
       // Validate
-      if (!formData.groupCode || !formData.name) {
-        setError('Group Code and Name are required');
+      if (!formData.groupCode) {
+        setError('Group Code is required');
+        setLoading(false);
         return;
       }
 
+      // Auto-fill name with groupCode if empty
+      const submitData = {
+        ...formData,
+        name: formData.name || formData.groupCode,
+      };
+
       // Create room
-      const response = await rocketChatService.createGroup(formData);
+      const response = await rocketChatService.createGroup(submitData);
 
       if (response.success) {
         // Success
@@ -117,16 +124,18 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
             {/* Room Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Room Name <span className="text-red-500">*</span>
+                Room Name
               </label>
               <input
                 type="text"
-                value={formData.name || formData.groupCode}
+                value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="My Project Room"
+                placeholder="留空则使用 Group Code"
                 className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                required
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                如果留空，将自动使用 Group Code 作为房间名称
+              </p>
             </div>
 
             {/* Description */}
