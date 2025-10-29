@@ -34,14 +34,6 @@ class RocketChatService {
   // ===== USER MANAGEMENT =====
   
   /**
-   * Đồng bộ user vào Rocket.Chat
-   * POST /api/integrations/rocket/sync-user
-   */
-  async syncUser(request: SyncUserRequest): Promise<SyncUserResponse> {
-    return apiClient.post(this.endpoints.syncUser, request);
-  }
-
-  /**
    * Lấy thông tin user
    * GET /api/integrations/rocket/user/{userId}/info
    */
@@ -55,7 +47,7 @@ class RocketChatService {
    * GET /api/integrations/rocket/users?count=100&offset=0
    */
   async getUsers(count: number = 100, offset: number = 0): Promise<{ success: boolean; users: any[] }> {
-    return apiClient.get(`${this.endpoints.syncUser}s`, {
+    return apiClient.get(this.endpoints.getUsers, {
       params: { count, offset }
     });
   }

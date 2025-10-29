@@ -36,42 +36,7 @@ namespace SourceAPI.Controllers.Integrations
             _logger = logger;
         }
 
-        #region User Management (T-11)
-
-        /// <summary>
-        /// T-11: Sync user to Rocket.Chat
-        /// DoD: Endpoint bảo vệ bằng API key; idempotent; trả {userId, rocketUserId, username}
-        /// </summary>
-        [HttpPost("sync-user")]
-        [ProducesResponseType(typeof(SyncUserResponse), 200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(401)]
-        public async Task<IActionResult> SyncUser([FromBody] SyncUserRequest request)
-        {
-            try
-            {
-                // TODO: Validate API key middleware
-                if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.FullName))
-                {
-                    return BadRequest(new { message = "UserId, Username (from OAuth2), and FullName are required. Email is optional." });
-                }
-
-                var result = await _userService.SyncUserAsync(request.UserId, request.Username, request.FullName, request.Email);
-
-                if (string.IsNullOrWhiteSpace(result.RocketUserId))
-                {
-                    return BadRequest(new { message = result.Message });
-                }
-
-                _logger.LogInformation($"User {request.UserId} synced successfully to Rocket.Chat");
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error syncing user {request.UserId}");
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-            }
-        }
+        #region User Management
 
         /// <summary>
         /// T-41: Get user info by internal user ID

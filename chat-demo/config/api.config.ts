@@ -25,7 +25,7 @@ export const API_CONFIG = {
     // Rocket.Chat Integration endpoints
     rocketChat: {
       // User Management
-      syncUser: '/api/integrations/rocket/sync-user',
+      getUsers: '/api/integrations/rocket/users',
       getUserInfo: '/api/integrations/rocket/user/{userId}/info',
       
       // Room Management
