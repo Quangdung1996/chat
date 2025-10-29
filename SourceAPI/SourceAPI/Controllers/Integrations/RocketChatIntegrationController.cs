@@ -207,6 +207,41 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
+        /// <summary>
+        /// Get all rooms for a specific user (subscriptions)
+        /// Returns all rooms user is participating in (DMs, groups, channels)
+        /// GET /api/integrations/rocket/user/{userId}/rooms
+        /// </summary>
+        [HttpGet("user/{userId}/rooms")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetUserRooms(int userId)
+        {
+            try
+            {
+                if (userId <= 0)
+                {
+                    return BadRequest(new { message = "UserId is required" });
+                }
+
+                var rooms = await _roomService.GetUserRoomsAsync(userId);
+
+                return Ok(new
+                {
+                    success = true,
+                    userId,
+                    count = rooms.Count,
+                    rooms
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting rooms for user {userId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
         #endregion
 
         #region Room Management (T-19b, T-26, T-30)
@@ -657,30 +692,27 @@ namespace SourceAPI.Controllers.Integrations
         }
 
         /// <summary>
-        /// Get room messages with pagination
+        /// Get room messages (real-time from Rocket.Chat)
         /// </summary>
         [HttpGet("room/{rocketRoomId}/messages")]
         [ProducesResponseType(200)]
-        public IActionResult GetRoomMessages(
+        public async Task<IActionResult> GetRoomMessages(
             string rocketRoomId,
-            [FromQuery] int pageSize = 100,
-            [FromQuery] int pageNumber = 1)
+            [FromQuery] string roomType = "group",
+            [FromQuery] int count = 50,
+            [FromQuery] int offset = 0)
         {
             try
             {
-                var messages = RocketChatRepository.GetRoomMessages(new GetRoomMessagesParam
-                {
-                    RocketRoomId = rocketRoomId,
-                    PageSize = pageSize,
-                    PageNumber = pageNumber
-                });
+                var messages = await _roomService.GetRoomMessagesAsync(rocketRoomId, roomType, count, offset);
 
                 return Ok(new
                 {
                     success = true,
                     rocketRoomId,
-                    pageNumber,
-                    pageSize,
+                    roomType,
+                    count = messages.Count,
+                    offset,
                     messages
                 });
             }

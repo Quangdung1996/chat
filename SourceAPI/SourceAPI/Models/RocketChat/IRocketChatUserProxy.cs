@@ -40,6 +40,16 @@ namespace SourceAPI.Models.RocketChat
 
         [Post("/api/v1/channels.invite")]
         Task<ApiResponse> InviteToChannelAsync([Body] InviteMemberRequest request);
+
+        // =====================================================
+        // Get user's subscribed rooms
+        // =====================================================
+
+        [Get("/api/v1/subscriptions.get")]
+        Task<UserSubscriptionsResponse> GetUserSubscriptionsAsync();
+
+        [Get("/api/v1/rooms.get")]
+        Task<UserRoomsResponse> GetUserRoomsAsync();
     }
 }
 

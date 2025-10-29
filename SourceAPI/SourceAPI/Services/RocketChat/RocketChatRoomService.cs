@@ -537,6 +537,92 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
+        /// <summary>
+        /// Get messages from room (real-time from Rocket.Chat API)
+        /// </summary>
+        public async Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting messages from room {roomId} (type: {roomType})");
+
+                RoomMessagesResponse response;
+
+                // Call appropriate API based on room type
+                if (roomType == "group")
+                {
+                    response = await _adminApi.GetGroupMessagesAsync(roomId, count, offset);
+                }
+                else if (roomType == "channel")
+                {
+                    response = await _adminApi.GetChannelMessagesAsync(roomId, count, offset);
+                }
+                else if (roomType == "dm" || roomType == "d")
+                {
+                    response = await _adminApi.GetDirectMessagesAsync(roomId, count, offset);
+                }
+                else
+                {
+                    _logger.LogWarning($"Unknown room type: {roomType}, defaulting to group");
+                    response = await _adminApi.GetGroupMessagesAsync(roomId, count, offset);
+                }
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get messages from room {roomId}");
+                    return new List<RoomMessage>();
+                }
+
+                _logger.LogInformation($"Retrieved {response.Messages.Count} messages from room {roomId}");
+                return response.Messages;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting messages from room {roomId}: {ex.Message}");
+                return new List<RoomMessage>();
+            }
+        }
+
+        /// <summary>
+        /// Get all rooms user is subscribed to (real-time from Rocket.Chat)
+        /// </summary>
+        public async Task<List<SubscriptionData>> GetUserRoomsAsync(int userId)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting rooms for user {userId}");
+
+                // Get user mapping to retrieve username
+                var mapping = await _userService.GetMappingAsync(userId);
+                if (mapping == null)
+                {
+                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
+                    return new List<SubscriptionData>();
+                }
+
+                // Get user token and create user-specific proxy
+                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(userId, mapping.RocketUsername);
+                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
+
+                // Get user's subscriptions (rooms they're in)
+                var response = await userApi.GetUserSubscriptionsAsync();
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get rooms for user {userId}");
+                    return new List<SubscriptionData>();
+                }
+
+                _logger.LogInformation($"Retrieved {response.Update.Count} rooms for user {userId} ({mapping.RocketUsername})");
+                return response.Update;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting rooms for user {userId}: {ex.Message}");
+                return new List<SubscriptionData>();
+            }
+        }
+
         #endregion
     }
 }

@@ -87,6 +87,16 @@ namespace SourceAPI.Services.RocketChat
         /// T-36b: Send message to room
         /// </summary>
         Task<string?> SendMessageAsync(string roomId, string text, string? alias = null);
+
+        /// <summary>
+        /// Get messages from room (real-time from Rocket.Chat)
+        /// </summary>
+        Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0);
+
+        /// <summary>
+        /// Get all rooms user is subscribed to
+        /// </summary>
+        Task<List<SubscriptionData>> GetUserRoomsAsync(int userId);
     }
 }
 

@@ -56,5 +56,106 @@ namespace SourceAPI.Models.RocketChat.DTOs
         public string Description { get; set; } = string.Empty;
         public bool ReadOnly { get; set; }
     }
+
+    /// <summary>
+    /// Response from GET /api/v1/subscriptions.get
+    /// Returns all rooms user is subscribed to
+    /// </summary>
+    public class UserSubscriptionsResponse : ApiResponse
+    {
+        [JsonProperty("update")]
+        public List<SubscriptionData> Update { get; set; } = new();
+
+        [JsonProperty("remove")]
+        public List<SubscriptionData> Remove { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Response from GET /api/v1/rooms.get
+    /// Returns all rooms user is participating in
+    /// </summary>
+    public class UserRoomsResponse : ApiResponse
+    {
+        [JsonProperty("update")]
+        public List<RoomData> Update { get; set; } = new();
+
+        [JsonProperty("remove")]
+        public List<RoomData> Remove { get; set; } = new();
+    }
+
+    /// <summary>
+    /// User's subscription to a room
+    /// </summary>
+    public class SubscriptionData
+    {
+        [JsonProperty("_id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonProperty("rid")]
+        public string RoomId { get; set; } = string.Empty;
+
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonProperty("fname")]
+        public string FullName { get; set; } = string.Empty;
+
+        [JsonProperty("t")]
+        public string Type { get; set; } = string.Empty; // "d" = DM, "p" = private group, "c" = public channel
+
+        [JsonProperty("u")]
+        public UserInfo User { get; set; } = new();
+
+        [JsonProperty("unread")]
+        public int UnreadCount { get; set; }
+
+        [JsonProperty("alert")]
+        public bool Alert { get; set; }
+
+        [JsonProperty("open")]
+        public bool Open { get; set; }
+    }
+
+    /// <summary>
+    /// Room data
+    /// </summary>
+    public class RoomData
+    {
+        [JsonProperty("_id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonProperty("fname")]
+        public string FullName { get; set; } = string.Empty;
+
+        [JsonProperty("t")]
+        public string Type { get; set; } = string.Empty; // "d" = DM, "p" = private group, "c" = public channel
+
+        [JsonProperty("msgs")]
+        public int MessageCount { get; set; }
+
+        [JsonProperty("usersCount")]
+        public int UsersCount { get; set; }
+
+        [JsonProperty("ts")]
+        public string Timestamp { get; set; } = string.Empty;
+
+        [JsonProperty("ro")]
+        public bool ReadOnly { get; set; }
+    }
+
+    public class UserInfo
+    {
+        [JsonProperty("_id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonProperty("username")]
+        public string Username { get; set; } = string.Empty;
+
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+    }
 }
 

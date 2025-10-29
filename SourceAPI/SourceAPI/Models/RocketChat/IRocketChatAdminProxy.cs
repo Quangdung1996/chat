@@ -106,6 +106,41 @@ namespace SourceAPI.Models.RocketChat
 
         [Post("/api/v1/chat.delete")]
         Task<ApiResponse> DeleteMessageAsync([Body] DeleteMessageRequest request);
+
+        // Get messages from room
+        [Get("/api/v1/groups.messages")]
+        Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+
+        [Get("/api/v1/channels.messages")]
+        Task<RoomMessagesResponse> GetChannelMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+
+        [Get("/api/v1/im.messages")]
+        Task<RoomMessagesResponse> GetDirectMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+    }
+
+    // Response for room messages
+    public class RoomMessagesResponse : ApiResponse
+    {
+        public List<RoomMessage> Messages { get; set; } = new();
+        public int Count { get; set; }
+        public int Offset { get; set; }
+        public int Total { get; set; }
+    }
+
+    public class RoomMessage
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Rid { get; set; } = string.Empty; // Room ID
+        public string Msg { get; set; } = string.Empty; // Message text
+        public DateTime Ts { get; set; } // Timestamp
+        public RoomMessageUser U { get; set; } = new(); // User info
+    }
+
+    public class RoomMessageUser
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }
 
