@@ -5,6 +5,7 @@ using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -347,16 +348,16 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get users directly from Rocket.Chat (for directory/contacts)
         /// </summary>
-        public async Task<List<DTOs.RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0)
+        public async Task<List<RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0)
         {
             try
             {
                 var response = await _rocketChatApi.GetUsersListAsync(count, offset);
-                
+
                 if (response == null || !response.Success || response.Users == null)
                 {
                     _logger.LogWarning("Failed to get users from Rocket.Chat");
-                    return new List<DTOs.RocketChatUser>();
+                    return new List<RocketChatUser>();
                 }
 
                 _logger.LogInformation($"Retrieved {response.Users.Count} users from Rocket.Chat");
@@ -365,7 +366,7 @@ namespace SourceAPI.Services.RocketChat
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting users from Rocket.Chat: {ex.Message}");
-                return new List<DTOs.RocketChatUser>();
+                return new List<RocketChatUser>();
             }
         }
 

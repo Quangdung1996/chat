@@ -41,7 +41,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get users from Rocket.Chat directly (for directory/contacts)
         /// </summary>
-        Task<System.Collections.Generic.List<DTOs.RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0);
+        Task<System.Collections.Generic.List<RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0);
 
         /// <summary>
         /// Update user active status
