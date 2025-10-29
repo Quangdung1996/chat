@@ -19,17 +19,14 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatUserService : IRocketChatUserService
     {
-        private readonly HttpClient _httpClient;
-        private readonly IRocketChatAuthService _authService;
+        private readonly IRocketChatProxy _rocketChatApi;
         private readonly ILogger<RocketChatUserService> _logger;
 
         public RocketChatUserService(
-            IHttpClientFactory httpClientFactory,
-            IRocketChatAuthService authService,
+            IRocketChatProxy rocketChatApi,
             ILogger<RocketChatUserService> logger)
         {
-            _httpClient = httpClientFactory.CreateClient("RocketChat");
-            _authService = authService;
+            _rocketChatApi = rocketChatApi;
             _logger = logger;
         }
 
@@ -76,42 +73,12 @@ namespace SourceAPI.Services.RocketChat
                     RequirePasswordChange = false
                 };
 
-                // Get admin token
-                var token = await _authService.GetAdminTokenAsync();
-
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/users.create");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                var payload = JsonConvert.SerializeObject(createRequest, new JsonSerializerSettings
-                {
-                    ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() },
-                    NullValueHandling = NullValueHandling.Ignore
-                });
-
-                request.Content = new StringContent(
-                    payload,
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.SendAsync(request);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError($"Failed to create user in Rocket.Chat: {response.StatusCode} - {responseContent}");
-
-                    return new CreateUserResponse
-                    {
-                        Success = false,
-                        Error = $"Failed to create user: {responseContent}"
-                    };
-                }
-
-                var createResponse = JsonConvert.DeserializeObject<CreateUserResponse>(responseContent);
+                // Use Refit - DelegatingHandler auto adds auth headers & logging
+                var createResponse = await _rocketChatApi.CreateUserAsync(createRequest);
 
                 if (createResponse == null || !createResponse.Success)
                 {
+                    _logger.LogError($"Failed to create user in Rocket.Chat: {createResponse?.Error}");
                     return new CreateUserResponse
                     {
                         Success = false,
@@ -221,15 +188,9 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var token = await _authService.GetAdminTokenAsync();
-
-                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/users.info?username={username}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-
-                var response = await _httpClient.SendAsync(request);
-
-                return response.IsSuccessStatusCode;
+                // Use Refit - DelegatingHandler auto adds auth headers
+                var response = await _rocketChatApi.GetUserInfoAsync(username);
+                return response != null && response.Success;
             }
             catch
             {

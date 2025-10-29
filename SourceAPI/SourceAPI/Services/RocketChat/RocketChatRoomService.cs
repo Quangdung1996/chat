@@ -17,19 +17,16 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatRoomService : IRocketChatRoomService
     {
-        private readonly HttpClient _httpClient;
-        private readonly IRocketChatAuthService _authService;
+        private readonly IRocketChatProxy _rocketChatApi;
         private readonly RocketChatConfig _config;
         private readonly ILogger<RocketChatRoomService> _logger;
 
         public RocketChatRoomService(
-            IHttpClientFactory httpClientFactory,
-            IRocketChatAuthService authService,
+            IRocketChatProxy rocketChatApi,
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger)
         {
-            _httpClient = httpClientFactory.CreateClient("RocketChat");
-            _authService = authService;
+            _rocketChatApi = rocketChatApi;
             _config = config.Value;
             _logger = logger;
         }
@@ -97,51 +94,28 @@ namespace SourceAPI.Services.RocketChat
                         : $"{description} ({metadata})";
                 }
 
-                // Prepare API request
-                var createData = new
+                // Prepare Refit request
+                var createRequest = new CreateRoomRequest
                 {
-                    name = roomName,
-                    members = request.Members,
-                    readOnly = request.IsReadOnly,
-                    customFields = request.DepartmentId.HasValue || request.ProjectId.HasValue
-                        ? new
-                        {
-                            departmentId = request.DepartmentId,
-                            projectId = request.ProjectId,
-                            groupCode = request.GroupCode
-                        }
-                        : null
+                    Name = roomName,
+                    Members = request.Members,
+                    ReadOnly = request.IsReadOnly
                 };
 
-                var token = await _authService.GetAdminTokenAsync();
-
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{apiEndpoint}");
-                httpRequest.Headers.Add("X-Auth-Token", token.AuthToken);
-                httpRequest.Headers.Add("X-User-Id", token.UserId);
-                httpRequest.Content = new StringContent(
-                    JsonConvert.SerializeObject(createData),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.SendAsync(httpRequest);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
+                // Use Refit - DelegatingHandler auto adds auth headers
+                CreateRoomResponse rocketResponse;
+                if (roomType == "group")
                 {
-                    _logger.LogError($"Failed to create {roomType}: {response.StatusCode} - {responseContent}");
-                    
-                    return new CreateGroupResponse
-                    {
-                        Success = false,
-                        Message = $"Failed to create {roomType}: {responseContent}"
-                    };
+                    rocketResponse = await _rocketChatApi.CreatePrivateGroupAsync(createRequest);
                 }
-
-                var rocketResponse = JsonConvert.DeserializeObject<RocketChatGroupResponse>(responseContent);
+                else
+                {
+                    rocketResponse = await _rocketChatApi.CreatePublicChannelAsync(createRequest);
+                }
 
                 if (rocketResponse == null || !rocketResponse.Success)
                 {
+                    _logger.LogError($"Failed to create {roomType}: {rocketResponse?.Error}");
                     return new CreateGroupResponse
                     {
                         Success = false,
@@ -149,10 +123,12 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
+                var room = roomType == "group" ? rocketResponse.Group : rocketResponse.Channel;
+
                 // Set description if provided
                 if (!string.IsNullOrWhiteSpace(description))
                 {
-                    await SetTopicAsync(rocketResponse.Group.Id, description, roomType);
+                    await SetTopicAsync(room.Id, description, roomType);
                 }
 
                 // TODO: Save to database
@@ -171,11 +147,11 @@ namespace SourceAPI.Services.RocketChat
                 // await _dbContext.Set<RoomMapping>().AddAsync(roomMapping);
                 // await _dbContext.SaveChangesAsync();
 
-                _logger.LogInformation($"Successfully created {roomType} {roomName} with ID {rocketResponse.Group.Id}");
+                _logger.LogInformation($"Successfully created {roomType} {roomName} with ID {room.Id}");
 
                 return new CreateGroupResponse
                 {
-                    RoomId = rocketResponse.Group.Id,
+                    RoomId = room.Id,
                     GroupCode = request.GroupCode,
                     Name = roomName,
                     Success = true,

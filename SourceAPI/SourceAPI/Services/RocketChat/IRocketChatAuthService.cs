@@ -40,6 +40,11 @@ namespace SourceAPI.Services.RocketChat
         Task<AuthTokenDto> GetBotTokenAsync();
 
         /// <summary>
+        /// Force refresh admin token (bypass cache)
+        /// </summary>
+        Task<AuthTokenDto> RefreshAdminTokenAsync();
+
+        /// <summary>
         /// Clear cached tokens
         /// </summary>
         void ClearCache();

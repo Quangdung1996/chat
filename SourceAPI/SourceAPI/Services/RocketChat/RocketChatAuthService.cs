@@ -167,6 +167,36 @@ namespace SourceAPI.Services.RocketChat
         }
 
         /// <summary>
+        /// Force refresh admin token (bypass cache)
+        /// Used by DelegatingHandler when receiving 401 Unauthorized
+        /// </summary>
+        public async Task<AuthTokenDto> RefreshAdminTokenAsync()
+        {
+            await _tokenRefreshLock.WaitAsync();
+            try
+            {
+                // Remove from cache
+                _cache.Remove(ADMIN_TOKEN_KEY);
+
+                // Login to get new token
+                var token = await LoginAsync(_config.AdminUsername, _config.AdminPassword);
+
+                // Cache the new token
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_config.TokenCacheTTL)
+                };
+                _cache.Set(ADMIN_TOKEN_KEY, token, cacheOptions);
+
+                return token;
+            }
+            finally
+            {
+                _tokenRefreshLock.Release();
+            }
+        }
+
+        /// <summary>
         /// T-02: Thread-safe token caching with auto-refresh
         /// DoD: Thread-safe; cấu hình TTL qua appsettings
         /// </summary>

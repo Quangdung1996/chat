@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Refit;
+using SourceAPI.Handlers;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Services.RocketChat;
 using System;
@@ -29,7 +31,23 @@ namespace SourceAPI.Extensions
                 throw new InvalidOperationException("RocketChat configuration is missing in appsettings.json");
             }
 
-            // Register HttpClient with base configuration
+            // Register DelegatingHandlers
+            services.AddTransient<LoggingDelegatingHandler>();
+            services.AddTransient<RocketChatAuthDelegatingHandler>();
+
+            // Register Refit HttpClient with DelegatingHandlers
+            services.AddRefitClient<IRocketChatProxy>()
+                .ConfigureHttpClient(client =>
+                {
+                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                })
+                .AddHttpMessageHandler<LoggingDelegatingHandler>()
+                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>();
+
+            // Register legacy HttpClient (for backward compatibility)
             services.AddHttpClient("RocketChat", client =>
             {
                 client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
