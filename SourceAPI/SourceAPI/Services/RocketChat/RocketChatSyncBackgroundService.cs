@@ -102,6 +102,14 @@ namespace SourceAPI.Services.RocketChat
                     {
                         try
                         {
+                            // Validate username (required from OAuth2)
+                            if (string.IsNullOrWhiteSpace(user.Username))
+                            {
+                                _logger.LogWarning("Skipping user {UserId} - no username from OAuth2", user.UserId);
+                                skippedCount++;
+                                continue;
+                            }
+
                             // Check if already synced
                             var existingMapping = await userService.GetMappingAsync(user.UserId);
                             if (existingMapping != null)
@@ -110,11 +118,12 @@ namespace SourceAPI.Services.RocketChat
                                 continue;
                             }
 
-                            // Sync user
+                            // Sync user (username from OAuth2, email is optional)
                             var result = await userService.SyncUserAsync(
                                 user.UserId,
-                                user.Email,
-                                user.FullName
+                                user.Username,
+                                user.FullName,
+                                string.IsNullOrWhiteSpace(user.Email) ? null : user.Email
                             );
 
                             if (!string.IsNullOrWhiteSpace(result.RocketUserId))

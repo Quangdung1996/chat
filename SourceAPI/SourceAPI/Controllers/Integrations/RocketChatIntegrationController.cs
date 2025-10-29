@@ -51,12 +51,12 @@ namespace SourceAPI.Controllers.Integrations
             try
             {
                 // TODO: Validate API key middleware
-                if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.FullName))
+                if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.FullName))
                 {
-                    return BadRequest(new { message = "UserId, Email, and FullName are required" });
+                    return BadRequest(new { message = "UserId, Username (from OAuth2), and FullName are required. Email is optional." });
                 }
 
-                var result = await _userService.SyncUserAsync(request.UserId, request.Email, request.FullName);
+                var result = await _userService.SyncUserAsync(request.UserId, request.Username, request.FullName, request.Email);
 
                 if (string.IsNullOrWhiteSpace(result.RocketUserId))
                 {
@@ -664,8 +664,9 @@ namespace SourceAPI.Controllers.Integrations
     public class SyncUserRequest
     {
         public int UserId { get; set; }
-        public string Email { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;  // From OAuth2 - REQUIRED
         public string FullName { get; set; } = string.Empty;
+        public string? Email { get; set; }  // Optional - will generate fake email if null
     }
 
     public class AddMemberRequest

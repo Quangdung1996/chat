@@ -37,30 +37,25 @@ namespace SourceAPI.Services.RocketChat
         /// DoD: Gọi users.create; trả RocketUserId/Username
         /// </summary>
         public async Task<CreateUserResponse> CreateUserAsync(
-            string email,
+            string username,
             string fullName,
-            string? username = null,
+            string? email = null,
             string? password = null)
         {
             try
             {
-                // Generate username if not provided (T-09)
+                // Validate username is required
                 if (string.IsNullOrWhiteSpace(username))
                 {
-                    username = SlugHelper.GenerateUsername(fullName);
+                    throw new ArgumentException("Username is required", nameof(username));
+                }
 
-                    // Check for uniqueness and add suffix if needed
-                    int suffix = 1;
-                    while (await UserExistsAsync(username))
-                    {
-                        username = SlugHelper.GenerateUsername(fullName, suffix);
-                        suffix++;
-
-                        if (suffix > 100)
-                        {
-                            throw new Exception($"Unable to generate unique username for {fullName} after 100 attempts");
-                        }
-                    }
+                // Generate fake email if not provided
+                // RocketChat requires email, but we can use fake one for users without email
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    email = $"{username}@noemail.local";
+                    _logger.LogInformation($"Generated fake email for user {username}: {email}");
                 }
 
                 // Generate strong password if not provided (T-09)
@@ -137,7 +132,7 @@ namespace SourceAPI.Services.RocketChat
         /// T-08: Sync user with Rocket.Chat
         /// DoD: persist mapping; bắt lỗi có ngữ nghĩa
         /// </summary>
-        public async Task<SyncUserResponse> SyncUserAsync(int userId, string email, string fullName)
+        public async Task<SyncUserResponse> SyncUserAsync(int userId, string username, string fullName, string? email = null)
         {
             try
             {
@@ -157,8 +152,8 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                // Create new user in Rocket.Chat
-                var createResult = await CreateUserAsync(email, fullName);
+                // Create new user in Rocket.Chat (username is primary, email is optional)
+                var createResult = await CreateUserAsync(username, fullName, email);
 
                 if (!createResult.Success)
                 {
@@ -179,7 +174,7 @@ namespace SourceAPI.Services.RocketChat
                     UserId = userId,
                     RocketUserId = createResult.User.Id,
                     RocketUsername = createResult.User.Username,
-                    Email = email,
+                    Email = email ?? string.Empty,
                     FullName = fullName,
                     Metadata = Newtonsoft.Json.JsonConvert.SerializeObject(metadata),
                     CreatedBy = userId.ToString()

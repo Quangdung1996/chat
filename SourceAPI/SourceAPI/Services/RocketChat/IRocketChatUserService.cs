@@ -12,14 +12,16 @@ namespace SourceAPI.Services.RocketChat
     {
         /// <summary>
         /// Create user in Rocket.Chat
+        /// Username is required (from OAuth2), email is optional
         /// </summary>
-        Task<CreateUserResponse> CreateUserAsync(string email, string fullName, string? username = null, string? password = null);
+        Task<CreateUserResponse> CreateUserAsync(string username, string fullName, string? email = null, string? password = null);
 
         /// <summary>
         /// Sync user from internal system to Rocket.Chat
         /// Creates user if not exists, updates if exists
+        /// Username is required (from OAuth2), email is optional
         /// </summary>
-        Task<SyncUserResponse> SyncUserAsync(int userId, string email, string fullName);
+        Task<SyncUserResponse> SyncUserAsync(int userId, string username, string fullName, string? email = null);
 
         /// <summary>
         /// Check if user exists in Rocket.Chat by username

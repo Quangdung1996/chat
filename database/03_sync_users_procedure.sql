@@ -5,13 +5,12 @@
 -- =====================================================
 
 -- TODO: CUSTOMIZE procedure này theo cấu trúc DB của bạn
--- Ví dụ này giả định bạn có bảng Users với cấu trúc:
--- - Id (INT)
--- - Email (VARCHAR)
--- - FullName (VARCHAR)
--- - IsActive (BOOLEAN)
+-- Ví dụ này giả định bạn có:
+-- - Bảng Users: Id, FullName, Email (optional), IsActive, IsDeleted
+-- - Bảng UserLogin: UserId, Username (from OAuth2 provider - REQUIRED)
+-- Username lấy từ UserLogin, Email có thể null (sẽ generate fake email nếu null)
 
--- OPTION 1: PostgreSQL Function
+-- OPTION 1: PostgreSQL Function (với Username từ UserLogin)
 CREATE OR REPLACE FUNCTION dbo."sp_GetUsersForRocketChatSync"(
     p_json TEXT
 )
@@ -20,17 +19,20 @@ DECLARE
     v_result TEXT;
 BEGIN
     -- Lấy tất cả users active mà chưa có trong UserRocketChatMapping
+    -- JOIN với UserLogin table để lấy Username
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
-            'Email', u."Email",
+            'Email', COALESCE(u."Email", ''),  -- Email có thể null
             'FullName', u."FullName",
-            'Username', u."Username"
+            'Username', ul."Username"  -- Username từ UserLogin (REQUIRED)
         )
     )::TEXT INTO v_result
-    FROM "Users" u  -- TODO: Thay "Users" bằng tên bảng user của bạn
+    FROM "Users" u
+    INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
+        AND ul."Username" IS NOT NULL  -- Chỉ lấy users có username
         AND NOT EXISTS (
             SELECT 1 
             FROM dbo."UserRocketChatMapping" m
@@ -56,14 +58,16 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
-            'Email', u."Email",
+            'Email', COALESCE(u."Email", ''),
             'FullName', u."FullName",
-            'Username', u."Username"
+            'Username', ul."Username"  -- Username từ UserLogin
         )
     )::TEXT INTO v_result
-    FROM "Users" u  -- TODO: Thay bằng tên bảng của bạn
+    FROM "Users" u
+    INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
-        AND u."IsDeleted" = false;
+        AND u."IsDeleted" = false
+        AND ul."Username" IS NOT NULL;
     
     RETURN COALESCE(v_result, '[]');
 END;
@@ -81,8 +85,12 @@ $$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- Notes:
--- 1. Thay "Users" bằng tên bảng user thực tế của bạn
--- 2. Thay các column names cho đúng với schema của bạn
--- 3. Có thể thêm filters: department, role, created date, etc.
+-- 1. Sử dụng table "UserLogin" để lấy Username (từ OAuth2)
+-- 2. Email có thể NULL - code sẽ tự generate fake email: username@noemail.local
+-- 3. Username từ UserLogin là BẮT BUỘC
+-- 4. Có thể thêm filters: department, role, created date, etc.
+-- 5. Kiểm tra column names trong UserLogin table:
+--    - UserId (FK to Users.Id)
+--    - Username (from OAuth2 provider)
 -- =====================================================
 
