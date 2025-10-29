@@ -34,6 +34,7 @@ namespace SourceAPI.Extensions
             }
 
             // Register DelegatingHandlers
+            services.AddTransient<RocketChatErrorHandlingDelegatingHandler>();
             services.AddTransient<LoggingDelegatingHandler>();
             services.AddTransient<RocketChatAuthDelegatingHandler>();
 
@@ -53,6 +54,7 @@ namespace SourceAPI.Extensions
             };
 
             // Register Refit HttpClient with DelegatingHandlers and JSON settings
+            // Order: Logging → Auth → ErrorHandling (cuối cùng, gần InnerHandler nhất)
             services.AddRefitClient<IRocketChatProxy>(refitSettings)
                 .ConfigureHttpClient(client =>
                 {
@@ -62,7 +64,8 @@ namespace SourceAPI.Extensions
                     client.Timeout = TimeSpan.FromSeconds(30);
                 })
                 .AddHttpMessageHandler<LoggingDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>();
+                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>()
+                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
 
             // Register legacy HttpClient (for backward compatibility)
             services.AddHttpClient("RocketChat", client =>
