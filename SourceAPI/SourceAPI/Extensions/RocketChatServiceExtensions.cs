@@ -53,8 +53,21 @@ namespace SourceAPI.Extensions
                 )
             };
 
-            // Register Refit HttpClient with DelegatingHandlers and JSON settings
+            // Register Admin Proxy with admin token (via DelegatingHandlers)
             // Order: Logging → Auth → ErrorHandling (cuối cùng, gần InnerHandler nhất)
+            services.AddRefitClient<IRocketChatAdminProxy>(refitSettings)
+                .ConfigureHttpClient(client =>
+                {
+                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                })
+                .AddHttpMessageHandler<LoggingDelegatingHandler>()
+                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>()
+                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
+
+            // Register legacy IRocketChatProxy (alias to IRocketChatAdminProxy for backward compatibility)
             services.AddRefitClient<IRocketChatProxy>(refitSettings)
                 .ConfigureHttpClient(client =>
                 {
@@ -76,11 +89,15 @@ namespace SourceAPI.Extensions
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
 
+            // Register User Proxy Factory (for creating user-specific proxies)
+            services.AddSingleton<IRocketChatUserProxyFactory, RocketChatUserProxyFactory>();
+
             // Register services
             services.AddScoped<IRocketChatAuthService, RocketChatAuthService>();
             services.AddScoped<IRocketChatUserService, RocketChatUserService>();
             services.AddScoped<IRocketChatRoomService, RocketChatRoomService>();
             services.AddScoped<IRocketChatAutoLoginService, RocketChatAutoLoginService>();
+            services.AddScoped<IRocketChatUserTokenService, RocketChatUserTokenService>();
 
             // Register background service for auto-sync
             //services.AddHostedService<RocketChatSyncBackgroundService>();

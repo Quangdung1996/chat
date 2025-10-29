@@ -62,11 +62,11 @@ class RocketChatService {
 
   /**
    * Tạo direct message room (1-on-1 chat)
-   * POST /api/integrations/rocket/dm/create?username=john.doe
+   * POST /api/integrations/rocket/dm/create?currentUserId=1&targetUsername=john.doe
    */
-  async createDirectMessage(username: string): Promise<{ success: boolean; roomId: string; username: string }> {
+  async createDirectMessage(currentUserId: number, targetUsername: string): Promise<{ success: boolean; roomId: string; targetUsername: string }> {
     return apiClient.post(this.endpoints.createDirectMessage, null, {
-      params: { username }
+      params: { currentUserId, targetUsername }
     });
   }
 

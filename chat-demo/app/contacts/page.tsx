@@ -75,8 +75,12 @@ export default function ContactsPage() {
     try {
       console.log('Starting chat with:', contact.fullName);
       
+      // TODO: Lấy currentUserId từ auth context sau khi login
+      // Tạm thời hardcode để test
+      const currentUserId = 1; // Replace with actual logged-in user ID
+      
       // Tạo/lấy DM room
-      const response = await rocketChatService.createDirectMessage(contact.username);
+      const response = await rocketChatService.createDirectMessage(currentUserId, contact.username);
       
       if (response.success && response.roomId) {
         // Navigate đến trang chat

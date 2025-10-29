@@ -111,9 +111,11 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 // Generate password if not provided
+                // Use username-based deterministic password when userId not available
                 if (string.IsNullOrWhiteSpace(password))
                 {
-                    password = PasswordGenerator.GenerateStrongPassword();
+                    password = RocketChatPasswordHelper.GeneratePasswordFromUsername(username);
+                    _logger.LogInformation($"Password not provided, generating deterministic password from username for {username}");
                 }
 
                 var createRequest = new CreateUserRequest
@@ -206,7 +208,8 @@ namespace SourceAPI.Services.RocketChat
 
                 // Create or get existing user in Rocket.Chat
                 // CreateUserAsync handles duplicate check internally
-                var password = PasswordGenerator.GenerateStrongPassword();
+                // Generate deterministic password from userId + salt
+                var password = RocketChatPasswordHelper.GeneratePasswordFromUserId(userId);
                 var createResult = await CreateUserAsync(username, fullName, email, password);
 
                 if (!createResult.Success)

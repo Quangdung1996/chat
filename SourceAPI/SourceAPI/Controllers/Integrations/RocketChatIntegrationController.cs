@@ -168,34 +168,41 @@ namespace SourceAPI.Controllers.Integrations
         #region Direct Messages
 
         /// <summary>
-        /// Create direct message room with a user
+        /// Create direct message room between current user and target user
         /// Returns existing DM if already exists (idempotent)
-        /// GET /api/integrations/rocket/dm/create?username=john.doe
+        /// POST /api/integrations/rocket/dm/create?currentUserId=1&targetUsername=john.doe
         /// </summary>
         [HttpPost("dm/create")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> CreateDirectMessage([FromQuery] string username)
+        public async Task<IActionResult> CreateDirectMessage(
+            [FromQuery] int currentUserId, 
+            [FromQuery] string targetUsername)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username))
+                if (currentUserId <= 0)
                 {
-                    return BadRequest(new { message = "Username is required" });
+                    return BadRequest(new { message = "CurrentUserId is required" });
                 }
 
-                var roomId = await _roomService.CreateDirectMessageAsync(username);
+                if (string.IsNullOrWhiteSpace(targetUsername))
+                {
+                    return BadRequest(new { message = "TargetUsername is required" });
+                }
+
+                var roomId = await _roomService.CreateDirectMessageAsync(currentUserId, targetUsername);
 
                 return Ok(new
                 {
                     success = true,
                     roomId = roomId,
-                    username = username
+                    targetUsername = targetUsername
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error creating DM with {username}");
+                _logger.LogError(ex, $"Error creating DM: {ex.Message}");
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }

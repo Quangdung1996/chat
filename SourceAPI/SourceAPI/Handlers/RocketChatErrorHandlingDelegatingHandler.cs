@@ -116,3 +116,4 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
         }
     }
 }
+

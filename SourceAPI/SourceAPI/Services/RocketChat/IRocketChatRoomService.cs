@@ -23,10 +23,10 @@ namespace SourceAPI.Services.RocketChat
         Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request);
 
         /// <summary>
-        /// Create direct message room (1-on-1 chat)
+        /// Create direct message room (1-on-1 chat) as a specific user
         /// Returns existing DM if already exists
         /// </summary>
-        Task<string> CreateDirectMessageAsync(string username);
+        Task<string> CreateDirectMessageAsync(int currentUserId, string targetUsername);
 
         /// <summary>
         /// T-20: Add members to room

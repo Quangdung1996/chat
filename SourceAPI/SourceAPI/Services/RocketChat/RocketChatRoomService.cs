@@ -1,10 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Refit;
+using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -14,16 +18,22 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatRoomService : IRocketChatRoomService
     {
-        private readonly IRocketChatProxy _rocketChatApi;
+        private readonly IRocketChatAdminProxy _adminApi;
+        private readonly IRocketChatUserProxyFactory _userProxyFactory;
+        private readonly IRocketChatUserTokenService _userTokenService;
         private readonly RocketChatConfig _config;
         private readonly ILogger<RocketChatRoomService> _logger;
 
         public RocketChatRoomService(
-            IRocketChatProxy rocketChatApi,
+            IRocketChatAdminProxy adminApi,
+            IRocketChatUserProxyFactory userProxyFactory,
+            IRocketChatUserTokenService userTokenService,
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger)
         {
-            _rocketChatApi = rocketChatApi;
+            _adminApi = adminApi;
+            _userProxyFactory = userProxyFactory;
+            _userTokenService = userTokenService;
             _config = config.Value;
             _logger = logger;
         }
@@ -47,21 +57,41 @@ namespace SourceAPI.Services.RocketChat
         }
 
         /// <summary>
-        /// Create direct message room (1-on-1 chat)
+        /// Create direct message room (1-on-1 chat) as a specific user
         /// Returns existing DM if already exists (idempotent)
         /// </summary>
-        public async Task<string> CreateDirectMessageAsync(string username)
+        public async Task<string> CreateDirectMessageAsync(int currentUserId, string targetUsername)
         {
             try
             {
-                _logger.LogInformation($"Creating DM with user: {username}");
+                _logger.LogInformation($"User {currentUserId} creating DM with: {targetUsername}");
 
+                // Get user mapping to get username
+                var userMapping = RocketChatRepository.GetUserMappingByUserId(currentUserId);
+                
+                if (userMapping == null || string.IsNullOrEmpty(userMapping.RocketUsername))
+                {
+                    throw new Exception($"User {currentUserId} not synced to Rocket.Chat");
+                }
+
+                // Get or create token for current user (login with deterministic password)
+                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(currentUserId, userMapping.RocketUsername);
+                
+                if (userToken == null || string.IsNullOrEmpty(userToken.AuthToken))
+                {
+                    throw new Exception($"Cannot get auth token for user {currentUserId}");
+                }
+
+                // Create user-specific proxy using factory
+                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
+
+                // Create DM request
                 var request = new CreateDMRequest
                 {
-                    Username = username
+                    Username = targetUsername
                 };
 
-                var response = await _rocketChatApi.CreateDirectMessageAsync(request);
+                var response = await userApi.CreateDirectMessageAsync(request);
 
                 if (response == null || !response.Success)
                 {
@@ -81,7 +111,7 @@ namespace SourceAPI.Services.RocketChat
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error creating DM with {username}: {ex.Message}");
+                _logger.LogError(ex, $"Error creating DM: {ex.Message}");
                 throw;
             }
         }
@@ -150,11 +180,11 @@ namespace SourceAPI.Services.RocketChat
                 CreateRoomResponse rocketResponse;
                 if (roomType == "group")
                 {
-                    rocketResponse = await _rocketChatApi.CreatePrivateGroupAsync(createRequest);
+                    rocketResponse = await _adminApi.CreatePrivateGroupAsync(createRequest);
                 }
                 else
                 {
-                    rocketResponse = await _rocketChatApi.CreatePublicChannelAsync(createRequest);
+                    rocketResponse = await _adminApi.CreatePublicChannelAsync(createRequest);
                 }
 
                 if (rocketResponse == null || !rocketResponse.Success)
@@ -302,9 +332,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _rocketChatApi.RenameGroupAsync(request);
+                    response = await _adminApi.RenameGroupAsync(request);
                 else
-                    response = await _rocketChatApi.RenameChannelAsync(request);
+                    response = await _adminApi.RenameChannelAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -349,9 +379,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _rocketChatApi.SetGroupReadOnlyAsync(request);
+                    response = await _adminApi.SetGroupReadOnlyAsync(request);
                 else
-                    response = await _rocketChatApi.SetChannelReadOnlyAsync(request);
+                    response = await _adminApi.SetChannelReadOnlyAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -378,9 +408,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _rocketChatApi.SetGroupTopicAsync(request);
+                    response = await _adminApi.SetGroupTopicAsync(request);
                 else
-                    response = await _rocketChatApi.SetChannelTopicAsync(request);
+                    response = await _adminApi.SetChannelTopicAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -406,7 +436,7 @@ namespace SourceAPI.Services.RocketChat
                 };
 
                 // Use Refit - DelegatingHandler auto adds auth headers
-                var response = await _rocketChatApi.PostMessageAsync(request);
+                var response = await _adminApi.PostMessageAsync(request);
                 
                 if (!response.Success)
                     return null;
@@ -441,22 +471,22 @@ namespace SourceAPI.Services.RocketChat
                 if (roomType == "group")
                 {
                     if (action == "invite")
-                        response = await _rocketChatApi.InviteToGroupAsync(request);
+                        response = await _adminApi.InviteToGroupAsync(request);
                     else if (action == "kick")
-                        response = await _rocketChatApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action == "addModerator")
-                        response = await _rocketChatApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
                 else
                 {
                     if (action == "invite")
-                        response = await _rocketChatApi.InviteToChannelAsync(request);
+                        response = await _adminApi.InviteToChannelAsync(request);
                     else if (action == "kick")
-                        response = await _rocketChatApi.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminApi.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action == "addModerator")
-                        response = await _rocketChatApi.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminApi.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
@@ -482,16 +512,16 @@ namespace SourceAPI.Services.RocketChat
                 switch (endpoint)
                 {
                     case "groups.archive":
-                        response = await _rocketChatApi.ArchiveGroupAsync(request);
+                        response = await _adminApi.ArchiveGroupAsync(request);
                         break;
                     case "channels.archive":
-                        response = await _rocketChatApi.ArchiveChannelAsync(request);
+                        response = await _adminApi.ArchiveChannelAsync(request);
                         break;
                     case "groups.delete":
-                        response = await _rocketChatApi.DeleteGroupAsync(request);
+                        response = await _adminApi.DeleteGroupAsync(request);
                         break;
                     case "channels.delete":
-                        response = await _rocketChatApi.DeleteChannelAsync(request);
+                        response = await _adminApi.DeleteChannelAsync(request);
                         break;
                     default:
                         _logger.LogWarning("Unknown endpoint: {Endpoint}", endpoint);
