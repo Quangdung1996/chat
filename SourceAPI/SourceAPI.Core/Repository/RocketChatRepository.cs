@@ -59,6 +59,17 @@ namespace SourceAPI.Core.Repository
                 ERocketChatStoredProcedureNames.sp_GetUsersForRocketChatSync);
         }
 
+        /// <summary>
+        /// Get all user mappings (for directory/contacts)
+        /// </summary>
+        public static UserRocketMappingResult[] GetAllUserMappings()
+        {
+            var param = new { }; // Empty param
+            return Exec_JsonStoredProceduce_GetArray<UserRocketMappingResult>(
+                param,
+                ERocketChatStoredProcedureNames.sp_GetAllUserMappings);
+        }
+
         // =====================================================
         // RoomMapping Operations
         // =====================================================

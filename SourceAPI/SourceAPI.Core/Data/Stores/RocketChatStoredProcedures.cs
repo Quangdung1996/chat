@@ -12,6 +12,7 @@ namespace SourceAPI.Core.Data.Stores
         sp_GetUserRocketMapping_ByRocketUserId,
         sp_UpsertUserRocketMapping,
         sp_GetUsersForRocketChatSync,
+        sp_GetAllUserMappings,
 
         // RoomMapping procedures
         sp_GetRoomMapping_ByGroupCode,

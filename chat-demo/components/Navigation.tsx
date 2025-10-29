@@ -10,10 +10,11 @@ const Navigation = () => {
 
   const navItems = [
     { href: '/', label: 'Trang chủ', icon: '🏠' },
-    { href: '/users', label: 'Người dùng', icon: '👥' },
+    { href: '/contacts', label: 'Danh bạ', icon: '📇' },
     { href: '/rooms', label: 'Phòng chat', icon: '💬' },
-    { href: '/members', label: 'Thành viên', icon: '👤' },
     { href: '/messages', label: 'Tin nhắn', icon: '📨' },
+    { href: '/users', label: 'Quản lý User', icon: '👥' },
+    { href: '/members', label: 'Thành viên', icon: '👤' },
     { href: '/webhooks', label: 'Webhooks', icon: '🔗' },
     { href: '/settings', label: 'Cấu hình', icon: '⚙️' },
   ];

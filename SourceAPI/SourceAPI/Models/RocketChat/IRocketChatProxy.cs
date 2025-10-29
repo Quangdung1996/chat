@@ -34,6 +34,9 @@ namespace SourceAPI.Models.RocketChat
         [Get("/api/v1/users.info")]
         Task<UserInfoResponse> GetUserInfoByIdAsync([Query("userId")] string userId);
 
+        [Get("/api/v1/users.list")]
+        Task<UsersListResponse> GetUsersListAsync([Query] int count = 100, [Query] int offset = 0);
+
         // =====================================================
         // Rooms/Channels
         // =====================================================

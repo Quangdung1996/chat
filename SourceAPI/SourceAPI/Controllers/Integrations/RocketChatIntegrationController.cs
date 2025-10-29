@@ -110,6 +110,32 @@ namespace SourceAPI.Controllers.Integrations
         }
 
         /// <summary>
+        /// Get all users from Rocket.Chat (for directory/contacts)
+        /// </summary>
+        [HttpGet("users")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetAllUsers([FromQuery] int count = 100, [FromQuery] int offset = 0)
+        {
+            try
+            {
+                var users = await _userService.GetRocketChatUsersAsync(count, offset);
+
+                return Ok(new
+                {
+                    success = true,
+                    users = users,
+                    count = users.Count,
+                    offset = offset
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting users from Rocket.Chat");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Get Rocket.Chat auto-login token for current user
         /// Allows seamless login to Rocket.Chat without password
         /// </summary>

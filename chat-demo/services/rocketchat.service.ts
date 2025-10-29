@@ -50,6 +50,16 @@ class RocketChatService {
     return apiClient.get(endpoint);
   }
 
+  /**
+   * Lấy danh sách users từ Rocket.Chat
+   * GET /api/integrations/rocket/users?count=100&offset=0
+   */
+  async getUsers(count: number = 100, offset: number = 0): Promise<{ success: boolean; users: any[] }> {
+    return apiClient.get(`${this.endpoints.syncUser}s`, {
+      params: { count, offset }
+    });
+  }
+
   // ===== ROOM MANAGEMENT =====
   
   /**

@@ -39,6 +39,11 @@ namespace SourceAPI.Services.RocketChat
         Task<UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId);
 
         /// <summary>
+        /// Get users from Rocket.Chat directly (for directory/contacts)
+        /// </summary>
+        Task<System.Collections.Generic.List<DTOs.RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0);
+
+        /// <summary>
         /// Update user active status
         /// </summary>
         Task<bool> SetUserActiveStatusAsync(int userId, bool isActive);
