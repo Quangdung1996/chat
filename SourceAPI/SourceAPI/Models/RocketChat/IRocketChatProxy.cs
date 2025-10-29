@@ -1,5 +1,6 @@
 using Refit;
 using SourceAPI.Models.RocketChat.DTOs;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Models.RocketChat
@@ -94,7 +95,7 @@ namespace SourceAPI.Models.RocketChat
     public class CreateRoomRequest
     {
         public string Name { get; set; } = string.Empty;
-        public List<string>? Members { get; set; }
+        public List<string> Members { get; set; }
         public bool ReadOnly { get; set; }
     }
 
