@@ -17,14 +17,14 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatUserService : IRocketChatUserService
     {
-        private readonly IRocketChatProxy _rocketChatApi;
+        private readonly IRocketChatAdminProxy _adminApi;
         private readonly ILogger<RocketChatUserService> _logger;
 
         public RocketChatUserService(
-            IRocketChatProxy rocketChatApi,
+            IRocketChatAdminProxy adminApi,
             ILogger<RocketChatUserService> logger)
         {
-            _rocketChatApi = rocketChatApi;
+            _adminApi = adminApi;
             _logger = logger;
         }
 
@@ -48,7 +48,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Check if user already exists
                 // Handler tự động xử lý "User not found" → return { success: true, user: null }
-                var existingUser = await _rocketChatApi.GetUserInfoAsync(username);
+                var existingUser = await _adminApi.GetUserInfoAsync(username);
                 if (existingUser != null && existingUser.Success && existingUser.User != null)
                 {
                     _logger.LogInformation($"User {username} already exists in Rocket.Chat");
@@ -130,7 +130,7 @@ namespace SourceAPI.Services.RocketChat
                 };
 
                 // Use Refit - DelegatingHandler auto adds auth headers & logging
-                var createResponse = await _rocketChatApi.CreateUserAsync(createRequest);
+                var createResponse = await _adminApi.CreateUserAsync(createRequest);
 
                 if (createResponse == null || !createResponse.Success)
                 {
@@ -156,7 +156,7 @@ namespace SourceAPI.Services.RocketChat
                         UserId = createResponse.User.Id,
                         ActiveStatus = true
                     };
-                    var activeResponse = await _rocketChatApi.SetUserActiveStatusAsync(setActiveRequest);
+                    var activeResponse = await _adminApi.SetUserActiveStatusAsync(setActiveRequest);
 
                     if (activeResponse != null && activeResponse.Success)
                     {
@@ -292,7 +292,7 @@ namespace SourceAPI.Services.RocketChat
             {
                 // Use Refit - DelegatingHandler auto adds auth headers
                 // Handler tự động xử lý "User not found" → return { success: true, user: null }
-                var response = await _rocketChatApi.GetUserInfoAsync(username);
+                var response = await _adminApi.GetUserInfoAsync(username);
                 return response != null && response.Success && response.User != null;
             }
             catch (Exception ex)
@@ -376,7 +376,7 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var response = await _rocketChatApi.GetUsersListAsync(count, offset);
+                var response = await _adminApi.GetUsersListAsync(count, offset);
 
                 if (response == null || !response.Success || response.Users == null)
                 {
