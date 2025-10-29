@@ -68,6 +68,36 @@ namespace SourceAPI.Models.RocketChat
         [Post("/api/v1/channels.addModerator")]
         Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
 
+        [Post("/api/v1/groups.rename")]
+        Task<ApiResponse> RenameGroupAsync([Body] RenameRoomRequest request);
+
+        [Post("/api/v1/channels.rename")]
+        Task<ApiResponse> RenameChannelAsync([Body] RenameRoomRequest request);
+
+        [Post("/api/v1/groups.setTopic")]
+        Task<ApiResponse> SetGroupTopicAsync([Body] SetTopicRequest request);
+
+        [Post("/api/v1/channels.setTopic")]
+        Task<ApiResponse> SetChannelTopicAsync([Body] SetTopicRequest request);
+
+        [Post("/api/v1/groups.setReadOnly")]
+        Task<ApiResponse> SetGroupReadOnlyAsync([Body] SetReadOnlyRequest request);
+
+        [Post("/api/v1/channels.setReadOnly")]
+        Task<ApiResponse> SetChannelReadOnlyAsync([Body] SetReadOnlyRequest request);
+
+        [Post("/api/v1/groups.archive")]
+        Task<ApiResponse> ArchiveGroupAsync([Body] RoomActionRequest request);
+
+        [Post("/api/v1/channels.archive")]
+        Task<ApiResponse> ArchiveChannelAsync([Body] RoomActionRequest request);
+
+        [Post("/api/v1/groups.delete")]
+        Task<ApiResponse> DeleteGroupAsync([Body] RoomActionRequest request);
+
+        [Post("/api/v1/channels.delete")]
+        Task<ApiResponse> DeleteChannelAsync([Body] RoomActionRequest request);
+
         // =====================================================
         // Messages
         // =====================================================
@@ -128,6 +158,29 @@ namespace SourceAPI.Models.RocketChat
     {
         public string RoomId { get; set; } = string.Empty;
         public string MsgId { get; set; } = string.Empty;
+    }
+
+    public class RenameRoomRequest
+    {
+        public string RoomId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class SetTopicRequest
+    {
+        public string RoomId { get; set; } = string.Empty;
+        public string Topic { get; set; } = string.Empty;
+    }
+
+    public class SetReadOnlyRequest
+    {
+        public string RoomId { get; set; } = string.Empty;
+        public bool ReadOnly { get; set; }
+    }
+
+    public class RoomActionRequest
+    {
+        public string RoomId { get; set; } = string.Empty;
     }
 
     public class ApiResponse

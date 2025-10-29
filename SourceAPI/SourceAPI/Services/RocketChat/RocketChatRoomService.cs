@@ -1,13 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -249,21 +246,20 @@ namespace SourceAPI.Services.RocketChat
             try
             {
                 var newSlug = SlugHelper.ToSlug(newName);
-                var endpoint = roomType == "group" ? "groups.rename" : "channels.rename";
+                var request = new RenameRoomRequest
+                {
+                    RoomId = roomId,
+                    Name = newSlug
+                };
 
-                var token = await _authService.GetAdminTokenAsync();
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                if (roomType == "group")
+                    response = await _rocketChatApi.RenameGroupAsync(request);
+                else
+                    response = await _rocketChatApi.RenameChannelAsync(request);
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{endpoint}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new { roomId, name = newSlug }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return response?.Success ?? false;
             }
             catch (Exception ex)
             {
@@ -295,23 +291,22 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<bool> SetAnnouncementModeAsync(string roomId, bool announcementOnly, string roomType = "group")
         {
-            var endpoint = roomType == "group" ? "groups.setReadOnly" : "channels.setReadOnly";
-            
             try
             {
-                var token = await _authService.GetAdminTokenAsync();
+                var request = new SetReadOnlyRequest
+                {
+                    RoomId = roomId,
+                    ReadOnly = announcementOnly
+                };
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{endpoint}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new { roomId, readOnly = announcementOnly }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                if (roomType == "group")
+                    response = await _rocketChatApi.SetGroupReadOnlyAsync(request);
+                else
+                    response = await _rocketChatApi.SetChannelReadOnlyAsync(request);
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return response?.Success ?? false;
             }
             catch (Exception ex)
             {
@@ -325,23 +320,22 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<bool> SetTopicAsync(string roomId, string topic, string roomType = "group")
         {
-            var endpoint = roomType == "group" ? "groups.setTopic" : "channels.setTopic";
-            
             try
             {
-                var token = await _authService.GetAdminTokenAsync();
+                var request = new SetTopicRequest
+                {
+                    RoomId = roomId,
+                    Topic = topic
+                };
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{endpoint}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new { roomId, topic }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                if (roomType == "group")
+                    response = await _rocketChatApi.SetGroupTopicAsync(request);
+                else
+                    response = await _rocketChatApi.SetChannelTopicAsync(request);
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return response?.Success ?? false;
             }
             catch (Exception ex)
             {
@@ -357,33 +351,20 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var token = await _authService.GetBotTokenAsync();
-
-                var messageData = new
+                var request = new PostMessageRequest
                 {
-                    roomId,
-                    text,
-                    alias
+                    RoomId = roomId,
+                    Text = text,
+                    Alias = alias
                 };
 
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/chat.postMessage");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(messageData),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.SendAsync(request);
+                // Use Refit - DelegatingHandler auto adds auth headers
+                var response = await _rocketChatApi.PostMessageAsync(request);
                 
-                if (!response.IsSuccessStatusCode)
+                if (!response.Success)
                     return null;
 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                
-                return result?.message?._id;
+                return response.Message?.Id;
             }
             catch (Exception ex)
             {
@@ -402,22 +383,38 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var prefix = roomType == "group" ? "groups" : "channels";
-                var endpoint = $"{prefix}.{action}";
+                var request = new InviteMemberRequest
+                {
+                    RoomId = roomId,
+                    UserId = userId
+                };
 
-                var token = await _authService.GetAdminTokenAsync();
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                if (roomType == "group")
+                {
+                    if (action == "invite")
+                        response = await _rocketChatApi.InviteToGroupAsync(request);
+                    else if (action == "kick")
+                        response = await _rocketChatApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                    else if (action == "addModerator")
+                        response = await _rocketChatApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                    else
+                        return false;
+                }
+                else
+                {
+                    if (action == "invite")
+                        response = await _rocketChatApi.InviteToChannelAsync(request);
+                    else if (action == "kick")
+                        response = await _rocketChatApi.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                    else if (action == "addModerator")
+                        response = await _rocketChatApi.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                    else
+                        return false;
+                }
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{endpoint}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new { roomId, userId }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return response?.Success ?? false;
             }
             catch (Exception ex)
             {
@@ -430,19 +427,31 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var token = await _authService.GetAdminTokenAsync();
+                var request = new RoomActionRequest { RoomId = roomId };
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/{endpoint}");
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new { roomId }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                
+                switch (endpoint)
+                {
+                    case "groups.archive":
+                        response = await _rocketChatApi.ArchiveGroupAsync(request);
+                        break;
+                    case "channels.archive":
+                        response = await _rocketChatApi.ArchiveChannelAsync(request);
+                        break;
+                    case "groups.delete":
+                        response = await _rocketChatApi.DeleteGroupAsync(request);
+                        break;
+                    case "channels.delete":
+                        response = await _rocketChatApi.DeleteChannelAsync(request);
+                        break;
+                    default:
+                        _logger.LogWarning("Unknown endpoint: {Endpoint}", endpoint);
+                        return false;
+                }
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return response?.Success ?? false;
             }
             catch (Exception ex)
             {
