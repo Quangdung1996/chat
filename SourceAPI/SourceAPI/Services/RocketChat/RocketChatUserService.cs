@@ -114,9 +114,6 @@ namespace SourceAPI.Services.RocketChat
                     password = PasswordGenerator.GenerateStrongPassword();
                 }
 
-                if (username == "thaisonlnts2001@gmail.com")
-                {
-                }
                 var createRequest = new CreateUserRequest
                 {
                     Email = email,
@@ -124,7 +121,7 @@ namespace SourceAPI.Services.RocketChat
                     Username = username.Replace("@", ""),
                     Password = password,
                     Verified = true,
-                    SendWelcomeEmail = false,
+                    SendWelcomeEmail = true,
                     RequirePasswordChange = false
                 };
 
