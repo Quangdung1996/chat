@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import PageHeader from '@/components/PageHeader';
-import Card from '@/components/Card';
 import rocketChatService from '@/services/rocketchat.service';
 
 interface Contact {
@@ -106,15 +104,21 @@ export default function ContactsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader
-        title="📇 Danh bạ"
-        description="Tìm và chat với đồng nghiệp trong tổ chức"
-      />
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800">
+      {/* Header */}
+      <div className="border-b dark:border-gray-700 px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          📇 Danh bạ
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Tìm và chat với đồng nghiệp trong tổ chức
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Search Bar */}
-        <Card>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-gray-500 text-xl">🔍</span>
@@ -127,10 +131,10 @@ export default function ContactsPage() {
               className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
-        </Card>
+        </div>
 
         {/* Contacts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {loading ? (
             <div className="col-span-full text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -145,7 +149,7 @@ export default function ContactsPage() {
             </div>
           ) : (
             filteredContacts.map((contact) => (
-              <Card key={contact.userId}>
+              <div key={contact.rocketUserId} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
                 <div className="flex flex-col items-center text-center space-y-4">
                   {/* Avatar */}
                   <div
@@ -202,14 +206,14 @@ export default function ContactsPage() {
                     </span>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>
 
         {/* Summary */}
         {!loading && filteredContacts.length > 0 && (
-          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 pb-4">
             Hiển thị {filteredContacts.length} / {contacts.length} người dùng
           </div>
         )}
