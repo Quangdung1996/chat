@@ -1,5 +1,5 @@
+using Ezy.APIService.Core.Repository;
 using Ezy.Module.Library.Utilities;
-using Ezy.Module.MSSQLRepository.Repository;
 using SourceAPI.Core.Data.Stores;
 using System;
 
@@ -22,7 +22,7 @@ namespace SourceAPI.Core.Repository
         {
             var param = new { UserId = userId };
             return Exec_JsonStoredProceduce<UserRocketMappingResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetUserRocketMapping_ByUserId);
         }
 
@@ -33,7 +33,7 @@ namespace SourceAPI.Core.Repository
         {
             var param = new { RocketUserId = rocketUserId };
             return Exec_JsonStoredProceduce<UserRocketMappingResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetUserRocketMapping_ByRocketUserId);
         }
 
@@ -43,7 +43,7 @@ namespace SourceAPI.Core.Repository
         public static UpsertResult UpsertUserMapping(UpsertUserMappingParam param)
         {
             return Exec_JsonStoredProceduce<UpsertResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_UpsertUserRocketMapping);
         }
 
@@ -70,7 +70,7 @@ namespace SourceAPI.Core.Repository
         {
             var param = new { GroupCode = groupCode };
             return Exec_JsonStoredProceduce<RoomMappingResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetRoomMapping_ByGroupCode);
         }
 
@@ -81,7 +81,7 @@ namespace SourceAPI.Core.Repository
         {
             var param = new { RocketRoomId = rocketRoomId };
             return Exec_JsonStoredProceduce<RoomMappingResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetRoomMapping_ByRocketRoomId);
         }
 
@@ -91,7 +91,7 @@ namespace SourceAPI.Core.Repository
         public static UpsertResult InsertRoom(InsertRoomMappingParam param)
         {
             return Exec_JsonStoredProceduce<UpsertResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_InsertRoomMapping);
         }
 
@@ -101,7 +101,7 @@ namespace SourceAPI.Core.Repository
         public static RoomMappingResult[] ListRooms(ListRoomsParam param)
         {
             return Exec_JsonStoredProceduce_GetArray<RoomMappingResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_ListRoomMappings);
         }
 
@@ -115,7 +115,7 @@ namespace SourceAPI.Core.Repository
         public static UpsertResult AddRoomMember(AddRoomMemberParam param)
         {
             return Exec_JsonStoredProceduce<UpsertResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_AddRoomMember);
         }
 
@@ -125,7 +125,7 @@ namespace SourceAPI.Core.Repository
         public static SimpleResult RemoveRoomMember(RemoveRoomMemberParam param)
         {
             return Exec_JsonStoredProceduce<SimpleResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_RemoveRoomMember);
         }
 
@@ -135,7 +135,7 @@ namespace SourceAPI.Core.Repository
         public static RoomMemberResult[] GetRoomMembers(GetRoomMembersParam param)
         {
             return Exec_JsonStoredProceduce_GetArray<RoomMemberResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetRoomMembers);
         }
 
@@ -145,7 +145,7 @@ namespace SourceAPI.Core.Repository
         public static SimpleResult UpdateMemberRole(UpdateMemberRoleParam param)
         {
             return Exec_JsonStoredProceduce<SimpleResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_UpdateRoomMemberRole);
         }
 
@@ -159,7 +159,7 @@ namespace SourceAPI.Core.Repository
         public static UpsertResult InsertMessageLog(InsertMessageLogParam param)
         {
             return Exec_JsonStoredProceduce<UpsertResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_InsertChatMessageLog);
         }
 
@@ -169,7 +169,7 @@ namespace SourceAPI.Core.Repository
         public static ChatMessageResult[] GetRoomMessages(GetRoomMessagesParam param)
         {
             return Exec_JsonStoredProceduce_GetArray<ChatMessageResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_GetRoomMessages);
         }
 
@@ -179,7 +179,7 @@ namespace SourceAPI.Core.Repository
         public static SimpleResult DeleteMessage(DeleteMessageParam param)
         {
             return Exec_JsonStoredProceduce<SimpleResult>(
-                param, 
+                param,
                 ERocketChatStoredProcedureNames.sp_DeleteChatMessage);
         }
 
@@ -188,7 +188,7 @@ namespace SourceAPI.Core.Repository
         // =====================================================
 
         private static TResult Exec_JsonStoredProceduce<TResult>(
-            object param, 
+            object param,
             ERocketChatStoredProcedureNames procedureName) where TResult : class
         {
             return Exec_JsonStoredProceduce<TResult>(string.Empty, param, procedureName);
@@ -196,7 +196,7 @@ namespace SourceAPI.Core.Repository
 
         private static TResult Exec_JsonStoredProceduce<TResult>(
             string connectionString,
-            object param, 
+            object param,
             ERocketChatStoredProcedureNames procedureName) where TResult : class
         {
             TResult resultData = null;
@@ -205,7 +205,7 @@ namespace SourceAPI.Core.Repository
 
             string jsonOutput = Exec_JsonStored_RAW_AnySP(
                 connectionString,
-                storedProcedureName, 
+                storedProcedureName,
                 paramJson);
 
             if (!string.IsNullOrEmpty(jsonOutput) && jsonOutput != "null")
@@ -216,16 +216,16 @@ namespace SourceAPI.Core.Repository
         }
 
         private static TResult[] Exec_JsonStoredProceduce_GetArray<TResult>(
-            object param, 
+            object param,
             ERocketChatStoredProcedureNames procedureName) where TResult : class
         {
             TResult[] results = null;
             string paramJson = JsonHelper.SerializeObject(param);
-            string storedProcedureName = $"dbo.\"{Enum.GetName(typeof(ERocketChatStoredProcedureNames), procedureName)}\"";
+            string storedProcedureName = $"{Enum.GetName(typeof(ERocketChatStoredProcedureNames), procedureName)}";
 
             string jsonOutput = Exec_JsonStored_RAW_AnySP(
                 string.Empty,
-                storedProcedureName, 
+                storedProcedureName,
                 paramJson);
 
             if (!string.IsNullOrEmpty(jsonOutput) && jsonOutput != "null" && jsonOutput != "[]")

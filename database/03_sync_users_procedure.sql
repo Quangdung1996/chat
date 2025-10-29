@@ -23,12 +23,12 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
-            'Email', COALESCE(u."Email", ''),  -- Email có thể null
+            'Email', COALESCE(u."EmailAddress", ''),  -- Email có thể null
             'FullName', u."FullName",
             'Username', ul."Username"  -- Username từ UserLogin (REQUIRED)
         )
     )::TEXT INTO v_result
-    FROM "Users" u
+    FROM "UserLogin" u
     INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
@@ -58,12 +58,12 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
-            'Email', COALESCE(u."Email", ''),
+            'Email', COALESCE(u."EmailAddress", ''),
             'FullName', u."FullName",
             'Username', ul."Username"  -- Username từ UserLogin
         )
     )::TEXT INTO v_result
-    FROM "Users" u
+    FROM "UserLogin" u
     INNER JOIN "UserLogin" ul ON ul."UserId" = u."Id"
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
