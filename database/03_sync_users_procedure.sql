@@ -10,7 +10,6 @@
 -- - Username (from OAuth2 provider - REQUIRED)
 -- - EmailAddress (optional - có thể null)
 -- - FirstName, LastName (concat để tạo FullName)
--- - IsActive, IsDeleted
 
 -- OPTION 1: PostgreSQL Function (với Username từ UserLogin)
 CREATE OR REPLACE FUNCTION dbo."sp_GetUsersForRocketChatSync"(
@@ -31,14 +30,11 @@ BEGIN
         )
     )::TEXT INTO v_result
     FROM dbo."UserLogin" u
-    WHERE u."IsActive" = true
-        AND u."IsDeleted" = false
-        AND u."Username" IS NOT NULL  -- Chỉ lấy users có username
+    WHERE u."Username" IS NOT NULL  -- Chỉ lấy users có username
         AND NOT EXISTS (
             SELECT 1 
             FROM dbo."UserRocketChatMapping" m
             WHERE m."UserId" = u."Id"
-                AND m."IsDeleted" = false
         );
     
     RETURN COALESCE(v_result, '[]');
@@ -65,9 +61,7 @@ BEGIN
         )
     )::TEXT INTO v_result
     FROM dbo."UserLogin" u
-    WHERE u."IsActive" = true
-        AND u."IsDeleted" = false
-        AND u."Username" IS NOT NULL;
+    WHERE u."Username" IS NOT NULL;
     
     RETURN COALESCE(v_result, '[]');
 END;
@@ -95,6 +89,5 @@ $$ LANGUAGE plpgsql;
 --    - Username (from OAuth2 provider)
 --    - EmailAddress (optional)
 --    - FirstName, LastName (concat để tạo FullName)
---    - IsActive, IsDeleted
 -- =====================================================
 
