@@ -20,13 +20,14 @@ export const API_CONFIG = {
       logout: '/api/auth/logout',
       register: '/api/auth/register',
       token: '/oauth2/token',
-      userInfo: '/api/user/me',
+      userInfo: '/api/v1/Account/userinfo',
     },
     // Rocket.Chat Integration endpoints
     rocketChat: {
       // User Management
       getUsers: '/api/integrations/rocket/users',
       getUserInfo: '/api/integrations/rocket/user/{userId}/info',
+      getUserRooms: '/api/integrations/rocket/user/{userId}/rooms',
 
       // Room Management
       createGroup: '/api/integrations/rocket/create-group',

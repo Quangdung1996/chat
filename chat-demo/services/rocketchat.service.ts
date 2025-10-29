@@ -21,6 +21,8 @@ import type {
   RoomMember,
   ChatMessage,
   UserInfo,
+  UserSubscription,
+  GetUserRoomsResponse,
   RoomFilter,
   PaginationParams,
   PaginatedResponse,
@@ -48,6 +50,16 @@ class RocketChatService {
     return apiClient.get(this.endpoints.getUsers, {
       params: { count, offset }
     });
+  }
+
+  /**
+   * Lấy tất cả rooms của user (real-time từ Rocket.Chat)
+   * Bao gồm: DMs, Groups, Channels
+   * GET /api/integrations/rocket/user/{userId}/rooms
+   */
+  async getUserRooms(userId: number): Promise<GetUserRoomsResponse> {
+    const endpoint = this.endpoints.getUserRooms.replace('{userId}', userId.toString());
+    return apiClient.get(endpoint);
   }
 
   // ===== ROOM MANAGEMENT =====
@@ -218,18 +230,21 @@ class RocketChatService {
   }
 
   /**
-   * Lấy lịch sử tin nhắn
-   * GET /api/integrations/rocket/room/{rocketRoomId}/messages?pageSize=100&pageNumber=1
+   * Lấy lịch sử tin nhắn (real-time từ Rocket.Chat)
+   * GET /api/integrations/rocket/room/{rocketRoomId}/messages?roomType=group&count=50&offset=0
    */
   async getMessages(
     rocketRoomId: string,
-    pagination?: PaginationParams
-  ): Promise<PaginatedResponse<ChatMessage>> {
+    roomType: string = 'group',
+    count: number = 50,
+    offset: number = 0
+  ): Promise<{ success: boolean; messages: any[] }> {
     const endpoint = this.endpoints.getMessages.replace('{rocketRoomId}', rocketRoomId);
     return apiClient.get(endpoint, {
       params: {
-        pageSize: pagination?.pageSize || 100,
-        pageNumber: pagination?.pageNumber || 1,
+        roomType,
+        count,
+        offset,
       },
     });
   }

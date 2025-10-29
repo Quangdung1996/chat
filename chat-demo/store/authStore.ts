@@ -7,10 +7,15 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface User {
+  id: number; // userId from API
   username: string;
-  userId?: number;
-  fullName?: string;
-  email?: string;
+  displayName?: string;
+  emailAddress?: string;
+  profilePicturePath?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  uniqueId?: string;
   roles?: string[];
 }
 

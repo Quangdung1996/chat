@@ -115,19 +115,39 @@ class AuthService {
   }
 
   /**
-   * Get user info từ token (nếu backend support)
+   * Get user info từ token
    */
   async getUserInfo(token: string): Promise<any> {
     try {
-      const response = await axios.get(`${API_CONFIG.baseURL}/api/user/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.data;
+      const response = await axios.get(
+        `${API_CONFIG.baseURL}${API_CONFIG.endpoints.auth.userInfo}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      // API returns { Data: { ... }, StatusCode, Msg }
+      if (response.data && response.data.Data) {
+        const userData = response.data.Data;
+        return {
+          id: parseInt(userData.Id, 10), // Convert string to number
+          username: userData.Username,
+          displayName: userData.DisplayName,
+          emailAddress: userData.EmailAddress,
+          profilePicturePath: userData.ProfilePicturePath,
+          firstName: userData.FirstName,
+          lastName: userData.LastName,
+          middleName: userData.MiddleName,
+          uniqueId: userData.UniqueId,
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Get user info error:', error);
-      return null;
+      throw new Error('Không thể lấy thông tin người dùng');
     }
   }
 }

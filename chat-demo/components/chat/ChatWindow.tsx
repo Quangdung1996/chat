@@ -4,18 +4,26 @@ import { useState, useEffect, useRef } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
-import type { Room, ChatMessage, SendMessageRequest } from '@/types/rocketchat';
+import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
 
 interface ChatWindowProps {
-  room: Room;
+  room: UserSubscription;
 }
 
 export default function ChatWindow({ room }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Determine room type for API calls
+  const getRoomType = () => {
+    if (room.type === 'd') return 'dm';
+    if (room.type === 'p') return 'group';
+    if (room.type === 'c') return 'channel';
+    return 'group';
+  };
 
   useEffect(() => {
     if (room) {
@@ -24,7 +32,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
       const interval = setInterval(loadMessages, 5000);
       return () => clearInterval(interval);
     }
-  }, [room.rocketRoomId]);
+  }, [room.roomId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -36,12 +44,14 @@ export default function ChatWindow({ room }: ChatWindowProps) {
 
   const loadMessages = async () => {
     try {
-      const response = await rocketChatService.getMessages(room.rocketRoomId, {
-        pageNumber: 1,
-        pageSize: 100,
-      });
-      if (response.success && response.data) {
-        setMessages(response.data || []);
+      const response = await rocketChatService.getMessages(
+        room.roomId,
+        getRoomType(),
+        50,
+        0
+      );
+      if (response.success && response.messages) {
+        setMessages(response.messages || []);
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -55,7 +65,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
     setSending(true);
     try {
       const request: SendMessageRequest = {
-        roomId: room.rocketRoomId,
+        roomId: room.roomId,
         text: messageText.trim(),
       };
       const response = await rocketChatService.sendMessage(request);
@@ -111,14 +121,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
 
       {/* Message Input */}
       <div className="border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        {room.isReadOnly ? (
-          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-            <p className="text-sm">
-              📢 Phòng này ở chế độ chỉ đọc. Chỉ owner/moderator mới có thể gửi tin nhắn.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+        <form onSubmit={handleSendMessage} className="flex items-end gap-2">
             {/* Emoji Button */}
             <button
               type="button"
@@ -162,7 +165,6 @@ export default function ChatWindow({ room }: ChatWindowProps) {
               )}
             </button>
           </form>
-        )}
       </div>
     </div>
   );

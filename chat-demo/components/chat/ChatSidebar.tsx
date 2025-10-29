@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
-import type { Room } from '@/types/rocketchat';
+import type { UserSubscription } from '@/types/rocketchat';
 
 interface ChatSidebarProps {
-  selectedRoom: Room | null;
-  onSelectRoom: (room: Room) => void;
+  selectedRoom: UserSubscription | null;
+  onSelectRoom: (room: UserSubscription) => void;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -19,21 +20,30 @@ export default function ChatSidebar({
   isMobileOpen,
   onCloseMobile,
 }: ChatSidebarProps) {
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const user = useAuthStore((state) => state.user);
+  const [rooms, setRooms] = useState<UserSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    loadRooms();
-  }, []);
+    if (user?.id) {
+      loadRooms();
+    }
+  }, [user?.id]);
 
   const loadRooms = async () => {
+    if (!user?.id) {
+      console.warn('User ID not available');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await rocketChatService.getRooms({}, { pageNumber: 1, pageSize: 100 });
-      if (response.success && response.data) {
-        setRooms(response.data || []);
+      const response = await rocketChatService.getUserRooms(user.id);
+      if (response.success && response.rooms) {
+        setRooms(response.rooms || []);
       }
     } catch (error) {
       console.error('Failed to load rooms:', error);
@@ -44,7 +54,8 @@ export default function ChatSidebar({
   };
 
   const filteredRooms = (rooms || []).filter((room) =>
-    room.roomName?.toLowerCase().includes(searchQuery.toLowerCase())
+    room.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    room.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -119,50 +130,69 @@ export default function ChatSidebar({
             </div>
           ) : (
             <div className="divide-y dark:divide-gray-700">
-              {filteredRooms.map((room) => (
-                <button
-                  key={room.rocketRoomId}
-                  onClick={() => {
-                    onSelectRoom(room);
-                    onCloseMobile();
-                  }}
-                  className={`
-                    w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-                    ${selectedRoom?.rocketRoomId === room.rocketRoomId ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Room Icon */}
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl">
-                      {room.roomType === 'group' ? '🔒' : '📢'}
-                    </div>
+              {filteredRooms.map((room) => {
+                // Determine room icon based on type
+                const getRoomIcon = () => {
+                  if (room.type === 'd') return '💬'; // Direct Message
+                  if (room.type === 'p') return '🔒'; // Private Group
+                  if (room.type === 'c') return '📢'; // Public Channel
+                  return '💬';
+                };
 
-                    {/* Room Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                          {room.roomName}
-                        </h3>
+                const displayName = room.fullName || room.name;
+                const hasUnread = room.unreadCount > 0;
+
+                return (
+                  <button
+                    key={room.id}
+                    onClick={() => {
+                      onSelectRoom(room);
+                      onCloseMobile();
+                    }}
+                    className={`
+                      w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                      ${selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
+                      ${hasUnread ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}
+                    `}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Room Icon */}
+                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl">
+                        {getRoomIcon()}
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {room.groupCode}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {room.isReadOnly && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">
-                            Read-only
-                          </span>
-                        )}
-                        {room.isArchived && (
-                          <span className="text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400 px-2 py-0.5 rounded">
-                            Archived
-                          </span>
-                        )}
+
+                      {/* Room Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`font-semibold text-gray-900 dark:text-white truncate ${hasUnread ? 'font-bold' : ''}`}>
+                            {displayName}
+                          </h3>
+                          {hasUnread && (
+                            <span className="ml-2 flex-shrink-0 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                              {room.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {room.type === 'd' ? 'Direct Message' : room.type === 'p' ? 'Private Group' : 'Public Channel'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {room.alert && (
+                            <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded">
+                              🔔 Alert
+                            </span>
+                          )}
+                          {room.open && (
+                            <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">
+                              ✅ Active
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

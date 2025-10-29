@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
-import type { Room, RoomMember } from '@/types/rocketchat';
+import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 
 interface RoomHeaderProps {
-  room: Room;
+  room: UserSubscription;
   onRefresh: () => void;
 }
 
@@ -17,13 +17,17 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  // TODO: getRoomMembers needs to be updated to accept roomId instead of roomMappingId
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
-      const response = await rocketChatService.getRoomMembers(room.rocketRoomId);
-      if (response.success && response.data) {
-        setMembers(response.data || []);
-      }
+      // This API call may need to be updated
+      // const response = await rocketChatService.getRoomMembers(room.roomId);
+      // if (response.success && response.data) {
+      //   setMembers(response.data || []);
+      // }
+      console.warn('getRoomMembers API needs to be updated for UserSubscription');
+      setMembers([]);
     } catch (error) {
       console.error('Failed to load members:', error);
     } finally {
@@ -44,11 +48,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           {/* Room Info */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-lg">
-              {room.roomType === 'group' ? '🔒' : '📢'}
+              {room.type === 'd' ? '💬' : room.type === 'p' ? '🔒' : '📢'}
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {room.roomName}
+                {room.fullName || room.name}
               </h2>
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <button
@@ -58,9 +62,9 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   <span>👥</span>
                   <span>{members.length} thành viên</span>
                 </button>
-                {room.isReadOnly && (
-                  <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">
-                    📢 Chỉ đọc
+                {room.unreadCount > 0 && (
+                  <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded">
+                    {room.unreadCount} chưa đọc
                   </span>
                 )}
               </div>
@@ -108,7 +112,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
       <InviteMembersModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        roomId={room.rocketRoomId}
+        roomId={room.roomId}
         onSuccess={() => {
           loadMembers();
           onRefresh();

@@ -4,10 +4,10 @@ import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
-import type { Room } from '@/types/rocketchat';
+import type { UserSubscription } from '@/types/rocketchat';
 
 export default function Home() {
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<UserSubscription | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (

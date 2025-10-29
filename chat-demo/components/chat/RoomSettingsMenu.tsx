@@ -2,23 +2,30 @@
 
 import { useState } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
-import type { Room } from '@/types/rocketchat';
+import type { UserSubscription } from '@/types/rocketchat';
 
 interface RoomSettingsMenuProps {
-  room: Room;
+  room: UserSubscription;
   onUpdate: () => void;
 }
 
 export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuProps) {
+  // Don't show settings for DMs
+  if (room.type === 'd') {
+    return null;
+  }
+
   const [showMenu, setShowMenu] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const roomType = room.type === 'p' ? 'group' : 'channel';
+
   const handleRename = async (newName: string) => {
     setLoading(true);
     try {
-      await rocketChatService.renameRoom(room.rocketRoomId, newName);
+      await rocketChatService.renameRoom(room.roomId, newName, roomType);
       onUpdate();
       setShowRenameModal(false);
     } catch (error) {
@@ -31,7 +38,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
   const handleArchive = async () => {
     setLoading(true);
     try {
-      await rocketChatService.archiveRoom(room.rocketRoomId);
+      await rocketChatService.archiveRoom(room.roomId, roomType);
       onUpdate();
       setShowMenu(false);
     } catch (error) {
@@ -44,7 +51,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await rocketChatService.deleteRoom(room.rocketRoomId, true);
+      await rocketChatService.deleteRoom(room.roomId, roomType);
       onUpdate();
       setShowDeleteConfirm(false);
       setShowMenu(false);
@@ -55,10 +62,10 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     }
   };
 
-  const handleToggleReadOnly = async () => {
+  const handleToggleReadOnly = async (announcementOnly: boolean) => {
     setLoading(true);
     try {
-      await rocketChatService.setAnnouncementMode(room.rocketRoomId, !room.isReadOnly);
+      await rocketChatService.setAnnouncementMode(room.roomId, announcementOnly, roomType);
       onUpdate();
       setShowMenu(false);
     } catch (error) {

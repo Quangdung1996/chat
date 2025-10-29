@@ -83,6 +83,30 @@ export interface RoomFilter {
   roomType?: string;
 }
 
+// User's Room Subscription (from Rocket.Chat real-time)
+export interface UserSubscription {
+  id: string;
+  roomId: string;
+  name: string;
+  fullName: string;
+  type: string; // "d" = DM, "p" = private group, "c" = public channel
+  user: {
+    id: string;
+    username: string;
+    name: string;
+  };
+  unreadCount: number;
+  alert: boolean;
+  open: boolean;
+}
+
+export interface GetUserRoomsResponse {
+  success: boolean;
+  userId: number;
+  count: number;
+  rooms: UserSubscription[];
+}
+
 // ===== MEMBER TYPES =====
 export interface RoomMember {
   id: number;

@@ -22,23 +22,24 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Gọi OAuth2 token endpoint
+      // Step 1: Get OAuth2 token
       const tokenResponse = await authService.login(formData.username, formData.password);
 
-      // Lưu token vào store
+      // Step 2: Get user info from API
+      const userInfo = await authService.getUserInfo(tokenResponse.access_token);
+      
+      if (!userInfo) {
+        throw new Error('Không thể lấy thông tin người dùng');
+      }
+
+      // Step 3: Save token + user info to store
       setAuth(
         tokenResponse.access_token,
         tokenResponse.refresh_token,
-        {
-          username: formData.username,
-          userId: tokenResponse.userId,
-          fullName: tokenResponse.fullName,
-          email: tokenResponse.email,
-          roles: tokenResponse.roles,
-        }
+        userInfo
       );
 
-      // Redirect về trang chủ
+      // Step 4: Redirect to home
       router.push('/');
     } catch (err) {
       setError((err as Error).message);
