@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
@@ -67,7 +68,7 @@ namespace SourceAPI.Services.RocketChat
                 var createRequest = new CreateUserRequest
                 {
                     Email = email,
-                    Name = fullName,
+                    Name = string.IsNullOrEmpty(fullName) ? username : fullName,
                     Username = username,
                     Password = password,
                     Verified = true,
@@ -81,8 +82,14 @@ namespace SourceAPI.Services.RocketChat
                 var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/users.create");
                 request.Headers.Add("X-Auth-Token", token.AuthToken);
                 request.Headers.Add("X-User-Id", token.UserId);
+                var payload = JsonConvert.SerializeObject(createRequest, new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() },
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+
                 request.Content = new StringContent(
-                    JsonConvert.SerializeObject(createRequest),
+                    payload,
                     Encoding.UTF8,
                     "application/json"
                 );
@@ -128,10 +135,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-08: Sync user with Rocket.Chat
-        /// DoD: persist mapping; bắt lỗi có ngữ nghĩa
-        /// </summary>
         public async Task<SyncUserResponse> SyncUserAsync(int userId, string username, string fullName, string? email = null)
         {
             try
