@@ -5,14 +5,14 @@
 
 export const API_CONFIG = {
   // URL của backend API
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
-  
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:12391',
+
   // Timeout cho API requests (ms)
   timeout: 30000,
-  
+
   // API Key cho Rocket.Chat endpoints
   apiKey: process.env.NEXT_PUBLIC_ROCKET_API_KEY || 'your-api-key-here',
-  
+
   // Endpoints
   endpoints: {
     auth: {
@@ -27,7 +27,7 @@ export const API_CONFIG = {
       // User Management
       getUsers: '/api/integrations/rocket/users',
       getUserInfo: '/api/integrations/rocket/user/{userId}/info',
-      
+
       // Room Management
       createGroup: '/api/integrations/rocket/create-group',
       listGroups: '/api/integrations/rocket/groups',
@@ -36,7 +36,7 @@ export const API_CONFIG = {
       deleteRoom: '/api/integrations/rocket/room/{roomId}',
       setAnnouncementMode: '/api/integrations/rocket/room/{roomId}/announcement-mode',
       setTopic: '/api/integrations/rocket/room/{roomId}/topic',
-      
+
       // Member Management
       addMember: '/api/integrations/rocket/room/{roomId}/add-member',
       addMembers: '/api/integrations/rocket/room/{roomId}/add-members',
@@ -45,11 +45,11 @@ export const API_CONFIG = {
       removeModerator: '/api/integrations/rocket/room/{roomId}/moderator/{rocketUserId}',
       addOwner: '/api/integrations/rocket/room/{roomId}/owner/{rocketUserId}',
       getRoomMembers: '/api/integrations/rocket/room/{roomMappingId}/members',
-      
+
       // Messaging
       sendMessage: '/api/integrations/rocket/send',
       getMessages: '/api/integrations/rocket/room/{rocketRoomId}/messages',
-      
+
       // Webhooks
       webhook: '/api/webhooks/rocketchat',
     }

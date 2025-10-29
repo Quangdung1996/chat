@@ -155,7 +155,7 @@ namespace SourceAPI.Services.RocketChat
                         ActiveStatus = true
                     };
                     var activeResponse = await _rocketChatApi.SetUserActiveStatusAsync(setActiveRequest);
-                    
+
                     if (activeResponse != null && activeResponse.Success)
                     {
                         _logger.LogInformation($"Successfully set user {username} as active in Rocket.Chat");
@@ -214,6 +214,17 @@ namespace SourceAPI.Services.RocketChat
                     throw new Exception($"Failed to create/get user in Rocket.Chat: {createResult.Error}");
                 }
 
+                if (createResult.IsExistingUser)
+                {
+                    return new SyncUserResponse
+                    {
+                        UserId = userId,
+                        RocketUserId = createResult.User.Id,
+                        Username = createResult.User.Username,
+                        IsNewUser = false,
+                        Message = "User already synced"
+                    };
+                }
                 // Save mapping to database
                 // Only save password if user was newly created
                 var metadata = new
@@ -249,8 +260,8 @@ namespace SourceAPI.Services.RocketChat
                     RocketUserId = createResult.User.Id,
                     Username = createResult.User.Username,
                     IsNewUser = !createResult.IsExistingUser, // True if newly created, False if existed
-                    Message = createResult.IsExistingUser 
-                        ? "Existing user synced successfully" 
+                    Message = createResult.IsExistingUser
+                        ? "Existing user synced successfully"
                         : "User created and synced successfully"
                 };
             }
