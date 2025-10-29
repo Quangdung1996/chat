@@ -5,11 +5,11 @@
 -- =====================================================
 
 -- TODO: CUSTOMIZE procedure này theo cấu trúc DB của bạn
--- Sử dụng table UserLogin có đủ các fields:
+-- Sử dụng table dbo.UserLogin có các fields:
 -- - Id (UserId)
 -- - Username (from OAuth2 provider - REQUIRED)
 -- - EmailAddress (optional - có thể null)
--- - FullName
+-- - FirstName, LastName (concat để tạo FullName)
 -- - IsActive, IsDeleted
 
 -- OPTION 1: PostgreSQL Function (với Username từ UserLogin)
@@ -21,16 +21,16 @@ DECLARE
     v_result TEXT;
 BEGIN
     -- Lấy tất cả users active mà chưa có trong UserRocketChatMapping
-    -- Query trực tiếp từ UserLogin (đã có đủ Username, Email, FullName)
+    -- Query trực tiếp từ dbo.UserLogin (đã có đủ Username, Email, FirstName, LastName)
     SELECT json_agg(
         json_build_object(
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),  -- Email có thể null
-            'FullName', u."FullName",
+            'FullName', TRIM(CONCAT(u."FirstName", ' ', u."LastName")),  -- Concat FirstName + LastName
             'Username', u."Username"  -- Username từ UserLogin (REQUIRED)
         )
     )::TEXT INTO v_result
-    FROM "UserLogin" u
+    FROM dbo."UserLogin" u
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
         AND u."Username" IS NOT NULL  -- Chỉ lấy users có username
@@ -60,11 +60,11 @@ BEGIN
         json_build_object(
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),
-            'FullName', u."FullName",
+            'FullName', TRIM(CONCAT(u."FirstName", ' ', u."LastName")),  -- Concat FirstName + LastName
             'Username', u."Username"  -- Username từ UserLogin
         )
     )::TEXT INTO v_result
-    FROM "UserLogin" u
+    FROM dbo."UserLogin" u
     WHERE u."IsActive" = true
         AND u."IsDeleted" = false
         AND u."Username" IS NOT NULL;
@@ -85,15 +85,16 @@ $$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- Notes:
--- 1. Query trực tiếp từ table "UserLogin" (đã có đủ tất cả fields)
+-- 1. Query trực tiếp từ table dbo.UserLogin (đã có đủ tất cả fields)
 -- 2. EmailAddress có thể NULL - code sẽ tự generate fake email: username@noemail.local
 -- 3. Username từ UserLogin là BẮT BUỘC
--- 4. Có thể thêm filters: department, role, created date, etc.
--- 5. Column names trong UserLogin table:
+-- 4. FullName = CONCAT(FirstName, ' ', LastName)
+-- 5. Có thể thêm filters: department, role, created date, etc.
+-- 6. Column names trong dbo.UserLogin table:
 --    - Id (UserId)
 --    - Username (from OAuth2 provider)
 --    - EmailAddress (optional)
---    - FullName
+--    - FirstName, LastName (concat để tạo FullName)
 --    - IsActive, IsDeleted
 -- =====================================================
 
