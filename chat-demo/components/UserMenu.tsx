@@ -28,7 +28,8 @@ export default function UserMenu() {
 
   if (!user) return null;
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -37,6 +38,9 @@ export default function UserMenu() {
       .toUpperCase();
   };
 
+  const displayName = user.displayName || user.username;
+  const avatarUrl = user.profilePicturePath;
+
   return (
     <div className="relative">
       {/* User Avatar Button */}
@@ -44,12 +48,20 @@ export default function UserMenu() {
         onClick={() => setShowMenu(!showMenu)}
         className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-          {getInitials(user.fullName || user.username)}
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={displayName}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+            {getInitials(displayName)}
+          </div>
+        )}
         <div className="hidden lg:block text-left">
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {user.fullName || user.username}
+            {displayName}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             @{user.username}
@@ -78,10 +90,13 @@ export default function UserMenu() {
           <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-20">
             <div className="p-4 border-b dark:border-gray-700">
               <p className="font-semibold text-gray-900 dark:text-white">
-                {user.fullName || user.username}
+                {displayName}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {user.email || `@${user.username}`}
+                {user.emailAddress || `@${user.username}`}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                ID: {user.id}
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 
 interface Contact {
@@ -15,6 +16,7 @@ interface Contact {
 }
 
 export default function ContactsPage() {
+  const user = useAuthStore((state) => state.user);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,12 +77,13 @@ export default function ContactsPage() {
     try {
       console.log('Starting chat with:', contact.fullName);
       
-      // TODO: Lấy currentUserId từ auth context sau khi login
-      // Tạm thời hardcode để test
-      const currentUserId = 1; // Replace with actual logged-in user ID
+      if (!user?.id) {
+        alert('Bạn cần đăng nhập để sử dụng tính năng này!');
+        return;
+      }
       
       // Tạo/lấy DM room
-      const response = await rocketChatService.createDirectMessage(currentUserId, contact.username);
+      const response = await rocketChatService.createDirectMessage(user.id, contact.username);
       
       if (response.success && response.roomId) {
         // Navigate đến trang chat
