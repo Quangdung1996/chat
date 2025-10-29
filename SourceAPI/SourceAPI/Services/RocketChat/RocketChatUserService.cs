@@ -28,7 +28,7 @@ namespace SourceAPI.Services.RocketChat
         }
 
         /// <summary>
-        /// T-08: Create user in Rocket.Chat
+        /// T-08: Create user in Rocket.Chat (public API - checks for duplicates)
         /// DoD: Gọi users.create; trả RocketUserId/Username
         /// </summary>
         public async Task<CreateUserResponse> CreateUserAsync(
@@ -45,12 +45,64 @@ namespace SourceAPI.Services.RocketChat
                     throw new ArgumentException("Username is required", nameof(username));
                 }
 
+                // Check if user already exists
+                var existingUser = await _rocketChatApi.GetUserInfoAsync(username);
+                if (existingUser != null && existingUser.Success)
+                {
+                    _logger.LogInformation($"User {username} already exists in Rocket.Chat");
+                    return new CreateUserResponse
+                    {
+                        Success = true,
+                        User = new UserData
+                        {
+                            Active = true,
+                            CreatedAt = existingUser.User.CreatedAt,
+                            Email = email ?? existingUser.User.Email,
+                            Id = existingUser.User.Id,
+                            Name = existingUser.User.Name,
+                            Username = existingUser.User.Username
+                        }
+                    };
+                }
+
+                // User doesn't exist, create new one
+                return await CreateUserInternalAsync(username, fullName, email, password);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Exception creating user in Rocket.Chat: {ex.Message}");
+
+                return new CreateUserResponse
+                {
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Internal method to create user without duplicate check
+        /// Used by SyncUserAsync after it has already checked for duplicates
+        /// </summary>
+        private async Task<CreateUserResponse> CreateUserInternalAsync(
+            string username,
+            string fullName,
+            string? email = null,
+            string? password = null)
+        {
+            try
+            {
                 // Generate fake email if not provided
-                // RocketChat requires email, but we can use fake one for users without email
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     email = $"{username}@noemail.local";
                     _logger.LogInformation($"Generated fake email for user {username}: {email}");
+                }
+
+                // Generate password if not provided
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    password = PasswordGenerator.GenerateStrongPassword();
                 }
 
                 var createRequest = new CreateUserRequest
@@ -63,24 +115,6 @@ namespace SourceAPI.Services.RocketChat
                     SendWelcomeEmail = false,
                     RequirePasswordChange = false
                 };
-
-                var user = await _rocketChatApi.GetUserInfoAsync(username);
-                if (user != null && user.Success)
-                {
-                    return new CreateUserResponse
-                    {
-                        Success = true,
-                        User = new UserData
-                        {
-                            Active = true,
-                            CreatedAt = user.User.CreatedAt,
-                            Email = email,
-                            Id = user.User.Id,
-                            Name = user.User.Name,
-                            Username = user.User.Username
-                        }
-                    };
-                }
 
                 // Use Refit - DelegatingHandler auto adds auth headers & logging
                 var createResponse = await _rocketChatApi.CreateUserAsync(createRequest);
@@ -115,7 +149,7 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                // Check if mapping already exists
+                // Check if mapping already exists in local DB
                 var existingMapping = await GetMappingAsync(userId);
 
                 if (existingMapping != null)
@@ -131,29 +165,55 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
+                // Check if user already exists in Rocket.Chat
+                var existingUser = await _rocketChatApi.GetUserInfoAsync(username);
+                
+                string? password = null;
+                bool isNewUser = false;
+                string rocketUserId;
+                string rocketUsername;
 
-                var password = PasswordGenerator.GenerateStrongPassword();
-                var createResult = await CreateUserAsync(username, fullName, email, password);
-
-                if (!createResult.Success)
+                if (existingUser != null && existingUser.Success)
                 {
-                    throw new Exception($"Failed to create user in Rocket.Chat: {createResult.Error}");
+                    // User đã tồn tại trong Rocket.Chat → chỉ tạo mapping, KHÔNG lưu password
+                    _logger.LogInformation($"User {username} already exists in Rocket.Chat, creating mapping only");
+                    rocketUserId = existingUser.User.Id;
+                    rocketUsername = existingUser.User.Username;
+                    isNewUser = false;
+                }
+                else
+                {
+                    // User chưa tồn tại → tạo mới với password
+                    _logger.LogInformation($"Creating new user {username} in Rocket.Chat");
+                    password = PasswordGenerator.GenerateStrongPassword();
+                    
+                    var createResult = await CreateUserInternalAsync(username, fullName, email, password);
+                    
+                    if (!createResult.Success)
+                    {
+                        throw new Exception($"Failed to create user in Rocket.Chat: {createResult.Error}");
+                    }
+                    
+                    rocketUserId = createResult.User.Id;
+                    rocketUsername = createResult.User.Username;
+                    isNewUser = true;
                 }
 
-                // Save mapping to database using Repository
-                // Note: Password is stored encrypted/hashed in Metadata for future auto-login
+                // Save mapping to database
+                // Chỉ lưu password nếu là user mới (vừa tạo)
                 var metadata = new
                 {
-                    password = password, // TODO: Encrypt this before storing
+                    password = password, // null nếu user đã tồn tại, có giá trị nếu mới tạo
                     createdAt = DateTime.UtcNow,
-                    source = "auto-sync"
+                    source = "auto-sync",
+                    isNewUser = isNewUser
                 };
 
                 var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
                 {
                     UserId = userId,
-                    RocketUserId = createResult.User.Id,
-                    RocketUsername = createResult.User.Username,
+                    RocketUserId = rocketUserId,
+                    RocketUsername = rocketUsername,
                     Email = email ?? string.Empty,
                     FullName = fullName,
                     Metadata = Newtonsoft.Json.JsonConvert.SerializeObject(metadata),
@@ -165,15 +225,15 @@ namespace SourceAPI.Services.RocketChat
                     _logger.LogWarning($"Failed to save user mapping for user {userId}");
                 }
 
-                _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {createResult.User.Id}");
+                _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {rocketUserId}");
 
                 return new SyncUserResponse
                 {
                     UserId = userId,
-                    RocketUserId = createResult.User.Id,
-                    Username = createResult.User.Username,
-                    IsNewUser = true,
-                    Message = "User synced successfully"
+                    RocketUserId = rocketUserId,
+                    Username = rocketUsername,
+                    IsNewUser = isNewUser,
+                    Message = isNewUser ? "User created and synced successfully" : "Existing user synced successfully"
                 };
             }
             catch (Exception ex)

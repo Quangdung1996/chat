@@ -564,7 +564,7 @@ BEGIN
     v_deletion_reason := p_json::json->>'DeletionReason';
     v_deleted_by := p_json::json->>'DeletedBy';
     
-    UPDATE chat."ChatMessageLog"
+    UPDATE dbo."ChatMessageLog"
     SET "IsDeleted" = true,
         "IsAutoDeleted" = v_is_auto_deleted,
         "DeletionReason" = v_deletion_reason,
