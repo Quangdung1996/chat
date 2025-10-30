@@ -108,7 +108,7 @@ export default function ChatSidebar({
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-md text-sm focus:ring-2 focus:ring-purple-500 dark:text-white placeholder-gray-500"
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-md text-sm focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-gray-500"
             />
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function ChatSidebar({
                       }}
                       className={`
                         w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                        ${isActive ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-purple-600' : ''}
+                        ${isActive ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-blue-600' : ''}
                       `}
                     >
                       <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export default function ChatSidebar({
                               {displayName}
                             </span>
                             {hasUnread && (
-                              <span className="flex-shrink-0 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                              <span className="flex-shrink-0 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
                                 {room.unreadCount}
                               </span>
                             )}
