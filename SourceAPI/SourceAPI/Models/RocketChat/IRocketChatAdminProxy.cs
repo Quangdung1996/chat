@@ -146,12 +146,17 @@ namespace SourceAPI.Models.RocketChat
         public DateTime Ts { get; set; } // Timestamp
         [JsonProperty("u")]
         public RoomMessageUser U { get; set; } = new(); // User info
+        [JsonProperty("isCurrentUser")]
+        public bool IsCurrentUser { get; set; } = false;
     }
 
     public class RoomMessageUser
     {
+        [JsonProperty("_id")]
         public string Id { get; set; } = string.Empty;
+        [JsonProperty("username")]
         public string Username { get; set; } = string.Empty;
+        [JsonProperty("name")]
         public string Name { get; set; } = string.Empty;
     }
 }

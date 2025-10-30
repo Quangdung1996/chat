@@ -6,6 +6,7 @@ using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -600,7 +601,14 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 _logger.LogInformation($"Retrieved {response.Messages.Count} messages from room {roomId}");
-                return response.Messages;
+                return response.Messages.OrderBy(x => x.Ts).Select(x =>
+                {
+                    if (x.U.Username == mapping.RocketUsername)
+                    {
+                        x.IsCurrentUser = true;
+                    }
+                    return x;
+                }).ToList();
             }
             catch (Exception ex)
             {
