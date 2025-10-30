@@ -12,7 +12,7 @@ namespace SourceAPI.Core.Repository
     public class RocketChatRepository : EzyEFStoreRepository
     {
         // =====================================================
-        // UserRocketChatMapping Operations (Read-only)
+        // Rocket_UserMapping Operations (Read-only)
         // =====================================================
 
         /// <summary>

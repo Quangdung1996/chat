@@ -249,7 +249,7 @@ namespace SourceAPI.Services.RocketChat
                 // Không dùng stored procedure nữa
                 // Example:
                 // await _dbContext.Database.ExecuteSqlRawAsync(
-                //     @"INSERT INTO dbo.""UserRocketChatMapping"" 
+                //     @"INSERT INTO dbo.""Rocket_UserMapping"" 
                 //       (""UserId"", ""RocketUserId"", ""RocketUsername"", ""Email"", ""FullName"", ""CreatedAt"", ""LastSyncAt"", ""Metadata"")
                 //       VALUES ({0}, {1}, {2}, {3}, {4}, NOW(), NOW(), {5})
                 //       ON CONFLICT (""UserId"", ""RocketUserId"") DO NOTHING",
@@ -308,7 +308,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get mapping by internal user ID
         /// </summary>
-        public async Task<UserRocketChatMapping?> GetMappingAsync(int userId)
+        public async Task<RocketUserMapping?> GetMappingAsync(int userId)
         {
             try
             {
@@ -317,7 +317,7 @@ namespace SourceAPI.Services.RocketChat
                 if (result == null)
                     return null;
 
-                return new UserRocketChatMapping
+                return new RocketUserMapping
                 {
                     Id = result.Id,
                     UserId = result.UserId,
@@ -341,7 +341,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get mapping by Rocket.Chat user ID
         /// </summary>
-        public async Task<UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId)
+        public async Task<RocketUserMapping?> GetMappingByRocketUserIdAsync(string rocketUserId)
         {
             try
             {
@@ -350,7 +350,7 @@ namespace SourceAPI.Services.RocketChat
                 if (result == null)
                     return null;
 
-                return new UserRocketChatMapping
+                return new RocketUserMapping
                 {
                     Id = result.Id,
                     UserId = result.UserId,
@@ -409,7 +409,7 @@ namespace SourceAPI.Services.RocketChat
                 // Không dùng stored procedure nữa
                 // Example:
                 // await _dbContext.Database.ExecuteSqlRawAsync(
-                //     @"UPDATE dbo.""UserRocketChatMapping"" 
+                //     @"UPDATE dbo.""Rocket_UserMapping"" 
                 //       SET ""IsActive"" = {0}, ""LastSyncAt"" = NOW()
                 //       WHERE ""UserId"" = {1}",
                 //     isActive, userId);

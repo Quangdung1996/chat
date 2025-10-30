@@ -46,14 +46,14 @@
 
 ### Đồng bộ người dùng
 
-- [ ] **T-06**: Migration bảng UserRocketChatMapping (1h)
-  - [ ] Tạo migration cho bảng `UserRocketChatMapping`
+- [ ] **T-06**: Migration bảng Rocket_UserMapping (1h)
+  - [ ] Tạo migration cho bảng `Rocket_UserMapping`
   - [ ] Thêm unique index trên (UserId, RocketUserId)
   - [ ] Test migrate/rollback
   - **DoD**: Tạo bảng mapping + unique index; chạy migrate/rollback ok
 
 - [ ] **T-07**: Model EF + cấu hình DbContext (1h)
-  - [ ] Entity class `UserRocketChatMapping`
+  - [ ] Entity class `RocketUserMapping`
   - [ ] Fluent API configuration
   - [ ] CRUD repository pattern
   - **DoD**: Entity + Fluent API hoàn chỉnh; CRUD cơ bản hoạt động
@@ -297,7 +297,7 @@ SourceAPI/
 │   │   └── DTOs/
 │   ├── Data/
 │   │   ├── Entities/
-│   │   │   ├── UserRocketChatMapping.cs
+│   │   │   ├── RocketUserMapping.cs
 │   │   │   ├── RoomMapping.cs
 │   │   │   ├── RoomMemberMapping.cs
 │   │   │   └── ChatMessageLog.cs

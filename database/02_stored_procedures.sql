@@ -9,7 +9,7 @@
 -- =====================================================
 
 -- =====================================================
--- UserRocketChatMapping Stored Procedures
+-- Rocket_UserMapping Stored Procedures
 -- =====================================================
 
 -- SP: Get user mapping by UserId
@@ -37,7 +37,7 @@ BEGIN
         'LastSyncAt', "LastSyncAt",
         'Metadata', "Metadata"
     )::TEXT INTO v_result
-    FROM dbo."UserRocketChatMapping"
+    FROM dbo."Rocket_UserMapping"
     WHERE "UserId" = v_user_id 
         AND "IsDeleted" = false
         AND "IsActive" = true
@@ -69,7 +69,7 @@ BEGIN
         'CreatedAt', "CreatedAt",
         'LastSyncAt', "LastSyncAt"
     )::TEXT INTO v_result
-    FROM dbo."UserRocketChatMapping"
+    FROM dbo."Rocket_UserMapping"
     WHERE "RocketUserId" = v_rocket_user_id 
         AND "IsDeleted" = false
     LIMIT 1;
@@ -97,7 +97,7 @@ BEGIN
             'LastSyncAt', "LastSyncAt"
         )
     )::TEXT INTO v_result
-    FROM dbo."UserRocketChatMapping"
+    FROM dbo."Rocket_UserMapping"
     WHERE "IsDeleted" = false
         AND "IsActive" = true
     ORDER BY "UserId";

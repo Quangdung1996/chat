@@ -9,7 +9,7 @@ namespace SourceAPI.Core.Data.Stores
     /// </summary>
     public enum ERocketChatStoredProcedureNames
     {
-        // UserRocketChatMapping procedures (read-only)
+        // Rocket_UserMapping procedures (read-only)
         sp_GetUserRocketMapping_ByUserId,
         sp_GetUserRocketMapping_ByRocketUserId,
         sp_GetUsersForRocketChatSync,

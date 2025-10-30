@@ -32,12 +32,12 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get mapping for internal user ID
         /// </summary>
-        Task<UserRocketChatMapping?> GetMappingAsync(int userId);
+        Task<RocketUserMapping?> GetMappingAsync(int userId);
 
         /// <summary>
         /// Get mapping by Rocket.Chat user ID
         /// </summary>
-        Task<UserRocketChatMapping?> GetMappingByRocketUserIdAsync(string rocketUserId);
+        Task<RocketUserMapping?> GetMappingByRocketUserIdAsync(string rocketUserId);
 
         /// <summary>
         /// Get users from Rocket.Chat directly (for directory/contacts)

@@ -25,7 +25,7 @@ namespace SourceAPI.Core.Data.RocketChatData
         public virtual int RoomMappingId { get; set; }
 
         /// <summary>
-        /// Reference to UserRocketChatMapping
+        /// Reference to Rocket_UserMapping
         /// </summary>
         public virtual int UserMappingId { get; set; }
 

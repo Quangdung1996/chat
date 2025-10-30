@@ -17,9 +17,9 @@ DROP FUNCTION IF EXISTS dbo."sp_GetAllActiveUsers"(TEXT) CASCADE;
 
 \echo '>>> Dropping tables...'
 
--- Drop UserRocketChatMapping table
-DROP TABLE IF EXISTS dbo."UserRocketChatMapping" CASCADE;
+-- Drop Rocket_UserMapping table
+DROP TABLE IF EXISTS dbo."Rocket_UserMapping" CASCADE;
 
 \echo '>>> Drop completed successfully!'
-\echo '>>> Chỉ còn bảng UserRocketChatMapping đã được xóa'
+\echo '>>> Chỉ còn bảng Rocket_UserMapping đã được xóa'
 \echo ''

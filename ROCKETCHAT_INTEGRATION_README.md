@@ -17,7 +17,7 @@ Dự án này implement tích hợp với Rocket.Chat để:
 SourceAPI/
 ├── Data/
 │   └── Entities/                    # Database entities
-│       ├── UserRocketChatMapping.cs
+│       ├── RocketUserMapping.cs
 │       ├── RoomMapping.cs
 │       ├── RoomMemberMapping.cs
 │       └── ChatMessageLog.cs
@@ -270,10 +270,10 @@ X-API-Key: your-api-key
 
 ## 📊 Database Schema
 
-### UserRocketChatMapping
+### Rocket_UserMapping
 
 ```sql
-CREATE TABLE UserRocketChatMapping (
+CREATE TABLE Rocket_UserMapping (
     Id INT PRIMARY KEY IDENTITY,
     UserId INT NOT NULL,
     RocketUserId NVARCHAR(50) NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE RoomMemberMapping (
     LeftAt DATETIME2,
     LastActivityAt DATETIME2,
     FOREIGN KEY (RoomMappingId) REFERENCES RoomMapping(Id),
-    FOREIGN KEY (UserMappingId) REFERENCES UserRocketChatMapping(Id)
+    FOREIGN KEY (UserMappingId) REFERENCES Rocket_UserMapping(Id)
 );
 ```
 
@@ -392,7 +392,7 @@ TODO: Add unit tests for:
 - [x] T-01: RocketChatAuthService (Login/Logout/Token/Validate)
 - [x] T-02: Token caching with auto-refresh
 - [x] T-03: Configuration + DI
-- [x] T-06: UserRocketChatMapping entity
+- [x] T-06: RocketUserMapping entity
 - [x] T-07: EF Model
 - [x] T-08: RocketChatUserService
 - [x] T-09: Username/Password generation

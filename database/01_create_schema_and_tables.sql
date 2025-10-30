@@ -11,10 +11,10 @@
 CREATE SCHEMA IF NOT EXISTS dbo;
 
 -- =====================================================
--- Table: dbo.UserRocketChatMapping
+-- Table: dbo.Rocket_UserMapping
 -- Purpose: Map internal users to Rocket.Chat users
 -- =====================================================
-CREATE TABLE IF NOT EXISTS dbo."UserRocketChatMapping" (
+CREATE TABLE IF NOT EXISTS dbo."Rocket_UserMapping" (
     "Id" SERIAL PRIMARY KEY,
     "UserId" INTEGER NOT NULL,
     "RocketUserId" VARCHAR(50) NOT NULL,
@@ -32,34 +32,34 @@ CREATE TABLE IF NOT EXISTS dbo."UserRocketChatMapping" (
     "Log_UpdatedBy" VARCHAR(100),
     
     -- Unique constraint for ON CONFLICT
-    CONSTRAINT "UQ_UserRocketMapping_UserId_RocketUserId" 
+    CONSTRAINT "UQ_Rocket_UserMapping_UserId_RocketUserId" 
         UNIQUE ("UserId", "RocketUserId")
 );
 
 -- Additional unique index (optional, for performance)
-CREATE UNIQUE INDEX IF NOT EXISTS "IX_UserRocketMapping_UserId_RocketUserId" 
-    ON dbo."UserRocketChatMapping"("UserId", "RocketUserId")
+CREATE UNIQUE INDEX IF NOT EXISTS "IX_Rocket_UserMapping_UserId_RocketUserId" 
+    ON dbo."Rocket_UserMapping"("UserId", "RocketUserId")
     WHERE "IsDeleted" = false;
 
 -- Index for quick lookup by RocketUserId
-CREATE INDEX IF NOT EXISTS "IX_UserRocketMapping_RocketUserId" 
-    ON dbo."UserRocketChatMapping"("RocketUserId");
+CREATE INDEX IF NOT EXISTS "IX_Rocket_UserMapping_RocketUserId" 
+    ON dbo."Rocket_UserMapping"("RocketUserId");
 
 -- Index for active users
-CREATE INDEX IF NOT EXISTS "IX_UserRocketMapping_IsActive" 
-    ON dbo."UserRocketChatMapping"("IsActive") WHERE "IsActive" = true;
+CREATE INDEX IF NOT EXISTS "IX_Rocket_UserMapping_IsActive" 
+    ON dbo."Rocket_UserMapping"("IsActive") WHERE "IsActive" = true;
 
-COMMENT ON TABLE dbo."UserRocketChatMapping" IS 'Maps internal system users to Rocket.Chat users';
-COMMENT ON COLUMN dbo."UserRocketChatMapping"."UserId" IS 'Internal system user ID';
-COMMENT ON COLUMN dbo."UserRocketChatMapping"."RocketUserId" IS 'Rocket.Chat user ID (_id)';
-COMMENT ON COLUMN dbo."UserRocketChatMapping"."RocketUsername" IS 'Rocket.Chat username';
+COMMENT ON TABLE dbo."Rocket_UserMapping" IS 'Maps internal system users to Rocket.Chat users';
+COMMENT ON COLUMN dbo."Rocket_UserMapping"."UserId" IS 'Internal system user ID';
+COMMENT ON COLUMN dbo."Rocket_UserMapping"."RocketUserId" IS 'Rocket.Chat user ID (_id)';
+COMMENT ON COLUMN dbo."Rocket_UserMapping"."RocketUsername" IS 'Rocket.Chat username';
 
 -- =====================================================
 -- Insert initial test data (optional)
 -- =====================================================
 
 -- Test admin user mapping (example)
--- INSERT INTO dbo."UserRocketChatMapping" 
+-- INSERT INTO dbo."Rocket_UserMapping" 
 --     ("UserId", "RocketUserId", "RocketUsername", "Email", "FullName")
 -- VALUES 
 --     (1, 'admin-rocket-id', 'admin', 'admin@example.com', 'System Admin')
@@ -82,7 +82,7 @@ COMMENT ON COLUMN dbo."UserRocketChatMapping"."RocketUsername" IS 'Rocket.Chat u
 \echo '======================================================'
 \echo ''
 \echo 'Tables created:'
-\echo '  ✓ UserRocketChatMapping - User mapping'
+\echo '  ✓ Rocket_UserMapping - User mapping'
 \echo ''
 \echo 'Data strategy:'
 \echo '  • Rooms: Query từ Rocket.Chat API (rooms.list, groups.list)'

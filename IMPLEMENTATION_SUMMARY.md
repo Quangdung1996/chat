@@ -18,7 +18,7 @@
 | T-01 | RocketChatAuthService | ✅ | `Services/RocketChat/RocketChatAuthService.cs` |
 | T-02 | Token cache + auto-refresh | ✅ | `Services/RocketChat/RocketChatAuthService.cs` |
 | T-03 | Configuration + DI | ✅ | `Extensions/RocketChatServiceExtensions.cs` |
-| T-06 | Database entity UserRocketChatMapping | ✅ | `Data/Entities/UserRocketChatMapping.cs` |
+| T-06 | Database entity RocketUserMapping | ✅ | `Data/Entities/RocketUserMapping.cs` |
 | T-07 | EF Model + DbContext config | ✅ | `Data/Entities/` |
 | T-08 | RocketChatUserService | ✅ | `Services/RocketChat/RocketChatUserService.cs` |
 | T-09 | Username/Password generation | ✅ | `Helpers/RocketChat/` |
@@ -87,7 +87,7 @@
 ```
 SourceAPI/
 ├── Data/Entities/                              # ✅ 4 entities
-│   ├── UserRocketChatMapping.cs
+│   ├── RocketUserMapping.cs
 │   ├── RoomMapping.cs
 │   ├── RoomMemberMapping.cs
 │   └── ChatMessageLog.cs
@@ -170,7 +170,7 @@ app.UseRocketChatApiKey();
 
 ### 4 tables được thiết kế:
 
-1. **UserRocketChatMapping** - Mapping giữa user nội bộ và Rocket.Chat
+1. **Rocket_UserMapping** - Mapping giữa user nội bộ và Rocket.Chat
 2. **RoomMapping** - Mapping cho rooms/groups
 3. **RoomMemberMapping** - Member của từng room với roles
 4. **ChatMessageLog** - Log tin nhắn (for compliance/audit)

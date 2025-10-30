@@ -19,7 +19,7 @@ RETURNS TEXT AS $$
 DECLARE
     v_result TEXT;
 BEGIN
-    -- Lấy tất cả users active mà chưa có trong UserRocketChatMapping
+    -- Lấy tất cả users active mà chưa có trong Rocket_UserMapping
     -- Query trực tiếp từ dbo.UserLogin (đã có đủ Username, Email, FirstName, LastName)
     SELECT json_agg(
         json_build_object(
@@ -33,7 +33,7 @@ BEGIN
     WHERE u."Username" IS NOT NULL  -- Chỉ lấy users có username
         AND NOT EXISTS (
             SELECT 1 
-            FROM dbo."UserRocketChatMapping" m
+            FROM dbo."Rocket_UserMapping" m
             WHERE m."UserId" = u."Id"
         );
     

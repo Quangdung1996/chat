@@ -86,8 +86,8 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 **Chạy SQL script sau trên database của bạn:**
 
 ```sql
--- UserRocketChatMapping
-CREATE TABLE UserRocketChatMapping (
+-- Rocket_UserMapping
+CREATE TABLE Rocket_UserMapping (
     Id INT PRIMARY KEY IDENTITY,
     UserId INT NOT NULL,
     RocketUserId NVARCHAR(50) NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE UserRocketChatMapping (
     Metadata NVARCHAR(1000)
 );
 
-CREATE UNIQUE INDEX IX_UserRocketMapping_UserId ON UserRocketChatMapping(UserId, RocketUserId);
+CREATE UNIQUE INDEX IX_Rocket_UserMapping_UserId ON Rocket_UserMapping(UserId, RocketUserId);
 
 -- RoomMapping
 CREATE TABLE RoomMapping (
@@ -132,7 +132,7 @@ CREATE TABLE RoomMemberMapping (
     LeftAt DATETIME2,
     LastActivityAt DATETIME2,
     FOREIGN KEY (RoomMappingId) REFERENCES RoomMapping(Id),
-    FOREIGN KEY (UserMappingId) REFERENCES UserRocketChatMapping(Id)
+    FOREIGN KEY (UserMappingId) REFERENCES Rocket_UserMapping(Id)
 );
 
 -- ChatMessageLog
