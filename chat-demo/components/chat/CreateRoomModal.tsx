@@ -279,7 +279,6 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                       >
                         <Checkbox
                           checked={selectedMembers.includes(user._id)}
-                          onCheckedChange={() => toggleMember(user._id)}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">
