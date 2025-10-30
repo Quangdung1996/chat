@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
+import { Search, Plus, X, ChevronDown } from 'lucide-react';
 import type { UserSubscription } from '@/types/rocketchat';
 
 interface ChatSidebarProps {
@@ -72,145 +73,135 @@ export default function ChatSidebar({
       <div
         className={`
           fixed lg:relative inset-y-0 left-0 z-50
-          w-80 bg-white dark:bg-gray-800 border-r dark:border-gray-700
+          w-80 bg-gray-50 dark:bg-gray-800 border-r dark:border-gray-700
           transform transition-transform duration-300 ease-in-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col
         `}
       >
         {/* Header */}
-        <div className="p-4 border-b dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              💬 Chat Demo
-            </h1>
-            <button
-              onClick={onCloseMobile}
-              className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400"
-            >
-              ✕
-            </button>
+        <div className="p-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Chat</h1>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="New chat"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Search */}
           <div className="relative">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm phòng..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:text-white"
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-md text-sm focus:ring-2 focus:ring-purple-500 dark:text-white placeholder-gray-500"
             />
-            <svg
-              className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
           </div>
         </div>
 
-        {/* Rooms List */}
+        {/* Rooms List - Teams Style */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500">
               <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full" />
-              <p className="mt-2 text-sm">Đang tải...</p>
+              <p className="mt-2 text-sm">Loading...</p>
             </div>
           ) : filteredRooms.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              <p className="text-sm">Không tìm thấy phòng nào</p>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="text-sm">No conversations found</p>
             </div>
           ) : (
-            <div className="divide-y dark:divide-gray-700">
-              {filteredRooms.map((room) => {
-                // Determine room icon based on type
-                const getRoomIcon = () => {
-                  if (room.type === 'd') return '💬'; // Direct Message
-                  if (room.type === 'p') return '🔒'; // Private Group
-                  if (room.type === 'c') return '📢'; // Public Channel
-                  return '💬';
-                };
+            <>
+              {/* Recent Section */}
+              <div className="px-4 py-2 bg-white dark:bg-gray-800">
+                <button className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  <ChevronDown className="w-4 h-4" />
+                  Recent
+                </button>
+              </div>
 
-                const displayName = room.fullName || room.name;
-                const hasUnread = room.unreadCount > 0;
+              {/* Conversations */}
+              <div className="bg-white dark:bg-gray-800">
+                {filteredRooms.map((room) => {
+                  const displayName = room.fullName || room.name;
+                  const hasUnread = room.unreadCount > 0;
+                  const isActive = selectedRoom?.id === room.id;
 
-                return (
-                  <button
-                    key={room.id}
-                    onClick={() => {
-                      onSelectRoom(room);
-                      onCloseMobile();
-                    }}
-                    className={`
-                      w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-                      ${selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                      ${hasUnread ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}
-                    `}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Room Icon */}
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl">
-                        {getRoomIcon()}
-                      </div>
+                  // Get initials for avatar
+                  const getInitials = (name: string) => {
+                    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                  };
 
-                      {/* Room Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className={`font-semibold text-gray-900 dark:text-white truncate ${hasUnread ? 'font-bold' : ''}`}>
-                            {displayName}
-                          </h3>
-                          {hasUnread && (
-                            <span className="ml-2 flex-shrink-0 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                              {room.unreadCount}
-                            </span>
+                  // Avatar color based on type
+                  const getAvatarColor = () => {
+                    if (room.type === 'd') return 'bg-gradient-to-br from-blue-400 to-blue-600';
+                    if (room.type === 'p') return 'bg-gradient-to-br from-purple-400 to-purple-600';
+                    return 'bg-gradient-to-br from-green-400 to-green-600';
+                  };
+
+                  return (
+                    <button
+                      key={room.id}
+                      onClick={() => {
+                        onSelectRoom(room);
+                        onCloseMobile();
+                      }}
+                      className={`
+                        w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                        ${isActive ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-purple-600' : ''}
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className={`relative flex-shrink-0 w-10 h-10 rounded-full ${getAvatarColor()} flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
+                          {getInitials(displayName)}
+                          {/* Online status (for DMs) */}
+                          {room.type === 'd' && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {room.type === 'd' ? 'Direct Message' : room.type === 'p' ? 'Private Group' : 'Public Channel'}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {room.alert && (
-                            <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded">
-                              🔔 Alert
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
+                              {displayName}
                             </span>
-                          )}
-                          {room.open && (
-                            <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">
-                              ✅ Active
-                            </span>
-                          )}
+                            {hasUnread && (
+                              <span className="flex-shrink-0 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                {room.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                            {room.type === 'd' ? 'Direct message' : room.type === 'p' ? 'Private group' : 'Public channel'}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
-        {/* Footer - User Menu & Refresh */}
-        <div className="p-4 border-t dark:border-gray-700 space-y-3">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-          >
-            ➕ Create New Room
-          </button>
-          <button
-            onClick={loadRooms}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-          >
-            🔄 Refresh Rooms
-          </button>
+        {/* Footer */}
+        <div className="p-3 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
           <UserMenu />
         </div>
       </div>

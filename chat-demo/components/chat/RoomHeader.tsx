@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
+import { Users, UserPlus, RefreshCw } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 
 interface RoomHeaderProps {
@@ -59,9 +60,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   onClick={() => setShowMembers(!showMembers)}
                   className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
+                  <Users className="w-3.5 h-3.5" />
                   <span>{members.length || '...'}</span>
                 </button>
                 {room.unreadCount > 0 && (
@@ -81,9 +80,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
               title="Mời thành viên"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
+              <UserPlus className="w-4 h-4" />
             </button>
 
             <button
@@ -91,9 +88,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
               title="Làm mới"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <RefreshCw className="w-4 h-4" />
             </button>
 
             <RoomSettingsMenu room={room} onUpdate={onRefresh} />
