@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
+import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
@@ -14,84 +15,43 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ room }: ChatWindowProps) {
   const { user } = useAuthStore();
-  const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const currentRoomRef = useRef<string>(room.roomId); // Track current room
 
-  // Get room type directly from room object for API calls
-  // Backend API expects: 'd' (DM), 'p' (private group), 'c' (channel)
-  const getRoomType = () => {
-    return room.type || 'p'; // Return type as-is, default to 'p' (private group)
+  // SWR fetcher function
+  const messagesFetcher = async ([_, roomId, roomType]: [string, string, string]) => {
+    const response = await rocketChatService.getMessages(
+      roomId,
+      roomType,
+      50,
+      0,
+      user?.username
+    );
+    
+    if (response.success && response.messages) {
+      return response.messages;
+    }
+    throw new Error('Failed to load messages');
   };
 
-  // Update current room ref khi room thay đổi
-  useEffect(() => {
-    currentRoomRef.current = room.roomId;
-  }, [room.roomId]);
-
-  useEffect(() => {
-    if (room?.roomId) {
-      // Clear messages cũ khi chuyển room
-      setMessages([]);
-      
-      // Load messages lần đầu với loading state
-      loadMessages(true);
-      
-      // Auto-refresh messages mỗi 10 giây (không hiển thị loading)
-      const interval = setInterval(() => {
-        const activeRoomId = currentRoomRef.current;
-        
-        // CHỈ load messages nếu roomId HIỆN TẠI trùng với roomId của interval này
-        if (activeRoomId === room.roomId) {
-          loadMessages(false);
-        }
-      }, 10000);
-      
-      // CLEANUP: Clear interval khi component unmount hoặc room thay đổi
-      return () => {
-        clearInterval(interval);
-      };
+  // SWR hook - auto polling every 10s, auto revalidate on focus
+  const { data: messages = [], error, isLoading, mutate } = useSWR(
+    room?.roomId ? ['messages', room.roomId, room.type || 'p'] : null,
+    messagesFetcher,
+    {
+      refreshInterval: 10000, // Poll mỗi 10 giây
+      revalidateOnFocus: true, // Auto reload khi quay lại tab
+      dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
+      onSuccess: () => {
+        // Auto scroll sau khi load messages
+        setTimeout(() => scrollToBottom(), 100);
+      }
     }
-  }, [room?.roomId]); // Chỉ re-run khi roomId thay đổi
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadMessages = async (isInitialLoad = false) => {
-    try {
-      if (isInitialLoad) {
-        setLoading(true);
-      }
-      
-      const response = await rocketChatService.getMessages(
-        room.roomId,
-        getRoomType(),
-        50,
-        0,
-        user?.username // Pass current username to identify own messages
-      );
-      
-      // Chỉ update messages nếu API thành công VÀ có data
-      if (response.success && response.messages) {
-        setMessages(response.messages);
-      }
-      // Nếu lỗi, GIỮ NGUYÊN messages cũ (không clear)
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-      // Giữ nguyên messages cũ khi lỗi
-    } finally {
-      if (isInitialLoad) {
-        setLoading(false);
-      }
-    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -107,8 +67,8 @@ export default function ChatWindow({ room }: ChatWindowProps) {
       const response = await rocketChatService.sendMessage(request);
       if (response.success) {
         setMessageText('');
-        // Tải lại messages sau khi gửi
-        setTimeout(loadMessages, 500);
+        // Revalidate messages sau khi gửi - SWR tự động fetch lại
+        setTimeout(() => mutate(), 500);
       }
     } catch (error) {
       alert('❌ Lỗi: ' + (error as Error).message);
@@ -127,11 +87,11 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
-      <RoomHeader room={room} onRefresh={() => loadMessages(false)} />
+      <RoomHeader room={room} onRefresh={() => mutate()} />
 
       {/* Messages Area - Apple Style */}
       <div className="flex-1 overflow-y-auto px-4">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin inline-block w-7 h-7 border-[3px] border-current border-t-transparent rounded-full text-[#007aff]" />
