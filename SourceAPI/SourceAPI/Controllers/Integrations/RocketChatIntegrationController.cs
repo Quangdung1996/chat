@@ -633,26 +633,16 @@ namespace SourceAPI.Controllers.Integrations
         [ProducesResponseType(200)]
         public IActionResult GetRoomMembers(int roomMappingId, [FromQuery] bool includeInactive = false)
         {
-            try
+            // TODO: Không còn bảng RoomMemberMapping - lấy trực tiếp từ Rocket.Chat API
+            // Use: await _roomService.GetMembersAsync(rocketRoomId) instead
+            // var members = await _roomService.GetMembersAsync(rocketRoomId);
+            
+            return Ok(new
             {
-                var members = RocketChatRepository.GetRoomMembers(new GetRoomMembersParam
-                {
-                    RoomMappingId = roomMappingId,
-                    IncludeInactive = includeInactive
-                });
-
-                return Ok(new
-                {
-                    success = true,
-                    roomMappingId,
-                    members
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error getting members for room {roomMappingId}");
-                return StatusCode(500, new { message = "Internal server error" });
-            }
+                success = false,
+                message = "TODO: Get members directly from Rocket.Chat API - no longer using database",
+                hint = "Use RocketChatRoomService.GetMembersAsync(roomId)"
+            });
         }
 
         #endregion

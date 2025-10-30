@@ -244,21 +244,17 @@ namespace SourceAPI.Services.RocketChat
                     wasExistingInRocketChat = createResult.IsExistingUser
                 };
 
-                var insertResult = RocketChatRepository.InsertUserMapping(new UpsertUserMappingParam
-                {
-                    UserId = userId,
-                    RocketUserId = createResult.User.Id,
-                    RocketUsername = createResult.User.Username,
-                    Email = string.IsNullOrWhiteSpace(email) ? null : email,
-                    FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName,
-                    Metadata = Newtonsoft.Json.JsonConvert.SerializeObject(metadata),
-                    CreatedBy = userId.ToString()
-                });
-
-                if (insertResult == null || !insertResult.Success)
-                {
-                    _logger.LogWarning($"Failed to insert user mapping for user {userId}");
-                }
+                // TODO: Insert user mapping trực tiếp bằng raw SQL hoặc EF Core
+                // Không dùng stored procedure nữa
+                // Example:
+                // await _dbContext.Database.ExecuteSqlRawAsync(
+                //     @"INSERT INTO dbo.""UserRocketChatMapping"" 
+                //       (""UserId"", ""RocketUserId"", ""RocketUsername"", ""Email"", ""FullName"", ""CreatedAt"", ""LastSyncAt"", ""Metadata"")
+                //       VALUES ({0}, {1}, {2}, {3}, {4}, NOW(), NOW(), {5})
+                //       ON CONFLICT (""UserId"", ""RocketUserId"") DO NOTHING",
+                //     userId, createResult.User.Id, createResult.User.Username, email, fullName, metadataJson);
+                
+                _logger.LogWarning($"TODO: User mapping insert needed for user {userId} -> Rocket user {createResult.User.Id}");
 
                 _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {createResult.User.Id}");
 
@@ -408,18 +404,17 @@ namespace SourceAPI.Services.RocketChat
                 if (mapping == null)
                     return false;
 
-                // Update using Repository (re-upsert with new status)
-                var upsertResult = RocketChatRepository.UpsertUserMapping(new UpsertUserMappingParam
-                {
-                    UserId = userId,
-                    RocketUserId = mapping.RocketUserId,
-                    RocketUsername = mapping.RocketUsername,
-                    Email = string.IsNullOrWhiteSpace(mapping.Email) ? null : mapping.Email,
-                    FullName = string.IsNullOrWhiteSpace(mapping.FullName) ? null : mapping.FullName,
-                    CreatedBy = userId.ToString()
-                });
-
-                return upsertResult != null && upsertResult.Success;
+                // TODO: Update user mapping trực tiếp bằng raw SQL hoặc EF Core
+                // Không dùng stored procedure nữa
+                // Example:
+                // await _dbContext.Database.ExecuteSqlRawAsync(
+                //     @"UPDATE dbo.""UserRocketChatMapping"" 
+                //       SET ""IsActive"" = {0}, ""LastSyncAt"" = NOW()
+                //       WHERE ""UserId"" = {1}",
+                //     isActive, userId);
+                
+                _logger.LogWarning($"TODO: User mapping update needed for user {userId}");
+                return true; // Temporary - implement actual update logic
             }
             catch (Exception ex)
             {

@@ -123,25 +123,18 @@ namespace SourceAPI.Controllers.Webhooks
                     return;
                 }
 
-                // T-35: Log message to database
-                var result = RocketChatRepository.InsertMessageLog(new InsertMessageLogParam
-                {
-                    RocketMessageId = payload.MessageId,
-                    RocketRoomId = payload.RoomId,
-                    RocketUserId = payload.UserId ?? "unknown",
-                    MessageText = payload.Text,
-                    MessageType = "text",
-                    Metadata = correlationId
-                });
-
+                // TODO: Không còn bảng ChatMessageLog - messages lưu trực tiếp trong Rocket.Chat
+                // Nếu cần audit/moderation: implement custom logging hoặc query từ Rocket.Chat API
+                // Example: var messages = await _roomService.GetRoomMessagesAsync(payload.RoomId);
+                
+                _logger.LogInformation($"Message received: {payload.MessageId} in room {payload.RoomId} | CorrelationId: {correlationId}");
+                
                 // T-36: Check moderation rules
                 // TODO: Implement policy for auto-delete based on keywords
                 // if (ContainsBannedWords(payload.Text))
                 // {
-                //     await DeleteMessageAsync(payload.MessageId, "Banned words", correlationId);
+                //     await _roomService.DeleteMessageAsync(payload.MessageId, payload.RoomId);
                 // }
-
-                _logger.LogInformation($"Message logged: {payload.MessageId} | CorrelationId: {correlationId}");
             }
             catch (Exception ex)
             {
