@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
 import rocketChatService from '@/services/rocketchat.service';
-import { Search, MessageSquare, Loader2 } from 'lucide-react';
+import { Search, MessageSquare, Loader2, Mail } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -15,9 +16,11 @@ interface User {
 }
 
 export default function ContactsPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [creatingDM, setCreatingDM] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -37,6 +40,36 @@ export default function ContactsPage() {
     }
   };
 
+  const handleStartChat = async (user: User) => {
+    setCreatingDM(user._id);
+    try {
+      // Lấy current user ID từ localStorage
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        console.error('No user found in localStorage');
+        return;
+      }
+      
+      const currentUser = JSON.parse(storedUser);
+      const currentUserId = currentUser.userId || currentUser.id;
+      
+      // Tạo DM room
+      const response = await rocketChatService.createDirectMessage(
+        currentUserId,
+        user.username
+      );
+      
+      if (response.success) {
+        // Redirect về trang chat
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Failed to create DM:', error);
+    } finally {
+      setCreatingDM(null);
+    }
+  };
+
   const filteredUsers = users.filter((user) =>
     user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -48,14 +81,14 @@ export default function ContactsPage() {
 
   const getAvatarColor = (username: string) => {
     const colors = [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-pink-400 to-pink-600',
-      'bg-gradient-to-br from-green-400 to-green-600',
-      'bg-gradient-to-br from-yellow-400 to-yellow-600',
-      'bg-gradient-to-br from-red-400 to-red-600',
-      'bg-gradient-to-br from-indigo-400 to-indigo-600',
-      'bg-gradient-to-br from-teal-400 to-teal-600',
+      'from-[#007aff] to-[#0051d5]',
+      'from-[#5856d6] to-[#3634a3]',
+      'from-[#ff2d55] to-[#c7254e]',
+      'from-[#34c759] to-[#248a3d]',
+      'from-[#ff9500] to-[#c93400]',
+      'from-[#ff3b30] to-[#c62828]',
+      'from-[#af52de] to-[#8e24aa]',
+      'from-[#5ac8fa] to-[#0091ea]',
     ];
     const index = username.charCodeAt(0) % colors.length;
     return colors[index];
@@ -63,42 +96,49 @@ export default function ContactsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <div className="flex h-screen overflow-hidden bg-[#f5f5f7] dark:bg-black">
         <TeamsSidebar />
         
-        <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
-          {/* Header */}
-          <div className="border-b dark:border-gray-700 p-6">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Danh bạ</h1>
+        <div className="flex-1 flex flex-col bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl">
+          {/* Header - Apple Style */}
+          <div className="border-b border-gray-200/50 dark:border-gray-700/50 px-8 pt-8 pb-6">
+            <h1 className="text-[34px] font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
+              Danh bạ
+            </h1>
             
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+            {/* Search - iOS Style */}
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm người dùng..."
+                placeholder="Tìm kiếm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full max-w-md pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-gray-500"
+                className="w-full pl-11 pr-4 py-[10px] bg-gray-100/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border-0 rounded-[10px] text-[17px] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007aff]/50 dark:focus:ring-[#0a84ff]/50 transition-all"
               />
             </div>
           </div>
 
           {/* User List */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-8 py-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">Đang tải danh bạ...</p>
+                  <Loader2 className="w-12 h-12 animate-spin text-[#007aff] dark:text-[#0a84ff] mx-auto mb-4" strokeWidth={2} />
+                  <p className="text-[17px] text-gray-500 dark:text-gray-400">Đang tải danh bạ...</p>
                 </div>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {searchQuery ? 'Không tìm thấy người dùng' : 'Danh bạ trống'}
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-[#2c2c2e] flex items-center justify-center">
+                    <Search className="w-12 h-12 text-gray-400" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-[22px] font-semibold text-gray-900 dark:text-white mb-2">
+                    {searchQuery ? 'Không tìm thấy' : 'Danh bạ trống'}
+                  </h3>
+                  <p className="text-[17px] text-gray-500 dark:text-gray-400">
+                    {searchQuery ? 'Thử tìm kiếm với từ khóa khác' : 'Chưa có người dùng nào'}
                   </p>
                 </div>
               </div>
@@ -107,27 +147,27 @@ export default function ContactsPage() {
                 {filteredUsers.map((user) => (
                   <div
                     key={user._id}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700 hover:shadow-lg transition-shadow"
+                    className="group bg-white/60 dark:bg-[#2c2c2e]/60 backdrop-blur-xl rounded-[20px] p-5 border border-gray-200/50 dark:border-gray-700/30 hover:shadow-xl hover:scale-[1.02] hover:bg-white dark:hover:bg-[#2c2c2e] transition-all duration-200"
                   >
-                    {/* Avatar */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="relative">
+                    {/* Avatar & Info */}
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="relative flex-shrink-0">
                         <div
-                          className={`w-12 h-12 rounded-full ${getAvatarColor(
+                          className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarColor(
                             user.username
-                          )} flex items-center justify-center text-white font-semibold text-sm shadow-sm`}
+                          )} flex items-center justify-center text-white font-semibold text-[20px] shadow-lg`}
                         >
                           {getInitials(user.name || user.username)}
                         </div>
                         {user.status === 'online' && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#34c759] border-[3px] border-white dark:border-[#2c2c2e] rounded-full shadow-sm" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                      <div className="flex-1 min-w-0 pt-1">
+                        <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate mb-1">
                           {user.name || user.username}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-[15px] text-gray-500 dark:text-gray-400 truncate">
                           @{user.username}
                         </p>
                       </div>
@@ -135,18 +175,32 @@ export default function ContactsPage() {
 
                     {/* Email */}
                     {user.emails && user.emails.length > 0 && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 truncate">
-                        📧 {user.emails[0].address}
-                      </p>
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-gray-50 dark:bg-[#1c1c1e]/50 rounded-[10px]">
+                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <p className="text-[13px] text-gray-600 dark:text-gray-400 truncate">
+                          {user.emails[0].address}
+                        </p>
+                      </div>
                     )}
 
-                    {/* Actions */}
+                    {/* Action Button */}
                     <button
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm font-medium"
+                      onClick={() => handleStartChat(user)}
+                      disabled={creatingDM === user._id}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-[11px] bg-[#007aff] hover:bg-[#0051d5] disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-[12px] transition-all duration-200 text-[15px] font-semibold shadow-sm hover:shadow-md active:scale-[0.98]"
                       title="Gửi tin nhắn"
                     >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Nhắn tin</span>
+                      {creatingDM === user._id ? (
+                        <>
+                          <Loader2 className="w-[18px] h-[18px] animate-spin" />
+                          <span>Đang mở...</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                          <span>Nhắn tin</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 ))}
