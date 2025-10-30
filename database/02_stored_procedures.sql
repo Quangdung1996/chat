@@ -106,6 +106,78 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- SP: Insert/Update user mapping (UPSERT)
+CREATE OR REPLACE FUNCTION dbo."sp_UpsertUserRocketMapping"(
+    p_json TEXT
+)
+RETURNS TEXT AS $$
+DECLARE
+    v_user_id INTEGER;
+    v_rocket_user_id VARCHAR(50);
+    v_rocket_username VARCHAR(255);
+    v_email VARCHAR(255);
+    v_full_name VARCHAR(255);
+    v_metadata TEXT;
+    v_result TEXT;
+BEGIN
+    -- Parse input JSON
+    v_user_id := (p_json::json->>'UserId')::INTEGER;
+    v_rocket_user_id := p_json::json->>'RocketUserId';
+    v_rocket_username := p_json::json->>'RocketUsername';
+    v_email := p_json::json->>'Email';
+    v_full_name := p_json::json->>'FullName';
+    v_metadata := p_json::json->>'Metadata';
+    
+    -- Insert or Update
+    INSERT INTO dbo."Rocket_UserMapping" (
+        "UserId",
+        "RocketUserId", 
+        "RocketUsername",
+        "Email",
+        "FullName",
+        "IsActive",
+        "IsDeleted",
+        "CreatedAt",
+        "LastSyncAt",
+        "Metadata"
+    )
+    VALUES (
+        v_user_id,
+        v_rocket_user_id,
+        v_rocket_username,
+        v_email,
+        v_full_name,
+        true,
+        false,
+        NOW(),
+        NOW(),
+        v_metadata
+    )
+    ON CONFLICT ("UserId", "RocketUserId") 
+    DO UPDATE SET
+        "RocketUsername" = EXCLUDED."RocketUsername",
+        "Email" = EXCLUDED."Email",
+        "FullName" = EXCLUDED."FullName",
+        "LastSyncAt" = NOW(),
+        "Metadata" = EXCLUDED."Metadata",
+        "IsActive" = true
+    RETURNING json_build_object(
+        'Id', "Id",
+        'UserId', "UserId",
+        'RocketUserId', "RocketUserId",
+        'RocketUsername', "RocketUsername",
+        'Email', "Email",
+        'FullName', "FullName",
+        'IsActive', "IsActive",
+        'CreatedAt', "CreatedAt",
+        'LastSyncAt', "LastSyncAt",
+        'Metadata', "Metadata"
+    )::TEXT INTO v_result;
+    
+    RETURN COALESCE(v_result, 'null');
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- Summary
 -- =====================================================
@@ -118,6 +190,7 @@ $$ LANGUAGE plpgsql;
 \echo '  • sp_GetUserRocketMapping_ByUserId'
 \echo '  • sp_GetUserRocketMapping_ByRocketUserId'
 \echo '  • sp_GetAllActiveUsers'
+\echo '  • sp_UpsertUserRocketMapping'
 \echo ''
 \echo 'Rooms, Members, Messages: Query từ Rocket.Chat API'
 \echo '======================================================'
