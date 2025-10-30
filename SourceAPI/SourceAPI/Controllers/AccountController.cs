@@ -4,11 +4,9 @@ using Ezy.APIService.Core.Data;
 using Ezy.APIService.Core.Services;
 using Ezy.APIService.Shared.Models;
 using Ezy.APIService.Shared.Services;
-using Ezy.APIService.Shared.Services.CoreService;
 using Ezy.Module.BaseMSSQLData.Utilities;
 using Ezy.Module.BaseService.FrameWork;
 using Ezy.Module.Controller.Controllers;
-using Ezy.Module.Library.Data;
 using Ezy.Module.Library.Message;
 using Ezy.Module.Library.UI;
 using Ezy.Module.Library.Utilities;
@@ -19,13 +17,11 @@ using Newtonsoft.Json.Linq;
 using SourceAPI.DataShared.Common;
 using SourceAPI.Services.BackgroundQueue;
 using SourceAPI.Services.RocketChat;
-using SourceAPI.Shared.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -303,7 +299,7 @@ namespace SourceAPI.Controllers
                             Register_SaveMoreInfo(model, token);
 
                             // Queue background task to sync Rocket.Chat user
-                            await QueueRocketChatUserSync(token.user_id, model.Username, model.FullName, model.Email);
+                            await QueueRocketChatUserSync(token.user_id, model.Username, $"{model.FirstName} {model.LastName}", model.Email);
                         }
                         catch (Exception exLogin)
                         {
@@ -345,7 +341,7 @@ namespace SourceAPI.Controllers
         /// <summary>
         /// Queue background task to sync newly registered user to Rocket.Chat
         /// </summary>
-        private async Task QueueRocketChatUserSync(int userId, string username, string fullName, string email)
+        private async Task QueueRocketChatUserSync(string userId, string username, string fullName, string email)
         {
             try
             {
@@ -354,51 +350,24 @@ namespace SourceAPI.Controllers
                     try
                     {
                         var syncResult = await _rocketChatUserService.SyncUserAsync(
-                            userId,
+                            int.Parse(userId),
                             username,
                             fullName ?? username,
                             email
                         );
 
-                        if (!string.IsNullOrWhiteSpace(syncResult.RocketUserId))
-                        {
-                            SQLDataContextHelper.LogInfo(
-                                $"Background: Successfully synced user {userId} ({username}) to Rocket.Chat",
-                                "RocketChat.BackgroundSync"
-                            );
-                        }
-                        else
-                        {
-                            SQLDataContextHelper.LogException(
-                                new Exception($"Background sync failed: {syncResult.Message}"),
-                                "RocketChat.BackgroundSync",
-                                $"UserId: {userId}, Username: {username}"
-                            );
-                        }
                     }
                     catch (Exception ex)
                     {
-                        SQLDataContextHelper.LogException(
-                            ex,
-                            "RocketChat.BackgroundSync",
-                            $"UserId: {userId}, Username: {username}, Error: {ex.Message}"
-                        );
+
                     }
                 });
 
-                SQLDataContextHelper.LogInfo(
-                    $"Queued Rocket.Chat sync for user {userId} ({username})",
-                    "RocketChat.QueueSync"
-                );
+
             }
             catch (Exception ex)
             {
-                // Don't fail registration if queue fails
-                SQLDataContextHelper.LogException(
-                    ex,
-                    "RocketChat.QueueSync",
-                    $"Failed to queue sync for user {userId}: {ex.Message}"
-                );
+
             }
         }
 
