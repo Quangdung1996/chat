@@ -19,6 +19,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentRoomRef = useRef<string>(room.roomId); // Track current room
 
   // Get room type directly from room object for API calls
   // Backend API expects: 'd' (DM), 'p' (private group), 'c' (channel)
@@ -26,18 +27,35 @@ export default function ChatWindow({ room }: ChatWindowProps) {
     return room.type || 'p'; // Return type as-is, default to 'p' (private group)
   };
 
+  // Update current room ref khi room thay đổi
   useEffect(() => {
-    if (room) {
+    currentRoomRef.current = room.roomId;
+  }, [room.roomId]);
+
+  useEffect(() => {
+    if (room?.roomId) {
       // Clear messages cũ khi chuyển room
       setMessages([]);
+      
       // Load messages lần đầu với loading state
       loadMessages(true);
       
       // Auto-refresh messages mỗi 10 giây (không hiển thị loading)
-      const interval = setInterval(() => loadMessages(false), 10000);
-      return () => clearInterval(interval);
+      const interval = setInterval(() => {
+        const activeRoomId = currentRoomRef.current;
+        
+        // CHỈ load messages nếu roomId HIỆN TẠI trùng với roomId của interval này
+        if (activeRoomId === room.roomId) {
+          loadMessages(false);
+        }
+      }, 10000);
+      
+      // CLEANUP: Clear interval khi component unmount hoặc room thay đổi
+      return () => {
+        clearInterval(interval);
+      };
     }
-  }, [room.roomId]);
+  }, [room?.roomId]); // Chỉ re-run khi roomId thay đổi
 
   useEffect(() => {
     scrollToBottom();
