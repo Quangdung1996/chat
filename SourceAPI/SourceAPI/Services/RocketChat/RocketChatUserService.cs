@@ -3,7 +3,6 @@ using SourceAPI.Core.Data.RocketChatData;
 using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Infrastructure.Proxy;
-using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
@@ -47,8 +46,6 @@ namespace SourceAPI.Services.RocketChat
                     throw new ArgumentException("Username is required", nameof(username));
                 }
 
-                // Check if user already exists
-                // Handler tự động xử lý "User not found" → return { success: true, user: null }
                 var existingUser = await _adminApi.GetUserInfoAsync(username);
                 if (existingUser != null && existingUser.Success && existingUser.User != null)
                 {
@@ -69,7 +66,7 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                // User doesn't exist (user == null), create new one
+
                 return await CreateUserInternalAsync(username, fullName, email, password);
             }
             catch (Exception ex)
@@ -150,29 +147,6 @@ namespace SourceAPI.Services.RocketChat
                 // Mark as newly created user
                 createResponse.IsExistingUser = false;
 
-                // Set user as active after successful creation
-                try
-                {
-                    //var setActiveRequest = new SetUserActiveStatusRequest
-                    //{
-                    //    UserId = createResponse.User.Id,
-                    //    ActiveStatus = true
-                    //};
-                    //var activeResponse = await _adminApi.SetUserActiveStatusAsync(setActiveRequest);
-
-                    //if (activeResponse != null && activeResponse.Success)
-                    //{
-                    //    _logger.LogInformation($"Successfully set user {username} as active in Rocket.Chat");
-                    //}
-                    //else
-                    //{
-                    //    _logger.LogWarning($"Failed to set user {username} as active: {activeResponse?.Error}");
-                    //}
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, $"Error setting user {username} as active (user created successfully): {ex.Message}");
-                }
 
                 return createResponse;
             }
@@ -212,9 +186,6 @@ namespace SourceAPI.Services.RocketChat
                 {
 
                 }
-                // Create or get existing user in Rocket.Chat
-                // CreateUserAsync handles duplicate check internally
-                // Generate deterministic password from userId + salt
                 var password = RocketChatPasswordHelper.GeneratePasswordFromUserId(userId);
                 var createResult = await CreateUserAsync(username, fullName, email, password);
 
@@ -234,27 +205,16 @@ namespace SourceAPI.Services.RocketChat
                         Message = "User already synced"
                     };
                 }
-                // Save mapping to database
-                // Only save password if user was newly created
+
                 var metadata = new
                 {
-                    password = createResult.IsExistingUser ? null : password, // Only save if newly created
+                    password = createResult.IsExistingUser ? null : password,
                     createdAt = DateTime.UtcNow,
                     source = "auto-sync",
                     isNewUser = !createResult.IsExistingUser,
                     wasExistingInRocketChat = createResult.IsExistingUser
                 };
 
-                // TODO: Insert user mapping trực tiếp bằng raw SQL hoặc EF Core
-                // Không dùng stored procedure nữa
-                // Example:
-                // await _dbContext.Database.ExecuteSqlRawAsync(
-                //     @"INSERT INTO dbo.""Rocket_UserMapping"" 
-                //       (""UserId"", ""RocketUserId"", ""RocketUsername"", ""Email"", ""FullName"", ""CreatedAt"", ""LastSyncAt"", ""Metadata"")
-                //       VALUES ({0}, {1}, {2}, {3}, {4}, NOW(), NOW(), {5})
-                //       ON CONFLICT (""UserId"", ""RocketUserId"") DO NOTHING",
-                //     userId, createResult.User.Id, createResult.User.Username, email, fullName, metadataJson);
-                
                 _logger.LogWarning($"TODO: User mapping insert needed for user {userId} -> Rocket user {createResult.User.Id}");
 
                 _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {createResult.User.Id}");
@@ -413,7 +373,7 @@ namespace SourceAPI.Services.RocketChat
                 //       SET ""IsActive"" = {0}, ""LastSyncAt"" = NOW()
                 //       WHERE ""UserId"" = {1}",
                 //     isActive, userId);
-                
+
                 _logger.LogWarning($"TODO: User mapping update needed for user {userId}");
                 return true; // Temporary - implement actual update logic
             }

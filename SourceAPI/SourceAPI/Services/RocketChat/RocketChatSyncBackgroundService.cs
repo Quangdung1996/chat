@@ -82,10 +82,6 @@ namespace SourceAPI.Services.RocketChat
 
                 try
                 {
-                    // TODO: Get list of users from main system
-                    // Đây là placeholder - bạn cần implement logic lấy danh sách users từ DB chính
-                    // VD: var users = await _userRepository.GetAllActiveUsersAsync();
-
                     var usersToSync = await GetUsersToSyncAsync(scope);
 
                     if (usersToSync == null || usersToSync.Length == 0)
@@ -102,7 +98,6 @@ namespace SourceAPI.Services.RocketChat
                     {
                         try
                         {
-                            // Validate username (required from OAuth2)
                             if (string.IsNullOrWhiteSpace(user.Username))
                             {
                                 _logger.LogWarning("Skipping user {UserId} - no username from OAuth2", user.UserId);
@@ -118,7 +113,6 @@ namespace SourceAPI.Services.RocketChat
                                 continue;
                             }
 
-                            // Sync user (username from OAuth2, email is optional)
                             var result = await userService.SyncUserAsync(
                                 user.UserId,
                                 user.Username,
@@ -139,7 +133,6 @@ namespace SourceAPI.Services.RocketChat
                                     user.UserId, result.Message);
                             }
 
-                            // Rate limiting: đợi 500ms giữa các request
                             await Task.Delay(500);
                         }
                         catch (Exception ex)
