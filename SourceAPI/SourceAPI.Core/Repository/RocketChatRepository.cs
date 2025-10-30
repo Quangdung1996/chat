@@ -12,8 +12,33 @@ namespace SourceAPI.Core.Repository
     public class RocketChatRepository : EzyEFStoreRepository
     {
         // =====================================================
-        // Rocket_UserMapping Operations (Read-only)
+        // Rocket_UserMapping Operations
         // =====================================================
+
+        /// <summary>
+        /// Insert or Update user mapping (UPSERT)
+        /// </summary>
+        public static UserRocketMappingResult UpsertUserRocketMapping(
+            int userId,
+            string rocketUserId,
+            string rocketUsername,
+            string email,
+            string fullName,
+            string metadata)
+        {
+            var param = new
+            {
+                UserId = userId,
+                RocketUserId = rocketUserId,
+                RocketUsername = rocketUsername,
+                Email = email,
+                FullName = fullName,
+                Metadata = metadata
+            };
+            return Exec_JsonStoredProceduce<UserRocketMappingResult>(
+                param,
+                ERocketChatStoredProcedureNames.sp_UpsertUserRocketMapping);
+        }
 
         /// <summary>
         /// Get user mapping by internal UserId

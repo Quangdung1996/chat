@@ -215,7 +215,22 @@ namespace SourceAPI.Services.RocketChat
                     wasExistingInRocketChat = createResult.IsExistingUser
                 };
 
-                _logger.LogWarning($"TODO: User mapping insert needed for user {userId} -> Rocket user {createResult.User.Id}");
+                // Insert user mapping to database
+                var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata);
+                var insertResult = RocketChatRepository.UpsertUserRocketMapping(
+                    userId,
+                    createResult.User.Id,
+                    createResult.User.Username,
+                    email ?? string.Empty,
+                    fullName,
+                    metadataJson
+                );
+
+                if (insertResult == null)
+                {
+                    _logger.LogError($"Failed to insert user mapping for user {userId}");
+                    throw new Exception("Failed to save user mapping to database");
+                }
 
                 _logger.LogInformation($"Successfully synced user {userId} to Rocket.Chat user {createResult.User.Id}");
 
@@ -363,19 +378,33 @@ namespace SourceAPI.Services.RocketChat
                 // Get current mapping to ensure it exists
                 var mapping = await GetMappingAsync(userId);
                 if (mapping == null)
+                {
+                    _logger.LogWarning($"User mapping not found for user {userId}");
                     return false;
+                }
 
-                // TODO: Update user mapping trực tiếp bằng raw SQL hoặc EF Core
-                // Không dùng stored procedure nữa
-                // Example:
-                // await _dbContext.Database.ExecuteSqlRawAsync(
-                //     @"UPDATE dbo.""Rocket_UserMapping"" 
-                //       SET ""IsActive"" = {0}, ""LastSyncAt"" = NOW()
-                //       WHERE ""UserId"" = {1}",
-                //     isActive, userId);
+                // Update using UPSERT (will update LastSyncAt and IsActive)
+                var metadata = string.IsNullOrEmpty(mapping.Metadata) 
+                    ? "{}" 
+                    : mapping.Metadata;
 
-                _logger.LogWarning($"TODO: User mapping update needed for user {userId}");
-                return true; // Temporary - implement actual update logic
+                var updateResult = RocketChatRepository.UpsertUserRocketMapping(
+                    userId,
+                    mapping.RocketUserId,
+                    mapping.RocketUsername,
+                    mapping.Email ?? string.Empty,
+                    mapping.FullName ?? string.Empty,
+                    metadata
+                );
+
+                if (updateResult == null)
+                {
+                    _logger.LogError($"Failed to update user mapping for user {userId}");
+                    return false;
+                }
+
+                _logger.LogInformation($"Updated user {userId} active status to {isActive}");
+                return true;
             }
             catch (Exception ex)
             {
