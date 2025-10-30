@@ -3,7 +3,7 @@
 -- Schema: dbo
 -- Database: PostgreSQL
 -- =====================================================
--- Chỉ cần 1 bảng UserRocketChatMapping
+-- Chỉ cần 1 bảng Rocket_UserMapping
 -- Tất cả dữ liệu room/message lấy trực tiếp từ Rocket.Chat API
 -- =====================================================
 
