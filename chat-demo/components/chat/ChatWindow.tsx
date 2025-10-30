@@ -28,9 +28,13 @@ export default function ChatWindow({ room }: ChatWindowProps) {
 
   useEffect(() => {
     if (room) {
-      loadMessages();
-      // Auto-refresh messages mỗi 10 giây
-      const interval = setInterval(loadMessages, 10000);
+      // Clear messages cũ khi chuyển room
+      setMessages([]);
+      // Load messages lần đầu với loading state
+      loadMessages(true);
+      
+      // Auto-refresh messages mỗi 10 giây (không hiển thị loading)
+      const interval = setInterval(() => loadMessages(false), 10000);
       return () => clearInterval(interval);
     }
   }, [room.roomId]);
@@ -43,8 +47,12 @@ export default function ChatWindow({ room }: ChatWindowProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadMessages = async () => {
+  const loadMessages = async (isInitialLoad = false) => {
     try {
+      if (isInitialLoad) {
+        setLoading(true);
+      }
+      
       const response = await rocketChatService.getMessages(
         room.roomId,
         getRoomType(),
@@ -52,11 +60,19 @@ export default function ChatWindow({ room }: ChatWindowProps) {
         0,
         user?.username // Pass current username to identify own messages
       );
+      
+      // Chỉ update messages nếu API thành công VÀ có data
       if (response.success && response.messages) {
-        setMessages(response.messages || []);
+        setMessages(response.messages);
       }
+      // Nếu lỗi, GIỮ NGUYÊN messages cũ (không clear)
     } catch (error) {
       console.error('Failed to load messages:', error);
+      // Giữ nguyên messages cũ khi lỗi
+    } finally {
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
@@ -93,7 +109,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
       {/* Room Header */}
-      <RoomHeader room={room} onRefresh={loadMessages} />
+      <RoomHeader room={room} onRefresh={() => loadMessages(false)} />
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto flex flex-col">
