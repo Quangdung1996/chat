@@ -240,13 +240,42 @@ class RocketChatService {
     offset: number = 0
   ): Promise<{ success: boolean; messages: any[] }> {
     const endpoint = this.endpoints.getMessages.replace('{rocketRoomId}', rocketRoomId);
-    return apiClient.get(endpoint, {
+    const response = await apiClient.get<{ 
+      success: boolean; 
+      messages: any[];
+      rocketRoomId?: string;
+      roomType?: string;
+      count?: number;
+      offset?: number;
+    }>(endpoint, {
       params: {
         roomType,
         count,
         offset,
       },
     });
+
+    // Transform backend response to match frontend expected format
+    if (response.success && response.messages) {
+      const transformedMessages = response.messages.map((msg: any) => ({
+        messageId: msg._id || msg.id,
+        username: msg.u?.username || msg.username || 'Unknown',
+        text: msg.msg || msg.text || '',
+        timestamp: msg.ts || msg.timestamp,
+        deleted: msg.deleted || false,
+        edited: msg.editedAt ? true : false,
+      }));
+
+      return {
+        success: response.success,
+        messages: transformedMessages,
+      };
+    }
+
+    return {
+      success: response.success || false,
+      messages: [],
+    };
   }
 
   // ===== HEALTH CHECK =====

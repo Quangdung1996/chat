@@ -154,6 +154,16 @@ export interface SendMessageResponse {
 }
 
 export interface ChatMessage {
+  messageId: string;
+  username: string;
+  text: string;
+  timestamp: string;
+  deleted?: boolean;
+  edited?: boolean;
+}
+
+// Backend message format (from DB)
+export interface StoredMessage {
   id: number;
   rocketMessageId: string;
   rocketUserId: string;
