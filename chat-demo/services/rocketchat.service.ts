@@ -231,11 +231,11 @@ class RocketChatService {
 
   /**
    * Lấy lịch sử tin nhắn (real-time từ Rocket.Chat)
-   * GET /api/integrations/rocket/room/{rocketRoomId}/messages?roomType=group&count=50&offset=0
+   * GET /api/integrations/rocket/room/{rocketRoomId}/messages?rid={roomId}&t={type}&count=50&offset=0
    */
   async getMessages(
     rocketRoomId: string,
-    roomType: string = 'group',
+    roomType: string = 'p', // 'd' for DM, 'p' for group, 'c' for channel
     count: number = 50,
     offset: number = 0,
     currentUsername?: string
@@ -250,7 +250,8 @@ class RocketChatService {
       offset?: number;
     }>(endpoint, {
       params: {
-        roomType,
+        rid: rocketRoomId,  // Backend cần rid
+        t: roomType,        // Backend cần t (type: 'd', 'p', 'c')
         count,
         offset,
       },

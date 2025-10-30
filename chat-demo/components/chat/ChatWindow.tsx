@@ -20,12 +20,10 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Determine room type for API calls
+  // Get room type directly from room object for API calls
+  // Backend API expects: 'd' (DM), 'p' (private group), 'c' (channel)
   const getRoomType = () => {
-    if (room.type === 'd') return 'dm';
-    if (room.type === 'p') return 'group';
-    if (room.type === 'c') return 'channel';
-    return 'group';
+    return room.type || 'p'; // Return type as-is, default to 'p' (private group)
   };
 
   useEffect(() => {
