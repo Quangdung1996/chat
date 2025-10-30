@@ -43,6 +43,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
       refreshInterval: 10000, // Poll mỗi 10 giây
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
+      keepPreviousData: true, // ✨ GIỮ data cũ khi switching, tránh flash
       onSuccess: () => {
         // Auto scroll sau khi load messages
         setTimeout(() => scrollToBottom(), 100);

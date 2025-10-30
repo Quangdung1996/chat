@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
@@ -13,6 +13,11 @@ function HomeContent() {
   const [selectedRoom, setSelectedRoom] = useState<UserSubscription | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [targetRoomId, setTargetRoomId] = useState<string | null>(null);
+
+  // Stable callback để tránh re-render ChatSidebar
+  const handleSelectRoom = useCallback((room: UserSubscription) => {
+    setSelectedRoom(room);
+  }, []);
 
   // Đọc roomId từ URL khi component mount
   useEffect(() => {

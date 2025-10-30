@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import type { CreateGroupRequest } from '@/types/rocketchat';
 
@@ -10,16 +10,57 @@ interface CreateRoomModalProps {
   onSuccess: () => void;
 }
 
+interface User {
+  _id: string;
+  username: string;
+  name?: string;
+  emails?: { address: string }[];
+}
+
 export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRoomModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<CreateGroupRequest>({
     groupCode: '',
     name: '',
     isPrivate: true,
     description: '',
     isReadOnly: false,
+    members: [],
   });
+
+  // Load users when modal opens
+  useEffect(() => {
+    if (isOpen && users.length === 0) {
+      loadUsers();
+    }
+  }, [isOpen]);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const response = await rocketChatService.getUsers(100, 0);
+      if (response.success && response.users) {
+        setUsers(response.users);
+      }
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const toggleMember = (userId: string) => {
+    setSelectedMembers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +75,13 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
         return;
       }
 
-      // Create room with current data
-      // Backend will auto-generate groupCode from name if needed
-      const response = await rocketChatService.createGroup(formData);
+      // Create room with selected members
+      const requestData = {
+        ...formData,
+        members: selectedMembers,
+      };
+
+      const response = await rocketChatService.createGroup(requestData);
 
       if (response.success) {
         // Success
@@ -50,7 +95,10 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
           isPrivate: true,
           description: '',
           isReadOnly: false,
+          members: [],
         });
+        setSelectedMembers([]);
+        setSearchTerm('');
       } else {
         setError(response.message || 'Failed to create room');
       }
@@ -192,32 +240,76 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
               </label>
             </div>
 
-            {/* Optional Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ID Phòng ban
-                </label>
-                <input
-                  type="number"
-                  value={formData.departmentId || ''}
-                  onChange={(e) => setFormData({ ...formData, departmentId: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Tùy chọn"
-                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
+            {/* Member Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                👥 Thêm thành viên (tùy chọn)
+              </label>
+              
+              {/* Search */}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="🔍 Tìm kiếm thành viên..."
+                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-2"
+              />
+
+              {/* Selected Members Count */}
+              {selectedMembers.length > 0 && (
+                <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">
+                  ✓ Đã chọn {selectedMembers.length} thành viên
+                </div>
+              )}
+
+              {/* User List */}
+              <div className="border dark:border-gray-600 rounded-lg max-h-48 overflow-y-auto">
+                {loadingUsers ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    Đang tải danh sách...
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    Không có người dùng
+                  </div>
+                ) : (
+                  <div className="divide-y dark:divide-gray-700">
+                    {users
+                      .filter(user => {
+                        if (!searchTerm) return true;
+                        const search = searchTerm.toLowerCase();
+                        return (
+                          user.username?.toLowerCase().includes(search) ||
+                          user.name?.toLowerCase().includes(search)
+                        );
+                      })
+                      .map(user => (
+                        <label
+                          key={user._id}
+                          className="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedMembers.includes(user._id)}
+                            onChange={() => toggleMember(user._id)}
+                            className="rounded text-blue-600"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {user.name || user.username}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{user.username}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ID Dự án
-                </label>
-                <input
-                  type="number"
-                  value={formData.projectId || ''}
-                  onChange={(e) => setFormData({ ...formData, projectId: e.target.value ? parseInt(e.target.value) : undefined })}
-                  placeholder="Tùy chọn"
-                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Có thể bỏ qua và thêm thành viên sau
+              </p>
             </div>
 
             {/* Actions */}
