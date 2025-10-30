@@ -112,7 +112,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
       <RoomHeader room={room} onRefresh={() => loadMessages(false)} />
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -130,13 +130,10 @@ export default function ChatWindow({ room }: ChatWindowProps) {
             </div>
           </div>
         ) : (
-          <>
-            <div className="flex-1" />
-            <div className="py-4">
-              <MessageList messages={messages} />
-              <div ref={messagesEndRef} />
-            </div>
-          </>
+          <div className="py-4">
+            <MessageList messages={messages} />
+            <div ref={messagesEndRef} />
+          </div>
         )}
       </div>
 
