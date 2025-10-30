@@ -13,8 +13,8 @@ export default function Home() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
-        {/* Left Navigation Bar - Teams Style */}
+      <div className="flex h-screen overflow-hidden bg-[#f5f5f7] dark:bg-black">
+        {/* Left Navigation Bar - Apple Style */}
         <TeamsSidebar />
 
         {/* Chat List - Middle Panel */}
@@ -28,13 +28,13 @@ export default function Home() {
         {/* Main Chat Window - Right Panel */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile Header - Show menu button */}
-          <div className="lg:hidden bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
+          <div className="lg:hidden bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 p-4">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-gray-700 dark:text-gray-300"
+              className="text-gray-700 dark:text-gray-300 hover:text-[#007aff] dark:hover:text-[#0a84ff] transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
@@ -43,14 +43,16 @@ export default function Home() {
           {selectedRoom ? (
             <ChatWindow room={selectedRoom} />
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-900">
+            <div className="flex-1 flex items-center justify-center bg-[#f5f5f7] dark:bg-[#1c1c1e]">
               <div className="text-center">
-                <div className="text-6xl mb-4">💬</div>
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Select a chat to start messaging
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#007aff] to-[#5856d6] flex items-center justify-center shadow-xl">
+                  <span className="text-5xl">💬</span>
+                </div>
+                <h2 className="text-[28px] font-semibold text-gray-900 dark:text-white mb-2 tracking-tight">
+                  Chọn cuộc trò chuyện
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Choose a conversation from the list to begin
+                <p className="text-[17px] text-gray-500 dark:text-gray-400">
+                  Chọn một cuộc trò chuyện từ danh sách để bắt đầu
                 </p>
               </div>
             </div>

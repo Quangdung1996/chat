@@ -44,27 +44,28 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-3">
+      {/* Apple Style Header with Frosted Glass */}
+      <div className="flex-shrink-0 bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 px-5 py-3">
         <div className="flex items-center justify-between">
           {/* Room Info */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#007aff] to-[#5856d6] flex items-center justify-center text-white text-sm flex-shrink-0 shadow-md">
               {room.type === 'd' ? '💬' : room.type === 'p' ? '🔒' : '📢'}
             </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
                 {room.fullName || room.name}
               </h2>
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-2.5 mt-0.5">
                 <button
                   onClick={() => setShowMembers(!showMembers)}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors"
+                  className="text-[13px] text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] flex items-center gap-1 transition-colors duration-200"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>{members.length || '...'}</span>
+                  <span>{members.length || '...'} thành viên</span>
                 </button>
                 {room.unreadCount > 0 && (
-                  <span className="flex items-center gap-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">
+                  <span className="flex items-center gap-1.5 text-[11px] bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-2 py-0.5 rounded-full font-medium">
                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                     {room.unreadCount}
                   </span>
@@ -73,22 +74,22 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1">
+          {/* Actions - Minimalist */}
+          <div className="flex items-center gap-0.5">
             <button
               onClick={() => setShowInviteModal(true)}
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
               title="Mời thành viên"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-5 h-5" />
             </button>
 
             <button
               onClick={onRefresh}
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
               title="Làm mới"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-5 h-5" />
             </button>
 
             <RoomSettingsMenu room={room} onUpdate={onRefresh} />
