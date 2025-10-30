@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
 import rocketChatService from '@/services/rocketchat.service';
+import { useAuthStore } from '@/store/authStore';
 import { Search, MessageSquare, Loader2, Mail } from 'lucide-react';
 
 interface User {
@@ -17,6 +18,7 @@ interface User {
 
 export default function ContactsPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,29 +42,35 @@ export default function ContactsPage() {
     }
   };
 
-  const handleStartChat = async (user: User) => {
-    setCreatingDM(user._id);
+  const handleStartChat = async (contactUser: User) => {
+    setCreatingDM(contactUser._id);
     try {
-      // Lấy current user ID từ localStorage
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        console.error('No user found in localStorage');
+      // Lấy current user ID từ authStore
+      if (!user?.id) {
+        console.error('No user found in authStore');
         return;
       }
       
-      const currentUser = JSON.parse(storedUser);
-      const currentUserId = currentUser.userId || currentUser.id;
+      const currentUserId = user.id;
       
       // Tạo DM room
       const response = await rocketChatService.createDirectMessage(
         currentUserId,
-        user.username
+        contactUser.username
       );
       
       console.log('🔍 [DEBUG] createDirectMessage response:', response);
       
       if (response.success && response.roomId) {
         console.log('✅ [DEBUG] Redirecting with roomId:', response.roomId);
+        
+        // Set flag để force reload rooms khi về trang home
+        sessionStorage.setItem('forceReloadRooms', 'true');
+        sessionStorage.setItem('targetRoomId', response.roomId);
+        
+        // Delay nhỏ để đảm bảo backend đã sync xong
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Redirect về trang chat với roomId để tự động mở room
         router.push(`/?roomId=${response.roomId}`);
       } else {
