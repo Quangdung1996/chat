@@ -3,6 +3,34 @@
 import { useState } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import type { UserSubscription } from '@/types/rocketchat';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface RoomSettingsMenuProps {
   room: UserSubscription;
@@ -15,7 +43,6 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     return null;
   }
 
-  const [showMenu, setShowMenu] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,7 +67,6 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     try {
       await rocketChatService.archiveRoom(room.roomId, roomType);
       onUpdate();
-      setShowMenu(false);
     } catch (error) {
       alert('Failed to archive room: ' + (error as Error).message);
     } finally {
@@ -54,7 +80,6 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
       await rocketChatService.deleteRoom(room.roomId, roomType);
       onUpdate();
       setShowDeleteConfirm(false);
-      setShowMenu(false);
     } catch (error) {
       alert('Failed to delete room: ' + (error as Error).message);
     } finally {
@@ -62,12 +87,11 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     }
   };
 
-  const handleToggleReadOnly = async (announcementOnly: boolean) => {
+  const handleToggleReadOnly = async () => {
     setLoading(true);
     try {
-      await rocketChatService.setAnnouncementMode(room.roomId, announcementOnly, roomType);
+      await rocketChatService.setAnnouncementMode(room.roomId, !room.isReadOnly, roomType);
       onUpdate();
-      setShowMenu(false);
     } catch (error) {
       alert('Failed to update room: ' + (error as Error).message);
     } finally {
@@ -77,105 +101,85 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
 
   return (
     <>
-      {/* Settings Button */}
-      <div className="relative">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          title="Room Settings"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-            />
-          </svg>
-        </button>
+      {/* Settings Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Room Settings"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+              />
+            </svg>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem onClick={() => setShowRenameModal(true)}>
+            ✏️ Rename Room
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={handleToggleReadOnly}
+            disabled={loading}
+          >
+            {room.isReadOnly ? '🔓 Disable' : '📢 Enable'} Read-Only
+          </DropdownMenuItem>
 
-        {/* Dropdown Menu */}
-        {showMenu && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setShowMenu(false)}
-            />
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 z-20">
-              <div className="py-1">
-                <button
-                  onClick={() => {
-                    setShowRenameModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  ✏️ Rename Room
-                </button>
-                
-                <button
-                  onClick={handleToggleReadOnly}
-                  disabled={loading}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {room.isReadOnly ? '🔓 Disable' : '📢 Enable'} Read-Only
-                </button>
+          <DropdownMenuItem
+            onClick={handleArchive}
+            disabled={loading || room.isArchived}
+          >
+            📦 Archive Room
+          </DropdownMenuItem>
 
-                <button
-                  onClick={handleArchive}
-                  disabled={loading || room.isArchived}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 disabled:opacity-50"
-                >
-                  📦 Archive Room
-                </button>
+          <DropdownMenuSeparator />
 
-                <div className="border-t dark:border-gray-700 my-1" />
-
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirm(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2"
-                >
-                  🗑️ Delete Room
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+          <DropdownMenuItem 
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            🗑️ Delete Room
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Rename Modal */}
-      {showRenameModal && (
-        <RenameModal
-          currentName={room.roomName}
-          onRename={handleRename}
-          onClose={() => setShowRenameModal(false)}
-          loading={loading}
-        />
-      )}
+      <RenameModal
+        isOpen={showRenameModal}
+        currentName={room.roomName}
+        onRename={handleRename}
+        onClose={() => setShowRenameModal(false)}
+        loading={loading}
+      />
 
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <DeleteConfirmModal
-          roomName={room.roomName}
-          onConfirm={handleDelete}
-          onClose={() => setShowDeleteConfirm(false)}
-          loading={loading}
-        />
-      )}
+      <DeleteConfirmDialog
+        isOpen={showDeleteConfirm}
+        roomName={room.roomName}
+        onConfirm={handleDelete}
+        onClose={() => setShowDeleteConfirm(false)}
+        loading={loading}
+      />
     </>
   );
 }
 
 // Rename Modal Component
 function RenameModal({
+  isOpen,
   currentName,
   onRename,
   onClose,
   loading,
 }: {
+  isOpen: boolean;
   currentName: string;
   onRename: (newName: string) => void;
   onClose: () => void;
@@ -184,85 +188,81 @@ function RenameModal({
   const [newName, setNewName] = useState(currentName);
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Rename Room
-          </h3>
-          <input
-            type="text"
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename Room</DialogTitle>
+          <DialogDescription>
+            Enter a new name for this room
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-2">
+          <Label htmlFor="roomName">Room Name</Label>
+          <Input
+            id="roomName"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-4"
+            placeholder="Enter room name"
             autoFocus
           />
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onRename(newName)}
-              disabled={loading || !newName.trim()}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
-            >
-              {loading ? 'Renaming...' : 'Rename'}
-            </button>
-          </div>
         </div>
-      </div>
-    </>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => onRename(newName)}
+            disabled={loading || !newName.trim()}
+          >
+            {loading ? 'Renaming...' : 'Rename'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// Delete Confirmation Modal
-function DeleteConfirmModal({
+// Delete Confirmation Dialog
+function DeleteConfirmDialog({
+  isOpen,
   roomName,
   onConfirm,
   onClose,
   loading,
 }: {
+  isOpen: boolean;
   roomName: string;
   onConfirm: () => void;
   onClose: () => void;
   loading: boolean;
 }) {
   return (
-    <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-          <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
-            ⚠️ Delete Room?
-          </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Are you sure you want to delete <strong>"{roomName}"</strong>?
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>⚠️ Delete Room?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete <strong>&ldquo;{roomName}&rdquo;</strong>?
             This action cannot be undone!
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
-            >
-              {loading ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={loading}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {loading ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
-

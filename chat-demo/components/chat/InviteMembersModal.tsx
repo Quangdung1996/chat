@@ -2,6 +2,16 @@
 
 import { useState } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 interface InviteMembersModalProps {
   isOpen: boolean;
@@ -34,6 +44,7 @@ export default function InviteMembersModal({
 
       if (ids.length === 0) {
         setError('Please enter at least one user ID');
+        setLoading(false);
         return;
       }
 
@@ -54,96 +65,75 @@ export default function InviteMembersModal({
     }
   };
 
-  if (!isOpen) return null;
+  const userCount = userIds
+    .split(/[,\n]/)
+    .filter((id) => id.trim().length > 0).length;
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
-        onClick={onClose}
-      />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>👥 Invite Members</DialogTitle>
+          <DialogDescription>
+            Add members to this room by entering their Rocket.Chat user IDs
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-          {/* Header */}
-          <div className="p-6 border-b dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                👥 Invite Members
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              >
-                ✕
-              </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Error */}
+          {error && (
+            <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-md text-sm">
+              {error}
             </div>
+          )}
+
+          {/* User IDs Input */}
+          <div className="space-y-2">
+            <Label htmlFor="userIds">Rocket.Chat User IDs</Label>
+            <textarea
+              id="userIds"
+              value={userIds}
+              onChange={(e) => setUserIds(e.target.value)}
+              placeholder="Enter user IDs (one per line or comma-separated)&#10;e.g:&#10;abc123&#10;def456&#10;ghi789"
+              rows={6}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none font-mono"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              💡 Enter Rocket.Chat user IDs separated by comma or new line
+            </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Error */}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-
-            {/* User IDs Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Rocket.Chat User IDs
-              </label>
-              <textarea
-                value={userIds}
-                onChange={(e) => setUserIds(e.target.value)}
-                placeholder="Enter user IDs (one per line or comma-separated)&#10;e.g:&#10;abc123&#10;def456&#10;ghi789"
-                rows={6}
-                className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm resize-none"
-                required
-              />
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                💡 Enter Rocket.Chat user IDs separated by comma or new line
+          {/* Preview */}
+          {userIds.trim() && (
+            <div className="bg-primary/10 border border-primary/20 px-4 py-3 rounded-md">
+              <p className="text-sm">
+                📋 Will invite{' '}
+                <strong>{userCount}</strong>{' '}
+                user(s)
               </p>
             </div>
+          )}
 
-            {/* Preview */}
-            {userIds.trim() && (
-              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-4 py-3 rounded">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  📋 Will invite{' '}
-                  <strong>
-                    {userIds.split(/[,\n]/).filter((id) => id.trim().length > 0).length}
-                  </strong>{' '}
-                  user(s)
-                </p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !userIds.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Inviting...' : 'Invite Members'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </>
+          {/* Actions */}
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !userIds.trim()}
+            >
+              {loading ? 'Inviting...' : 'Invite Members'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
-
