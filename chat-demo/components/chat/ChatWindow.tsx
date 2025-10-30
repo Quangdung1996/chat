@@ -107,7 +107,7 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full">
       {/* Room Header */}
       <RoomHeader room={room} onRefresh={() => loadMessages(false)} />
 

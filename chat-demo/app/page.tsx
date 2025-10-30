@@ -26,7 +26,7 @@ export default function Home() {
         />
 
         {/* Main Chat Window - Right Panel */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile Header - Show menu button */}
           <div className="lg:hidden bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
             <button

@@ -72,11 +72,11 @@ export default function ChatSidebar({
       {/* Sidebar */}
       <div
         className={`
-          fixed lg:relative inset-y-0 left-0 z-50
+          fixed lg:static inset-y-0 left-0 z-50
           w-80 bg-gray-50 dark:bg-gray-800 border-r dark:border-gray-700
-          transform transition-transform duration-300 ease-in-out
+          transform transition-transform duration-300 ease-in-out lg:transform-none
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          flex flex-col
+          flex flex-col h-screen
         `}
       >
         {/* Header */}

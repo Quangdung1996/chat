@@ -14,7 +14,7 @@ export default function TeamsSidebar() {
   ];
 
   return (
-    <div className="w-20 bg-gradient-to-b from-blue-600 to-blue-700 dark:from-gray-900 dark:to-gray-950 flex flex-col items-center py-6 shadow-xl border-r border-blue-500/20">
+    <div className="w-20 flex-shrink-0 bg-gradient-to-b from-blue-600 to-blue-700 dark:from-gray-900 dark:to-gray-950 flex flex-col items-center py-6 shadow-xl border-r border-blue-500/20">
       {/* App Logo */}
       <div className="w-14 h-14 mb-8 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer hover:scale-105 transform duration-200">
         💬
