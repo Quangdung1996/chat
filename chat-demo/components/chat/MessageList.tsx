@@ -55,6 +55,7 @@ export default function MessageList({ messages }: MessageListProps) {
         const showAvatar = index === 0 || messages[index - 1].username !== message.username;
         const isConsecutive = index > 0 && messages[index - 1].username === message.username;
         const isHovered = hoveredMessage === message.messageId;
+        const isCurrentUser = message.isCurrentUser;
 
         return (
           <div
@@ -67,7 +68,9 @@ export default function MessageList({ messages }: MessageListProps) {
           >
             {/* Action Bar - Appears on Hover (Teams Style) */}
             {isHovered && !message.deleted && (
-              <div className="absolute -top-3 right-8 z-10 flex items-center gap-0.5 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-1">
+              <div className={`absolute -top-3 z-10 flex items-center gap-0.5 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-1 ${
+                isCurrentUser ? 'right-4' : 'right-8'
+              }`}>
                 <button
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                   title="Thích"
@@ -95,25 +98,27 @@ export default function MessageList({ messages }: MessageListProps) {
               </div>
             )}
 
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
               {/* Avatar */}
-              <div className="flex-shrink-0 w-8 h-8 mt-0.5">
-                {showAvatar ? (
-                  <div
-                    className={`w-8 h-8 rounded-full ${getAvatarColor(
-                      message.username
-                    )} flex items-center justify-center text-white font-semibold text-xs shadow-sm`}
-                  >
-                    {getInitials(message.username)}
-                  </div>
-                ) : (
-                  <div className="w-8 h-8" />
-                )}
-              </div>
+              {!isCurrentUser && (
+                <div className="flex-shrink-0 w-8 h-8 mt-0.5">
+                  {showAvatar ? (
+                    <div
+                      className={`w-8 h-8 rounded-full ${getAvatarColor(
+                        message.username
+                      )} flex items-center justify-center text-white font-semibold text-xs shadow-sm`}
+                    >
+                      {getInitials(message.username)}
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8" />
+                  )}
+                </div>
+              )}
 
               {/* Message Content */}
-              <div className="flex-1 min-w-0">
-                {showAvatar && (
+              <div className={`flex-1 min-w-0 ${isCurrentUser ? 'flex flex-col items-end' : ''}`}>
+                {showAvatar && !isCurrentUser && (
                   <div className="flex items-baseline gap-2 mb-0.5">
                     <span className="font-semibold text-sm text-gray-900 dark:text-white">
                       {message.username}
@@ -130,7 +135,9 @@ export default function MessageList({ messages }: MessageListProps) {
                 )}
 
                 {/* Message Text */}
-                <div className={`text-sm ${isConsecutive ? 'mt-0' : 'mt-0.5'}`}>
+                <div className={`text-sm ${isConsecutive ? 'mt-0' : 'mt-0.5'} ${
+                  isCurrentUser ? 'max-w-[70%]' : ''
+                }`}>
                   {message.deleted ? (
                     <span className="text-gray-400 dark:text-gray-500 italic">
                       <svg className="w-3 h-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,15 +146,33 @@ export default function MessageList({ messages }: MessageListProps) {
                       Tin nhắn đã bị xóa
                     </span>
                   ) : (
-                    <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words leading-relaxed">
-                      {message.text}
-                    </p>
+                    <div className={`inline-block px-3 py-2 rounded-lg ${
+                      isCurrentUser 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                    }`}>
+                      <p className="whitespace-pre-wrap break-words leading-relaxed">
+                        {message.text}
+                      </p>
+                      {isCurrentUser && (
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-xs text-blue-100">
+                            {formatTime(message.timestamp)}
+                          </span>
+                          {message.edited && (
+                            <span className="text-xs text-blue-200 italic">
+                              (đã sửa)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Timestamp on hover (for consecutive messages) */}
-              {isConsecutive && isHovered && (
+              {/* Timestamp on hover (for consecutive messages from others) */}
+              {isConsecutive && isHovered && !isCurrentUser && (
                 <div className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                   {formatTime(message.timestamp)}
                 </div>

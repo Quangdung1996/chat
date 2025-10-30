@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
+import { useAuthStore } from '@/store/authStore';
 import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
 
 interface ChatWindowProps {
@@ -11,6 +12,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ room }: ChatWindowProps) {
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
@@ -48,7 +50,8 @@ export default function ChatWindow({ room }: ChatWindowProps) {
         room.roomId,
         getRoomType(),
         50,
-        0
+        0,
+        user?.username // Pass current username to identify own messages
       );
       if (response.success && response.messages) {
         setMessages(response.messages || []);

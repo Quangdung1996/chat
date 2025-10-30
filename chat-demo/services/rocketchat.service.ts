@@ -237,7 +237,8 @@ class RocketChatService {
     rocketRoomId: string,
     roomType: string = 'group',
     count: number = 50,
-    offset: number = 0
+    offset: number = 0,
+    currentUsername?: string
   ): Promise<{ success: boolean; messages: any[] }> {
     const endpoint = this.endpoints.getMessages.replace('{rocketRoomId}', rocketRoomId);
     const response = await apiClient.get<{ 
@@ -257,14 +258,18 @@ class RocketChatService {
 
     // Transform backend response to match frontend expected format
     if (response.success && response.messages) {
-      const transformedMessages = response.messages.map((msg: any) => ({
-        messageId: msg._id || msg.id,
-        username: msg.u?.username || msg.username || 'Unknown',
-        text: msg.msg || msg.text || '',
-        timestamp: msg.ts || msg.timestamp,
-        deleted: msg.deleted || false,
-        edited: msg.editedAt ? true : false,
-      }));
+      const transformedMessages = response.messages.map((msg: any) => {
+        const username = msg.u?.username || msg.username || 'Unknown';
+        return {
+          messageId: msg._id || msg.id,
+          username,
+          text: msg.msg || msg.text || '',
+          timestamp: msg.ts || msg.timestamp,
+          deleted: msg.deleted || false,
+          edited: msg.editedAt ? true : false,
+          isCurrentUser: currentUsername ? username === currentUsername : false,
+        };
+      });
 
       return {
         success: response.success,

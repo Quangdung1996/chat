@@ -160,6 +160,7 @@ export interface ChatMessage {
   timestamp: string;
   deleted?: boolean;
   edited?: boolean;
+  isCurrentUser?: boolean;
 }
 
 // Backend message format (from DB)
