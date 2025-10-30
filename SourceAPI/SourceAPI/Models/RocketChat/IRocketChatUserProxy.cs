@@ -53,6 +53,16 @@ namespace SourceAPI.Models.RocketChat
 
         [Get("/api/v1/rooms.info?roomId={roomId}")]
         Task<RoomInfoResponse> GetRoomInfoAsync(string roomId);
+
+        // Get messages from room
+        [Get("/api/v1/groups.messages")]
+        Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+
+        [Get("/api/v1/channels.messages")]
+        Task<RoomMessagesResponse> GetChannelMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+
+        [Get("/api/v1/im.messages")]
+        Task<RoomMessagesResponse> GetDirectMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
     }
 }
 

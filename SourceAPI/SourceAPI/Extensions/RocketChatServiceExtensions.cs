@@ -5,6 +5,7 @@ using Newtonsoft.Json.Serialization;
 using Refit;
 using SourceAPI.Handlers;
 using SourceAPI.Models.RocketChat;
+using SourceAPI.Services;
 using SourceAPI.Services.RocketChat;
 using System;
 
@@ -77,28 +78,6 @@ namespace SourceAPI.Extensions
                 .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>()
                 .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
 
-            // Register legacy IRocketChatProxy (alias to IRocketChatAdminProxy for backward compatibility)
-            services.AddRefitClient<IRocketChatProxy>(refitSettings)
-                .ConfigureHttpClient(client =>
-                {
-                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
-                    client.Timeout = TimeSpan.FromSeconds(30);
-                })
-                .AddHttpMessageHandler<LoggingDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
-
-            // Register legacy HttpClient (for backward compatibility)
-            services.AddHttpClient("RocketChat", client =>
-            {
-                client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
-
             // Register User Proxy Factory (for creating user-specific proxies)
             services.AddSingleton<IRocketChatUserProxyFactory, RocketChatUserProxyFactory>();
             services.AddHttpClient("RocketChatUser", client =>
@@ -123,6 +102,8 @@ namespace SourceAPI.Extensions
 
             // Register memory cache if not already registered
             services.AddMemoryCache();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;
         }

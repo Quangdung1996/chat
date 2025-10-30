@@ -16,12 +16,12 @@ namespace SourceAPI.Services.RocketChat
     public class RocketChatRoomService : IRocketChatRoomService
     {
         private readonly IRocketChatAdminProxy _adminApi;
-        private readonly IRocketChatProxy _userProxy;
         private readonly IRocketChatUserProxyFactory _userProxyFactory;
         private readonly IRocketChatUserTokenService _userTokenService;
         private readonly RocketChatConfig _config;
         private readonly ILogger<RocketChatRoomService> _logger;
         private readonly IRocketChatUserService _userService;
+        private readonly ICurrentUserService _currentUserService;
         public RocketChatRoomService(
             IRocketChatAdminProxy adminApi,
             IRocketChatUserProxyFactory userProxyFactory,
@@ -29,7 +29,7 @@ namespace SourceAPI.Services.RocketChat
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger,
             IRocketChatUserService service,
-            IRocketChatProxy userProxy)
+            ICurrentUserService currentUserService)
         {
             _adminApi = adminApi;
             _userProxyFactory = userProxyFactory;
@@ -37,7 +37,7 @@ namespace SourceAPI.Services.RocketChat
             _config = config.Value;
             _logger = logger;
             _userService = service;
-            _userProxy = userProxy;
+            _currentUserService = currentUserService;
         }
 
         /// <summary>
@@ -555,6 +555,21 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
+                roomType = "d";
+                var userId = _currentUserService.UserId;
+                // Get user mapping to retrieve username
+                var mapping = await _userService.GetMappingAsync(userId);
+                if (mapping == null)
+                {
+                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
+                    return default;
+                }
+
+                // Get user token and create user-specific proxy
+                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(userId, mapping.RocketUsername);
+                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
+
+
                 _logger.LogInformation($"Getting messages from room {roomId} (type: {roomType})");
 
                 RoomMessagesResponse response;
@@ -562,20 +577,20 @@ namespace SourceAPI.Services.RocketChat
                 // Call appropriate API based on room type
                 if (roomType == "group")
                 {
-                    response = await _adminApi.GetGroupMessagesAsync(roomId, count, offset);
+                    response = await userApi.GetGroupMessagesAsync(roomId, count, offset);
                 }
                 else if (roomType == "channel")
                 {
-                    response = await _adminApi.GetChannelMessagesAsync(roomId, count, offset);
+                    response = await userApi.GetChannelMessagesAsync(roomId, count, offset);
                 }
                 else if (roomType == "dm" || roomType == "d")
                 {
-                    response = await _adminApi.GetDirectMessagesAsync(roomId, count, offset);
+                    response = await userApi.GetDirectMessagesAsync(roomId, count, offset);
                 }
                 else
                 {
                     _logger.LogWarning($"Unknown room type: {roomType}, defaulting to group");
-                    response = await _adminApi.GetGroupMessagesAsync(roomId, count, offset);
+                    response = await userApi.GetGroupMessagesAsync(roomId, count, offset);
                 }
 
                 if (response == null || !response.Success)

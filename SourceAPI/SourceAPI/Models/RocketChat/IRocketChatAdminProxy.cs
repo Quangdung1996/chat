@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using Refit;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;
@@ -123,18 +124,27 @@ namespace SourceAPI.Models.RocketChat
     // Response for room messages
     public class RoomMessagesResponse : ApiResponse
     {
+        [JsonProperty("messages")]
         public List<RoomMessage> Messages { get; set; } = new();
+        [JsonProperty("count")]
         public int Count { get; set; }
+        [JsonProperty("offset")]
         public int Offset { get; set; }
+        [JsonProperty("total")]
         public int Total { get; set; }
     }
 
     public class RoomMessage
     {
+        [JsonProperty("_id")]
         public string Id { get; set; } = string.Empty;
+        [JsonProperty("rid")]
         public string Rid { get; set; } = string.Empty; // Room ID
+        [JsonProperty("msg")]
         public string Msg { get; set; } = string.Empty; // Message text
+        [JsonProperty("ts")]
         public DateTime Ts { get; set; } // Timestamp
+        [JsonProperty("u")]
         public RoomMessageUser U { get; set; } = new(); // User info
     }
 
