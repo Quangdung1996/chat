@@ -59,9 +59,9 @@ export default function ContactsPage() {
         user.username
       );
       
-      if (response.success) {
-        // Redirect về trang chat
-        router.push('/');
+      if (response.success && response.roomId) {
+        // Redirect về trang chat với roomId để tự động mở room
+        router.push(`/?roomId=${response.roomId}`);
       }
     } catch (error) {
       console.error('Failed to create DM:', error);

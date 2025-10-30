@@ -13,6 +13,8 @@ interface ChatSidebarProps {
   onSelectRoom: (room: UserSubscription) => void;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
+  targetRoomId?: string | null;
+  onRoomSelected?: () => void;
 }
 
 export default function ChatSidebar({
@@ -20,6 +22,8 @@ export default function ChatSidebar({
   onSelectRoom,
   isMobileOpen,
   onCloseMobile,
+  targetRoomId,
+  onRoomSelected,
 }: ChatSidebarProps) {
   const user = useAuthStore((state) => state.user);
   const [rooms, setRooms] = useState<UserSubscription[]>([]);
@@ -32,6 +36,17 @@ export default function ChatSidebar({
       loadRooms();
     }
   }, [user?.id]);
+
+  // Auto-select room khi có targetRoomId từ URL
+  useEffect(() => {
+    if (targetRoomId && rooms.length > 0) {
+      const targetRoom = rooms.find(room => room.roomId === targetRoomId);
+      if (targetRoom) {
+        onSelectRoom(targetRoom);
+        onRoomSelected?.(); // Clear targetRoomId sau khi đã select
+      }
+    }
+  }, [targetRoomId, rooms, onSelectRoom, onRoomSelected]);
 
   const loadRooms = async () => {
     if (!user?.id) {

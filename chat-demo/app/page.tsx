@@ -1,18 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import type { UserSubscription } from '@/types/rocketchat';
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [selectedRoom, setSelectedRoom] = useState<UserSubscription | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [targetRoomId, setTargetRoomId] = useState<string | null>(null);
+
+  // Đọc roomId từ URL khi component mount
+  useEffect(() => {
+    const roomId = searchParams.get('roomId');
+    if (roomId) {
+      setTargetRoomId(roomId);
+    }
+  }, [searchParams]);
 
   return (
-    <ProtectedRoute>
       <div className="flex h-screen overflow-hidden bg-[#f5f5f7] dark:bg-black">
         {/* Left Navigation Bar - Apple Style */}
         <TeamsSidebar />
@@ -23,6 +33,8 @@ export default function Home() {
           onSelectRoom={setSelectedRoom}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
+          targetRoomId={targetRoomId}
+          onRoomSelected={() => setTargetRoomId(null)}
         />
 
         {/* Main Chat Window - Right Panel */}
@@ -59,6 +71,22 @@ export default function Home() {
           )}
         </div>
       </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={
+        <div className="flex h-screen items-center justify-center bg-[#f5f5f7] dark:bg-black">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-[#007aff] border-t-transparent animate-spin" />
+            <p className="text-[17px] text-gray-500 dark:text-gray-400">Đang tải...</p>
+          </div>
+        </div>
+      }>
+        <HomeContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
