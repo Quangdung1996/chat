@@ -59,7 +59,45 @@ class RocketChatService {
    */
   async getUserRooms(userId: number): Promise<GetUserRoomsResponse> {
     const endpoint = this.endpoints.getUserRooms.replace('{userId}', userId.toString());
-    return apiClient.get(endpoint);
+    const response = await apiClient.get<{
+      success: boolean;
+      userId: number;
+      count: number;
+      rooms: any[];
+    }>(endpoint);
+
+    // Transform backend response to match frontend interface
+    if (response.success && response.rooms) {
+      const transformedRooms: UserSubscription[] = response.rooms.map((room: any) => ({
+        id: room._id,                    // subscription ID
+        roomId: room.rid,                // actual room ID (for API calls)
+        name: room.name,
+        fullName: room.fname || room.name, // fallback to name if fname is empty
+        type: room.t,                    // 'd', 'p', 'c'
+        user: {
+          id: room.u._id,
+          username: room.u.username,
+          name: room.u.name,
+        },
+        unreadCount: room.unread || 0,
+        alert: room.alert || false,
+        open: room.open || false,
+      }));
+
+      return {
+        success: response.success,
+        userId: response.userId,
+        count: response.count,
+        rooms: transformedRooms,
+      };
+    }
+
+    return {
+      success: response.success || false,
+      userId: response.userId || userId,
+      count: 0,
+      rooms: [],
+    };
   }
 
   // ===== ROOM MANAGEMENT =====
