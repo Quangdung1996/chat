@@ -433,8 +433,7 @@ namespace SourceAPI.Services.RocketChat
                 var request = new PostMessageRequest
                 {
                     RoomId = roomId,
-                    Text = text,
-                    Alias = alias
+                    Text = text
                 };
                 // Get user mapping to retrieve username
                 var mapping = await _userService.GetMappingAsync(int.Parse(userId));
@@ -447,9 +446,8 @@ namespace SourceAPI.Services.RocketChat
                 // Get user token and create user-specific proxy
                 var userToken = await _userTokenService.GetOrCreateUserTokenAsync(int.Parse(userId), mapping.RocketUsername);
                 var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
-
                 // Use Refit - DelegatingHandler auto adds auth headers
-                var response = await _userProxy.PostMessageAsync(request);
+                var response = await userApi.PostMessageAsync(request);
 
                 if (!response.Success)
                     return null;

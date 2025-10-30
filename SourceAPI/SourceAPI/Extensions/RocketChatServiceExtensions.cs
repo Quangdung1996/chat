@@ -65,8 +65,6 @@ namespace SourceAPI.Extensions
                 .AddHttpMessageHandler<LoggingDelegatingHandler>()
                 .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>(); // NO Auth Handler!
 
-            // Register Admin Proxy with admin token (via DelegatingHandlers)
-            // Order: Logging → Auth → ErrorHandling (cuối cùng, gần InnerHandler nhất)
             services.AddRefitClient<IRocketChatAdminProxy>(refitSettings)
                 .ConfigureHttpClient(client =>
                 {
@@ -103,6 +101,15 @@ namespace SourceAPI.Extensions
 
             // Register User Proxy Factory (for creating user-specific proxies)
             services.AddSingleton<IRocketChatUserProxyFactory, RocketChatUserProxyFactory>();
+            services.AddHttpClient("RocketChatUser", client =>
+            {
+                client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+              .AddHttpMessageHandler<LoggingDelegatingHandler>()
+              .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
 
             // Register services
             services.AddScoped<IRocketChatAuthService, RocketChatAuthService>();

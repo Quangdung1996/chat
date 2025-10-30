@@ -50,6 +50,9 @@ namespace SourceAPI.Models.RocketChat
 
         [Get("/api/v1/rooms.get")]
         Task<UserRoomsResponse> GetUserRoomsAsync();
+
+        [Get("/api/v1/rooms.info?roomId={roomId}")]
+        Task<RoomInfoResponse> GetRoomInfoAsync(string roomId);
     }
 }
 
