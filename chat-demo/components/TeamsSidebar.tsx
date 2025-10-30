@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MessageSquare, Hash, Users, Settings } from 'lucide-react';
+import { MessageSquare, Hash, UserCircle, Settings } from 'lucide-react';
 
 export default function TeamsSidebar() {
   const pathname = usePathname();
@@ -10,7 +10,7 @@ export default function TeamsSidebar() {
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageSquare },
     { href: '/channels', label: 'Channels', icon: Hash },
-    { href: '/teams', label: 'Teams', icon: Users },
+    { href: '/contacts', label: 'Danh bạ', icon: UserCircle },
   ];
 
   return (
