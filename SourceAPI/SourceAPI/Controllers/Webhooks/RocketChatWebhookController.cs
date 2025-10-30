@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using SourceAPI.Core.Repository;
 using System;
 using System.Threading.Tasks;
 
@@ -126,9 +125,9 @@ namespace SourceAPI.Controllers.Webhooks
                 // TODO: Không còn bảng ChatMessageLog - messages lưu trực tiếp trong Rocket.Chat
                 // Nếu cần audit/moderation: implement custom logging hoặc query từ Rocket.Chat API
                 // Example: var messages = await _roomService.GetRoomMessagesAsync(payload.RoomId);
-                
+
                 _logger.LogInformation($"Message received: {payload.MessageId} in room {payload.RoomId} | CorrelationId: {correlationId}");
-                
+
                 // T-36: Check moderation rules
                 // TODO: Implement policy for auto-delete based on keywords
                 // if (ContainsBannedWords(payload.Text))
@@ -239,17 +238,7 @@ namespace SourceAPI.Controllers.Webhooks
         {
             try
             {
-                // Mark message as deleted in database
-                var result = RocketChatRepository.DeleteMessage(new DeleteMessageParam
-                {
-                    RocketMessageId = messageId,
-                    IsAutoDeleted = true,
-                    DeletionReason = reason,
-                    DeletedBy = "system"
-                });
 
-                // TODO: Call Rocket.Chat API to delete message
-                // await _roomService.DeleteMessageAsync(messageId);
 
                 _logger.LogInformation($"Message deleted: {messageId} | Reason: {reason} | CorrelationId: {correlationId}");
                 await Task.CompletedTask;

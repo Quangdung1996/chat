@@ -1,8 +1,6 @@
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using SourceAPI.Core.Repository;
-using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
 using System;
@@ -263,19 +261,6 @@ namespace SourceAPI.Controllers.Integrations
                     return BadRequest(new { message = "GroupCode is required" });
                 }
 
-                // T-19b: Check if group already exists (idempotent)
-                var existingRoom = RocketChatRepository.GetRoomByGroupCode(request.GroupCode);
-                if (existingRoom != null)
-                {
-                    return Ok(new CreateGroupResponse
-                    {
-                        RoomId = existingRoom.RocketRoomId,
-                        GroupCode = existingRoom.GroupCode,
-                        Name = existingRoom.RoomName,
-                        Success = true,
-                        Message = "Group already exists"
-                    });
-                }
 
                 // Create new group
                 var result = request.IsPrivate
@@ -312,21 +297,20 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                var rooms = RocketChatRepository.ListRooms(new ListRoomsParam
-                {
-                    DepartmentId = departmentId,
-                    ProjectId = projectId,
-                    RoomType = roomType,
-                    PageSize = pageSize,
-                    PageNumber = pageNumber
-                });
+                //var rooms = RocketChatRepository.ListRooms(new ListRoomsParam
+                //{
+                //    DepartmentId = departmentId,
+                //    ProjectId = projectId,
+                //    RoomType = roomType,
+                //    PageSize = pageSize,
+                //    PageNumber = pageNumber
+                //});
 
                 return Ok(new
                 {
                     success = true,
                     pageNumber,
                     pageSize,
-                    data = rooms
                 });
             }
             catch (Exception ex)
@@ -637,7 +621,7 @@ namespace SourceAPI.Controllers.Integrations
             // TODO: Không còn bảng RoomMemberMapping - lấy trực tiếp từ Rocket.Chat API
             // Use: await _roomService.GetMembersAsync(rocketRoomId) instead
             // var members = await _roomService.GetMembersAsync(rocketRoomId);
-            
+
             return Ok(new
             {
                 success = false,
