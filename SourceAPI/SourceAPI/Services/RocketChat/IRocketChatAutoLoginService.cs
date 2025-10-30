@@ -1,3 +1,4 @@
+using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Threading.Tasks;
 

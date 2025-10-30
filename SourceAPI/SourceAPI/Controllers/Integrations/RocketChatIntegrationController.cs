@@ -2,6 +2,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Core.Repository;
+using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
 using System;

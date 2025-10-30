@@ -2,7 +2,7 @@ using Refit;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Models.RocketChat
+namespace SourceAPI.Infrastructure.Proxy
 {
     /// <summary>
     /// Refit interface for RocketChat REST API - Public Operations

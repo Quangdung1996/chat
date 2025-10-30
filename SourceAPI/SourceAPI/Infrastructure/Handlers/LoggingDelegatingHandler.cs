@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Handlers
+namespace SourceAPI.Infrastructure.Handlers
 {
     /// <summary>
     /// DelegatingHandler to log HTTP requests and responses

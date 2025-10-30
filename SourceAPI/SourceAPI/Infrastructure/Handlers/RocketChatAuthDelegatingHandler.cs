@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Handlers
+namespace SourceAPI.Infrastructure.Handlers
 {
     /// <summary>
     /// DelegatingHandler to automatically add RocketChat authentication headers

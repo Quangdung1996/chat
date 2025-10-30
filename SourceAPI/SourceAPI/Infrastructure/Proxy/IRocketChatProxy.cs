@@ -3,7 +3,7 @@ using SourceAPI.Models.RocketChat.DTOs;
 using System;
 using System.Collections.Generic;
 
-namespace SourceAPI.Models.RocketChat;
+namespace SourceAPI.Infrastructure.Proxy;
 
 
 // =====================================================
@@ -192,3 +192,4 @@ public class MessageData
     [JsonProperty("msg")]
     public string Msg { get; set; } = string.Empty;
 }
+

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
+using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System;

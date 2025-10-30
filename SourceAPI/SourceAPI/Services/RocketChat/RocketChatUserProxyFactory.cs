@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Refit;
+using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
 using System;
 using System.Net.Http;

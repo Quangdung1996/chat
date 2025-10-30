@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Models.RocketChat
+namespace SourceAPI.Infrastructure.Proxy
 {
     /// <summary>
     /// Refit interface for RocketChat REST API - Admin Operations
