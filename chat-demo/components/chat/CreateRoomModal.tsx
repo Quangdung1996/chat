@@ -115,7 +115,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+        className="fixed inset-0 bg-black bg-opacity-30 z-50"
         onClick={onClose}
       />
 
@@ -284,15 +284,18 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                         );
                       })
                       .map(user => (
-                        <label
+                        <div
                           key={user._id}
                           className="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                          onClick={() => toggleMember(user._id)}
                         >
                           <input
                             type="checkbox"
                             checked={selectedMembers.includes(user._id)}
-                            onChange={() => toggleMember(user._id)}
-                            className="rounded text-blue-600"
+                            onChange={() => {}}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded text-blue-600 pointer-events-none"
+                            readOnly
                           />
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -302,7 +305,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                               @{user.username}
                             </div>
                           </div>
-                        </label>
+                        </div>
                       ))}
                   </div>
                 )}
