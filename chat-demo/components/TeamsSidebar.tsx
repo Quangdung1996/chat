@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MessageSquare, Hash, Users, Calendar, Phone, FolderOpen, Settings } from 'lucide-react';
+import { MessageSquare, Hash, Users, Settings } from 'lucide-react';
 
 export default function TeamsSidebar() {
   const pathname = usePathname();
@@ -11,9 +11,6 @@ export default function TeamsSidebar() {
     { href: '/', label: 'Chat', icon: MessageSquare },
     { href: '/channels', label: 'Channels', icon: Hash },
     { href: '/teams', label: 'Teams', icon: Users },
-    { href: '/calendar', label: 'Calendar', icon: Calendar },
-    { href: '/calls', label: 'Calls', icon: Phone },
-    { href: '/files', label: 'Files', icon: FolderOpen },
   ];
 
   return (

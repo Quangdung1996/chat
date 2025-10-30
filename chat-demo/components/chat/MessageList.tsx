@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Heart, Reply, MoreHorizontal, Trash2 } from 'lucide-react';
 import type { ChatMessage } from '@/types/rocketchat';
 
 interface MessageListProps {
@@ -75,25 +76,19 @@ export default function MessageList({ messages }: MessageListProps) {
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                   title="Thích"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                  <Heart className="w-4 h-4" />
                 </button>
                 <button
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                   title="Phản hồi"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                  </svg>
+                  <Reply className="w-4 h-4" />
                 </button>
                 <button
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                   title="Thêm"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                  </svg>
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -139,10 +134,8 @@ export default function MessageList({ messages }: MessageListProps) {
                   isCurrentUser ? 'max-w-[70%]' : ''
                 }`}>
                   {message.deleted ? (
-                    <span className="text-gray-400 dark:text-gray-500 italic">
-                      <svg className="w-3 h-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                    <span className="text-gray-400 dark:text-gray-500 italic flex items-center gap-1">
+                      <Trash2 className="w-3 h-3" />
                       Tin nhắn đã bị xóa
                     </span>
                   ) : (
