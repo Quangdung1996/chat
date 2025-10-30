@@ -59,9 +59,14 @@ export default function ContactsPage() {
         user.username
       );
       
+      console.log('🔍 [DEBUG] createDirectMessage response:', response);
+      
       if (response.success && response.roomId) {
+        console.log('✅ [DEBUG] Redirecting with roomId:', response.roomId);
         // Redirect về trang chat với roomId để tự động mở room
         router.push(`/?roomId=${response.roomId}`);
+      } else {
+        console.warn('⚠️ [DEBUG] No roomId in response or not success');
       }
     } catch (error) {
       console.error('Failed to create DM:', error);

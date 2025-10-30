@@ -39,11 +39,20 @@ export default function ChatSidebar({
 
   // Auto-select room khi có targetRoomId từ URL
   useEffect(() => {
+    console.log('🔍 [ChatSidebar] targetRoomId:', targetRoomId);
+    console.log('🔍 [ChatSidebar] rooms count:', rooms.length);
+    
     if (targetRoomId && rooms.length > 0) {
+      console.log('🔍 [ChatSidebar] Searching for room with roomId:', targetRoomId);
+      console.log('🔍 [ChatSidebar] Available roomIds:', rooms.map(r => r.roomId));
+      
       const targetRoom = rooms.find(room => room.roomId === targetRoomId);
       if (targetRoom) {
+        console.log('✅ [ChatSidebar] Found target room:', targetRoom.name);
         onSelectRoom(targetRoom);
         onRoomSelected?.(); // Clear targetRoomId sau khi đã select
+      } else {
+        console.warn('⚠️ [ChatSidebar] Room not found with roomId:', targetRoomId);
       }
     }
   }, [targetRoomId, rooms, onSelectRoom, onRoomSelected]);

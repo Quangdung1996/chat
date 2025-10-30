@@ -17,7 +17,9 @@ function HomeContent() {
   // Đọc roomId từ URL khi component mount
   useEffect(() => {
     const roomId = searchParams.get('roomId');
+    console.log('🔍 [HomePage] URL roomId:', roomId);
     if (roomId) {
+      console.log('✅ [HomePage] Setting targetRoomId:', roomId);
       setTargetRoomId(roomId);
     }
   }, [searchParams]);
