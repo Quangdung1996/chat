@@ -7,6 +7,7 @@ using SourceAPI.Infrastructure.Handlers;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Services;
+using SourceAPI.Services.BackgroundQueue;
 using SourceAPI.Services.RocketChat;
 using System;
 
@@ -97,6 +98,13 @@ namespace SourceAPI.Extensions
             services.AddScoped<IRocketChatRoomService, RocketChatRoomService>();
             services.AddScoped<IRocketChatAutoLoginService, RocketChatAutoLoginService>();
             services.AddScoped<IRocketChatUserTokenService, RocketChatUserTokenService>();
+
+            // Register background task queue for async user registration
+            services.AddSingleton<IBackgroundTaskQueue>(ctx =>
+            {
+                return new BackgroundTaskQueue(capacity: 100); // Queue capacity
+            });
+            services.AddHostedService<QueuedHostedService>();
 
             // Register background service for auto-sync
             // services.AddHostedService<RocketChatSyncBackgroundService>();

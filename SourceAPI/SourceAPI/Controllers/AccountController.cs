@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using SourceAPI.DataShared.Common;
+using SourceAPI.Services.BackgroundQueue;
+using SourceAPI.Services.RocketChat;
 using SourceAPI.Shared.Services;
 using System;
 using System.Collections.Generic;
@@ -39,6 +41,17 @@ namespace SourceAPI.Controllers
         private const string TwitterApiBaseUrl = "https://api.twitter.com/1.1/";
 
         private DateTime epochUtc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
+        private readonly IRocketChatUserService _rocketChatUserService;
+
+        public AccountController(
+            IBackgroundTaskQueue backgroundTaskQueue,
+            IRocketChatUserService rocketChatUserService)
+        {
+            _backgroundTaskQueue = backgroundTaskQueue;
+            _rocketChatUserService = rocketChatUserService;
+        }
 
         /// <summary>
         ///
@@ -288,6 +301,9 @@ namespace SourceAPI.Controllers
 
                             result.Data = token;
                             Register_SaveMoreInfo(model, token);
+
+                            // Queue background task to sync Rocket.Chat user
+                            await QueueRocketChatUserSync(token.user_id, model.Username, model.FullName, model.Email);
                         }
                         catch (Exception exLogin)
                         {
@@ -323,6 +339,66 @@ namespace SourceAPI.Controllers
                 //service.UserLoginId = token.user_id;
                 //service.LogBy = token.user_name;
                 //service.SaveRegisterInfo4UserLogin(model, out sMessage);
+            }
+        }
+
+        /// <summary>
+        /// Queue background task to sync newly registered user to Rocket.Chat
+        /// </summary>
+        private async Task QueueRocketChatUserSync(int userId, string username, string fullName, string email)
+        {
+            try
+            {
+                await _backgroundTaskQueue.QueueBackgroundWorkItemAsync(async token =>
+                {
+                    try
+                    {
+                        var syncResult = await _rocketChatUserService.SyncUserAsync(
+                            userId,
+                            username,
+                            fullName ?? username,
+                            email
+                        );
+
+                        if (!string.IsNullOrWhiteSpace(syncResult.RocketUserId))
+                        {
+                            SQLDataContextHelper.LogInfo(
+                                $"Background: Successfully synced user {userId} ({username}) to Rocket.Chat",
+                                "RocketChat.BackgroundSync"
+                            );
+                        }
+                        else
+                        {
+                            SQLDataContextHelper.LogException(
+                                new Exception($"Background sync failed: {syncResult.Message}"),
+                                "RocketChat.BackgroundSync",
+                                $"UserId: {userId}, Username: {username}"
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SQLDataContextHelper.LogException(
+                            ex,
+                            "RocketChat.BackgroundSync",
+                            $"UserId: {userId}, Username: {username}, Error: {ex.Message}"
+                        );
+                    }
+                });
+
+                SQLDataContextHelper.LogInfo(
+                    $"Queued Rocket.Chat sync for user {userId} ({username})",
+                    "RocketChat.QueueSync"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Don't fail registration if queue fails
+                SQLDataContextHelper.LogException(
+                    ex,
+                    "RocketChat.QueueSync",
+                    $"Failed to queue sync for user {userId}: {ex.Message}"
+                );
             }
         }
 
