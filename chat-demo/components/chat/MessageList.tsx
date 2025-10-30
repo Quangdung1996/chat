@@ -61,34 +61,34 @@ export default function MessageList({ messages }: MessageListProps) {
         return (
           <div
             key={message.messageId}
-            className={`group relative px-4 py-1 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors ${
-              isConsecutive ? '' : 'mt-3'
+            className={`group relative px-6 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${
+              isConsecutive ? '' : 'mt-4'
             }`}
             onMouseEnter={() => setHoveredMessage(message.messageId)}
             onMouseLeave={() => setHoveredMessage(null)}
           >
             {/* Action Bar - Appears on Hover (Teams Style) */}
             {isHovered && !message.deleted && (
-              <div className={`absolute -top-3 z-10 flex items-center gap-0.5 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-1 ${
-                isCurrentUser ? 'right-4' : 'right-8'
+              <div className={`absolute -top-2 z-10 flex items-center gap-1 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-1 ${
+                isCurrentUser ? 'right-6' : 'right-10'
               }`}>
                 <button
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                  className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all"
                   title="Thích"
                 >
-                  <Heart className="w-4 h-4" />
+                  <Heart className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
-                  title="Phản hồi"
+                  className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all"
+                  title="Trả lời"
                 >
-                  <Reply className="w-4 h-4" />
+                  <Reply className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                  className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all"
                   title="Thêm"
                 >
-                  <MoreHorizontal className="w-4 h-4" />
+                  <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
@@ -139,21 +139,21 @@ export default function MessageList({ messages }: MessageListProps) {
                       Tin nhắn đã bị xóa
                     </span>
                   ) : (
-                    <div className={`inline-block px-3 py-2 rounded-lg ${
+                    <div className={`inline-block px-4 py-2.5 rounded-2xl ${
                       isCurrentUser 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                        ? 'bg-blue-600 text-white shadow-sm' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                     }`}>
-                      <p className="whitespace-pre-wrap break-words leading-relaxed">
+                      <p className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
                         {message.text}
                       </p>
                       {isCurrentUser && (
-                        <div className="flex items-center justify-end gap-1 mt-1">
-                          <span className="text-xs text-blue-100">
+                        <div className="flex items-center justify-end gap-1.5 mt-1">
+                          <span className="text-[11px] text-blue-100">
                             {formatTime(message.timestamp)}
                           </span>
                           {message.edited && (
-                            <span className="text-xs text-blue-200 italic">
+                            <span className="text-[11px] text-blue-200 italic">
                               (đã sửa)
                             </span>
                           )}

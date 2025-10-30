@@ -5,7 +5,7 @@ import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
 import { useAuthStore } from '@/store/authStore';
-import { Bold, Italic, Link as LinkIcon, Smile, Paperclip, Send } from 'lucide-react';
+import { Smile, Paperclip, Send } from 'lucide-react';
 import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
 
 interface ChatWindowProps {
@@ -137,86 +137,62 @@ export default function ChatWindow({ room }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Message Input - Teams Style */}
-      <div className="border-t dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-4">
-        <form onSubmit={handleSendMessage} className="space-y-2">
-          {/* Formatting Toolbar */}
-          <div className="flex items-center gap-1 pb-2 border-b dark:border-gray-700">
-            <button
-              type="button"
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Bold"
-            >
-              <Bold className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Italic"
-            >
-              <Italic className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Link"
-            >
-              <LinkIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Emoji"
-            >
-              <Smile className="w-4 h-4" />
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Đính kèm file"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Text Input */}
+      {/* Message Input - Modern Clean Design */}
+      <div className="flex-shrink-0 border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <form onSubmit={handleSendMessage}>
           <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Nhập tin nhắn..."
-                rows={1}
-                className="w-full px-0 py-2 bg-transparent border-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none focus:ring-0"
-                style={{ minHeight: '40px', maxHeight: '160px' }}
-              />
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">Enter</kbd> để gửi,{' '}
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">Shift+Enter</kbd> để xuống dòng
-              </p>
+            {/* Action Buttons - Left Side */}
+            <div className="flex items-center gap-1 pb-2">
+              <button
+                type="button"
+                className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                title="Đính kèm file"
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                title="Chèn emoji"
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Text Input */}
+            <div className="flex-1 min-w-0">
+              <div className="relative">
+                <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Nhập tin nhắn..."
+                  rows={1}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ minHeight: '44px', maxHeight: '120px' }}
+                />
+              </div>
             </div>
 
             {/* Send Button */}
             <button
               type="submit"
               disabled={!messageText.trim() || sending}
-              className="flex-shrink-0 px-4 py-2 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors font-medium text-sm"
-              title="Gửi tin nhắn"
+              className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-sm hover:shadow-md disabled:shadow-none mb-0.5"
+              title={sending ? "Đang gửi..." : "Gửi tin nhắn (Enter)"}
             >
               {sending ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  <span>Đang gửi...</span>
-                </>
+                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
               ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Gửi</span>
-                </>
+                <Send className="w-5 h-5" />
               )}
             </button>
+          </div>
+
+          {/* Helper Text */}
+          <div className="mt-2 px-2 text-xs text-gray-400 dark:text-gray-500">
+            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono">Enter</kbd> để gửi • 
+            <kbd className="ml-1 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono">Shift + Enter</kbd> để xuống dòng
           </div>
         </form>
       </div>
