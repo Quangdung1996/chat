@@ -155,12 +155,20 @@ export interface SendMessageResponse {
 
 export interface ChatMessage {
   messageId: string;
-  username: string;
+  roomId?: string;
+  username?: string;
   text: string;
-  timestamp: string;
+  timestamp?: string;
+  createdAt?: string;
+  updatedAt?: string;
   deleted?: boolean;
   edited?: boolean;
   isCurrentUser?: boolean;
+  user?: {
+    id: string;
+    username: string;
+    name?: string;
+  };
 }
 
 // Backend message format (from DB)
