@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import {
   Dialog,
@@ -11,128 +11,328 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, Users, UserPlus, X, Check, AlertCircle } from 'lucide-react';
 
 interface InviteMembersModalProps {
   isOpen: boolean;
   onClose: () => void;
   roomId: string;
+  roomName?: string;
   onSuccess: () => void;
+}
+
+interface User {
+  _id: string;
+  username: string;
+  name?: string;
+  emails?: { address: string }[];
+  status?: string;
 }
 
 export default function InviteMembersModal({
   isOpen,
   onClose,
   roomId,
+  roomName,
   onSuccess,
 }: InviteMembersModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userIds, setUserIds] = useState<string>('');
+  const [success, setSuccess] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  // Load users when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadUsers();
+    }
+  }, [isOpen]);
 
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedMembers([]);
+      setSearchTerm('');
+      setError(null);
+      setSuccess(null);
+    }
+  }, [isOpen]);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
     try {
-      // Parse user IDs
-      const ids = userIds
-        .split(/[,\n]/)
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0);
-
-      if (ids.length === 0) {
-        setError('Please enter at least one user ID');
-        setLoading(false);
-        return;
-      }
-
-      // Add members
-      const response = await rocketChatService.addMembers(roomId, ids);
-
-      if (response.success) {
-        onSuccess();
-        onClose();
-        setUserIds('');
-      } else {
-        setError('Failed to add members');
+      const response = await rocketChatService.getUsers(100, 0);
+      if (response.success && response.users) {
+        setUsers(response.users);
       }
     } catch (err) {
-      setError((err as Error).message);
+      console.error('Failed to load users:', err);
+      setError('Không thể tải danh sách người dùng');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const toggleMember = (userId: string) => {
+    setSelectedMembers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (selectedMembers.length === 0) {
+      setError('Vui lòng chọn ít nhất một thành viên');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Add members
+      const response = await rocketChatService.addMembers(roomId, selectedMembers);
+
+      if (response.success) {
+        setSuccess(`Đã thêm ${response.successCount} thành viên thành công!`);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1500);
+      } else {
+        setError('Không thể thêm thành viên');
+      }
+    } catch (err) {
+      setError((err as Error).message || 'Đã xảy ra lỗi');
     } finally {
       setLoading(false);
     }
   };
 
-  const userCount = userIds
-    .split(/[,\n]/)
-    .filter((id) => id.trim().length > 0).length;
+  const filteredUsers = users.filter(user => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      user.username?.toLowerCase().includes(search) ||
+      user.name?.toLowerCase().includes(search)
+    );
+  });
+
+  // Get avatar initials
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
+  // Get avatar color
+  const getAvatarColor = (username: string) => {
+    const colors = [
+      'from-blue-500 to-blue-600',
+      'from-purple-500 to-purple-600',
+      'from-pink-500 to-pink-600',
+      'from-green-500 to-green-600',
+      'from-yellow-500 to-yellow-600',
+      'from-red-500 to-red-600',
+      'from-indigo-500 to-indigo-600',
+      'from-teal-500 to-teal-600',
+    ];
+    const index = username.charCodeAt(0) % colors.length;
+    return `bg-gradient-to-br ${colors[index]}`;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>👥 Invite Members</DialogTitle>
-          <DialogDescription>
-            Add members to this room by entering their Rocket.Chat user IDs
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[550px] max-h-[85vh] p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2 mb-1">
+                <UserPlus className="w-6 h-6 text-primary" />
+                Thêm thành viên
+              </DialogTitle>
+              {roomName && (
+                <DialogDescription className="text-base">
+                  Thêm người dùng vào <strong>{roomName}</strong>
+                </DialogDescription>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Error */}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {/* Messages */}
           {error && (
-            <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-md text-sm">
-              {error}
+            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* User IDs Input */}
-          <div className="space-y-2">
-            <Label htmlFor="userIds">Rocket.Chat User IDs</Label>
-            <textarea
-              id="userIds"
-              value={userIds}
-              onChange={(e) => setUserIds(e.target.value)}
-              placeholder="Enter user IDs (one per line or comma-separated)&#10;e.g:&#10;abc123&#10;def456&#10;ghi789"
-              rows={6}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none font-mono"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              💡 Enter Rocket.Chat user IDs separated by comma or new line
+          {success && (
+            <div className="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm theo tên hoặc username..."
+                className="pl-10 h-11"
+                autoFocus
+              />
+            </div>
+
+            {/* Selected Members Count */}
+            {selectedMembers.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Check className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium">
+                    Đã chọn {selectedMembers.length} thành viên
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedMembers([])}
+                  className="h-auto py-1 px-2 text-xs"
+                >
+                  Bỏ chọn tất cả
+                </Button>
+              </div>
+            )}
+
+            {/* User List */}
+            <div className="border rounded-lg overflow-hidden">
+              <ScrollArea className="h-[360px]">
+                {loadingUsers ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-primary" />
+                    <p className="mt-3 text-sm text-muted-foreground">Đang tải danh sách...</p>
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                      {searchTerm ? 'Không tìm thấy người dùng' : 'Không có người dùng'}
+                    </p>
+                    {searchTerm && (
+                      <p className="text-xs text-muted-foreground">
+                        Thử từ khóa tìm kiếm khác
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {filteredUsers.map(user => {
+                      const isSelected = selectedMembers.includes(user._id);
+                      const displayName = user.name || user.username;
+                      
+                      return (
+                        <button
+                          key={user._id}
+                          type="button"
+                          onClick={() => toggleMember(user._id)}
+                          className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                            isSelected ? 'bg-primary/5' : ''
+                          }`}
+                        >
+                          {/* Avatar */}
+                          <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
+                            {getInitials(displayName)}
+                            {/* Online status indicator */}
+                            {user.status === 'online' && (
+                              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
+                            )}
+                          </div>
+                          
+                          {/* Info */}
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="text-sm font-medium truncate">
+                              {displayName}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              @{user.username}
+                              {user.status === 'online' && (
+                                <span className="ml-2 text-green-600 dark:text-green-400">● Trực tuyến</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Checkbox */}
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleMember(user._id)}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Info text */}
+            <p className="text-xs text-muted-foreground text-center">
+              💡 Chọn người dùng bạn muốn thêm vào nhóm
             </p>
           </div>
+        </div>
 
-          {/* Preview */}
-          {userIds.trim() && (
-            <div className="bg-primary/10 border border-primary/20 px-4 py-3 rounded-md">
-              <p className="text-sm">
-                📋 Will invite{' '}
-                <strong>{userCount}</strong>{' '}
-                user(s)
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <DialogFooter className="gap-2">
+        {/* Footer */}
+        <div className="p-6 pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-between gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
+              className="flex-1"
             >
-              Cancel
+              Hủy bỏ
             </Button>
             <Button
-              type="submit"
-              disabled={loading || !userIds.trim()}
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading || selectedMembers.length === 0}
+              className="flex-1"
             >
-              {loading ? 'Inviting...' : 'Invite Members'}
+              {loading ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  Đang thêm...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Thêm {selectedMembers.length > 0 ? `(${selectedMembers.length})` : ''}
+                </>
+              )}
             </Button>
-          </DialogFooter>
-        </form>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
