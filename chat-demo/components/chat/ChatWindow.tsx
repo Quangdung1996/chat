@@ -42,15 +42,13 @@ function ChatWindow({ room }: ChatWindowProps) {
   const user = useAuthStore(selectUser);
   const token = useAuthStore(selectToken);
 
-  // ✅ Stable room type - ensure it never changes between renders
-  const roomType = useMemo(() => room.type || 'p', [room.type]);
-  const roomId = useMemo(() => room.roomId, [room.roomId]);
+  // ✅ Extract primitive values FIRST to avoid reference changes
+  // room object can be recreated, but roomId/type strings are stable
+  const roomId = room.roomId;
+  const roomType = room.type || 'p';
 
-  // ✅ Memoize SWR key để tránh infinite loop
-  const swrKey = useMemo(
-    () => roomId ? ['messages', roomId, roomType] : null,
-    [roomId, roomType]
-  );
+  // ✅ SWR key với primitive values - không cần useMemo vì strings đã stable
+  const swrKey = roomId ? ['messages', roomId, roomType] : null;
 
   // SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
   const { data: messages = [], error, isLoading, mutate } = useSWR(

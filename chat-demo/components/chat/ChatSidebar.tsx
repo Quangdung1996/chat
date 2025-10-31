@@ -55,14 +55,11 @@ export default function ChatSidebar({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [creatingDM, setCreatingDM] = useState<string | null>(null);
 
-  // ✅ Stable user ID
-  const userId = useMemo(() => user?.id, [user?.id]);
+  // ✅ Extract primitive value - user.id is already a number (stable)
+  const userId = user?.id;
 
-  // ✅ SWR key cho rooms - memoize để tránh infinite loop
-  const roomsSwrKey = useMemo(
-    () => userId ? ['rooms', userId] : null,
-    [userId]
-  );
+  // ✅ SWR key với primitive value - không cần useMemo
+  const roomsSwrKey = userId ? ['rooms', userId] : null;
 
   // ✅ SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
   const { data: rooms = [], error, isLoading, mutate } = useSWR(
