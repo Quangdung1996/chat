@@ -90,8 +90,8 @@ export default function ChatSidebar({
     if (!rocketChatWS.isConnected()) {
       rocketChatWS.connect()
         .then(() => {
-          // Authenticate using backend API to get Rocket.Chat token
-          return rocketChatWS.authenticateWithBackend(user.id);
+          // Authenticate using stored token (đã get khi login)
+          return rocketChatWS.authenticateWithStoredToken();
         })
         .catch(err => {
           console.error('❌ Failed to connect/authenticate WebSocket:', err);

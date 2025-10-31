@@ -250,12 +250,43 @@ class RocketChatWebSocketService {
   }
 
   /**
-   * Authenticate with backend token
-   * Lấy token từ backend và authenticate WebSocket
+   * Authenticate with stored token from authStore
+   * KHÔNG gọi backend API - chỉ reuse token đã có
+   */
+  async authenticateWithStoredToken(): Promise<void> {
+    try {
+      // Get token from authStore (đã được lưu khi login)
+      const authState = useAuthStore.getState();
+      const authToken = authState.rocketChatToken;
+      const userId = authState.rocketChatUserId;
+
+      console.log('🔐 Authenticating WebSocket with stored token:', {
+        hasToken: !!authToken,
+        userId: userId
+      });
+      
+      if (!authToken || !userId) {
+        throw new Error('No RocketChat token found in store. Please login again.');
+      }
+      
+      // Authenticate WebSocket with the stored token
+      await this.authenticate(authToken, userId);
+      
+      console.log('✅ WebSocket authenticated successfully with stored token');
+    } catch (error) {
+      console.error('❌ Failed to authenticate with stored token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * @deprecated Use authenticateWithStoredToken() instead
+   * Authenticate with backend token (OLD METHOD - gọi backend mỗi lần)
+   * Chỉ dùng trong trường hợp token hết hạn cần refresh
    */
   async authenticateWithBackend(userId: number): Promise<void> {
     try {
-      console.log('🔐 Getting Rocket.Chat token from backend for user:', userId);
+      console.log('⚠️ [DEPRECATED] Getting NEW token from backend for user:', userId);
       
       // Get token from backend API
       const tokenResponse = await rocketChatService.getLoginToken(userId);
@@ -266,14 +297,10 @@ class RocketChatWebSocketService {
 
       console.log('✅ Got token from backend, authenticating WebSocket...');
       
-      // Save token to localStorage for future use (legacy support)
-      localStorage.setItem('rc_token', tokenResponse.authToken);
-      localStorage.setItem('rc_uid', tokenResponse.userId);
-      
       // Save token to authStore for axios interceptor
       useAuthStore.getState().setRocketChatAuth(tokenResponse.authToken, tokenResponse.userId);
       
-      console.log('💾 Saved new token to localStorage and authStore');
+      console.log('💾 Saved new token to authStore');
       
       // Authenticate WebSocket with the token
       await this.authenticate(tokenResponse.authToken, tokenResponse.userId);
@@ -292,13 +319,6 @@ class RocketChatWebSocketService {
     return new Promise((resolve, reject) => {
       this.authToken = authToken;
       this.userId = userId;
-
-      // Save token to localStorage (legacy support)
-      localStorage.setItem('rc_token', authToken);
-      localStorage.setItem('rc_uid', userId);
-
-      // Save token to authStore for axios interceptor
-      useAuthStore.getState().setRocketChatAuth(authToken, userId);
 
       const id = this.getNextId();
       this.callbacks.set(id, (result: any) => {

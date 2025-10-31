@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import authService from '@/services/auth.service';
+import rocketChatService from '@/services/rocketchat.service';
 
 // 🔧 Selector function - tránh infinite loop với Zustand
 const selectSetAuth = (state: any) => state.setAuth;
+const selectSetRocketChatAuth = (state: any) => state.setRocketChatAuth;
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore(selectSetAuth);
+  const setRocketChatAuth = useAuthStore(selectSetRocketChatAuth);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -35,14 +38,27 @@ export default function LoginPage() {
         throw new Error('Không thể lấy thông tin người dùng');
       }
 
-      // Step 3: Save token + user info to store
+      // Step 3: Save OAuth token + user info to store
       setAuth(
         tokenResponse.access_token,
         tokenResponse.refresh_token,
         userInfo
       );
 
-      // Step 4: Redirect to home
+      // Step 4: Get RocketChat token (chỉ 1 lần duy nhất khi login)
+      console.log('🚀 Getting RocketChat token for user:', userInfo.id);
+      try {
+        const rocketToken = await rocketChatService.getLoginToken(userInfo.id);
+        if (rocketToken.success && rocketToken.authToken) {
+          setRocketChatAuth(rocketToken.authToken, rocketToken.userId);
+          console.log('✅ RocketChat token saved to store');
+        }
+      } catch (rcError) {
+        console.warn('⚠️ Failed to get RocketChat token (non-blocking):', rcError);
+        // Non-blocking: user can still access app even if RC token fails
+      }
+
+      // Step 5: Redirect to home
       router.push('/');
     } catch (err) {
       setError((err as Error).message);

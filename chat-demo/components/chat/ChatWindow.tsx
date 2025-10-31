@@ -85,8 +85,8 @@ function ChatWindow({ room }: ChatWindowProps) {
     // Connect to WebSocket
     rocketChatWS.connect()
       .then(() => {
-        // Authenticate using backend API to get Rocket.Chat token
-        return rocketChatWS.authenticateWithBackend(user.id);
+        // Authenticate using stored token (đã get khi login)
+        return rocketChatWS.authenticateWithStoredToken();
       })
       .then(() => {
         setWsConnected(true);
