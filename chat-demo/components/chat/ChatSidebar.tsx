@@ -121,8 +121,6 @@ export default function ChatSidebar({
       return;
     }
 
-    console.log('🔔 Subscribing to user subscriptions for:', rocketChatUserId);
-
     // Handler cho subscription updates (unread count, etc)
     const handleSubscriptionUpdate = (data: any) => {
       const { action, subscription } = data;
@@ -147,17 +145,7 @@ export default function ChatSidebar({
             ...(subscription.fname && { fullName: subscription.fname }),
           };
           
-          console.log('✅ Updated room unread count:', {
-            roomId: subscription.rid,
-            roomName: newRooms[roomIndex].name,
-            unreadCount: subscription.unread || 0,
-            beforeUpdate: existingRoom,
-            afterUpdate: newRooms[roomIndex]
-          });
-          
           return newRooms;
-        } else {
-          console.warn('⚠️ Room not found in list:', subscription.rid);
         }
         
         return currentRooms;
