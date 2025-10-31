@@ -6,7 +6,7 @@ import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
-import { Search, Plus, X, ChevronDown, MessageSquare, Loader2 } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, MessageSquare, Loader2, XCircle } from 'lucide-react';
 import type { UserSubscription } from '@/types/rocketchat';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
@@ -312,16 +312,25 @@ export default function ChatSidebar({
             </div>
           </div>
 
-          {/* Search - iOS Style */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {/* Search - Enhanced iOS Style */}
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400 dark:text-gray-500 transition-all duration-200 group-focus-within:text-[#007aff] dark:group-focus-within:text-[#0a84ff]" />
             <input
               type="text"
-              placeholder="Tìm kiếm"
+              placeholder="Tìm kiếm cuộc trò chuyện..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-[#3a3a3c] border-0 rounded-lg text-[17px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007aff]/20 dark:focus:ring-[#0a84ff]/20 transition-all"
+              className="w-full pl-10 pr-10 py-2.5 bg-gray-100/80 dark:bg-[#3a3a3c]/80 backdrop-blur-sm border-0 rounded-xl text-[15px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007aff]/30 dark:focus:ring-[#0a84ff]/30 focus:bg-white dark:focus:bg-[#2c2c2e] transition-all duration-200 shadow-sm focus:shadow-md"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                aria-label="Xóa tìm kiếm"
+              >
+                <XCircle className="w-[18px] h-[18px] fill-current opacity-60 hover:opacity-100" />
+              </button>
+            )}
           </div>
         </div>
 
