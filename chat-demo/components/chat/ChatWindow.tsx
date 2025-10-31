@@ -123,6 +123,7 @@ function ChatWindow({ room }: ChatWindowProps) {
     // Handler cho message mới từ WebSocket
     const handleNewMessage = (message: any) => {
       console.log('📨 New message from WebSocket:', message);
+      console.log('🕐 Raw timestamp from WebSocket:', message.ts, '| Type:', typeof message.ts);
       
       // Helper to parse Rocket.Chat timestamp format
       const parseTimestamp = (ts: any): string => {
