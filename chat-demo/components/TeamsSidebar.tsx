@@ -10,7 +10,6 @@ export default function TeamsSidebar() {
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageCircle },
     { href: '/channels', label: 'Channels', icon: UsersIcon },
-    { href: '/contacts', label: 'Danh bạ', icon: UserCircle2 },
   ];
 
   return (
