@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ChatMessage } from '@/types/rocketchat';
 
@@ -7,7 +8,7 @@ interface MessageListProps {
   messages: ChatMessage[];
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+function MessageList({ messages }: MessageListProps) {
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -137,3 +138,15 @@ export default function MessageList({ messages }: MessageListProps) {
   );
 }
 
+// ✨ Memoize MessageList để tránh re-render khi messages không đổi
+export default memo(MessageList, (prevProps, nextProps) => {
+  // So sánh độ dài và message cuối cùng
+  if (prevProps.messages.length !== nextProps.messages.length) return false;
+  if (prevProps.messages.length === 0) return true;
+  
+  const prevLast = prevProps.messages[prevProps.messages.length - 1];
+  const nextLast = nextProps.messages[nextProps.messages.length - 1];
+  
+  return prevLast.messageId === nextLast.messageId && 
+         prevLast.text === nextLast.text;
+});

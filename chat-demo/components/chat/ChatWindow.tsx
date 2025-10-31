@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, memo } from 'react';
 import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
@@ -13,7 +13,7 @@ interface ChatWindowProps {
   room: UserSubscription;
 }
 
-export default function ChatWindow({ room }: ChatWindowProps) {
+function ChatWindow({ room }: ChatWindowProps) {
   const { user } = useAuthStore();
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
@@ -40,10 +40,17 @@ export default function ChatWindow({ room }: ChatWindowProps) {
     room?.roomId ? ['messages', room.roomId, room.type || 'p'] : null,
     messagesFetcher,
     {
-      refreshInterval: 10000, // Poll mỗi 10 giây
+      refreshInterval: 5000, // ✨ Poll mỗi 5 giây (giảm từ 10s)
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
       keepPreviousData: true, // ✨ GIỮ data cũ khi switching, tránh flash
+      revalidateOnMount: true, // ✨ Load ngay khi mount
+      compare: (a, b) => {
+        // ✨ So sánh messages để tránh re-render không cần thiết
+        if (!a || !b) return false;
+        if (a.length !== b.length) return false;
+        return JSON.stringify(a) === JSON.stringify(b);
+      },
       onSuccess: () => {
         // Auto scroll sau khi load messages
         setTimeout(() => scrollToBottom(), 100);
@@ -180,3 +187,8 @@ export default function ChatWindow({ room }: ChatWindowProps) {
   );
 }
 
+// ✨ Memoize ChatWindow để tránh re-render không cần thiết
+export default memo(ChatWindow, (prevProps, nextProps) => {
+  // Chỉ re-render khi roomId thay đổi
+  return prevProps.room.roomId === nextProps.room.roomId;
+});

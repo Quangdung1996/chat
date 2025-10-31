@@ -16,6 +16,7 @@ function HomeContent() {
 
   // Stable callback để tránh re-render ChatSidebar
   const handleSelectRoom = useCallback((room: UserSubscription) => {
+    console.log('📍 [HomePage] Selecting room:', room.name, room.roomId);
     setSelectedRoom(room);
   }, []);
 
