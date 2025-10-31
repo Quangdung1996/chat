@@ -339,5 +339,44 @@ public class UserInfo
     public string Name { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Response from groups.members, channels.members, or im.members
+/// </summary>
+public class RoomMembersResponse : ApiResponse
+{
+    [JsonProperty("members")]
+    public List<RoomMemberData> Members { get; set; } = new();
+
+    [JsonProperty("count")]
+    public int Count { get; set; }
+
+    [JsonProperty("offset")]
+    public int Offset { get; set; }
+
+    [JsonProperty("total")]
+    public int Total { get; set; }
+}
+
+/// <summary>
+/// Member information in a room
+/// </summary>
+public class RoomMemberData
+{
+    [JsonProperty("_id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonProperty("username")]
+    public string Username { get; set; } = string.Empty;
+
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonProperty("status")]
+    public string Status { get; set; } = string.Empty; // "online", "away", "busy", "offline"
+
+    [JsonProperty("roles")]
+    public List<string> Roles { get; set; } = new(); // ["owner", "moderator", "member"]
+}
+
 #endregion
 

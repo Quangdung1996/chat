@@ -116,5 +116,18 @@ public interface IRocketChatAdminProxy
 
     [Get("/api/v1/im.messages")]
     Task<RoomMessagesResponse> GetDirectMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+
+    // =====================================================
+    // Get room members (Admin)
+    // =====================================================
+
+    [Get("/api/v1/groups.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetGroupMembersAsync(string roomId);
+
+    [Get("/api/v1/channels.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetChannelMembersAsync(string roomId);
+
+    [Get("/api/v1/im.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetDirectMessageMembersAsync(string roomId);
 }
 

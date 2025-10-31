@@ -98,6 +98,12 @@ namespace SourceAPI.Services.RocketChat
         /// Direct authentication with Rocket.Chat without internal userId mapping
         /// </summary>
         Task<List<SubscriptionData>> GetUserRoomsByTokenAsync(string authToken, string rocketUserId);
+
+        /// <summary>
+        /// Get members of a specific room
+        /// User must be a member of the room to access this
+        /// </summary>
+        Task<RoomMembersResponse> GetRoomMembersAsync(string authToken, string rocketUserId, string roomId, string roomType = "group");
     }
 }
 

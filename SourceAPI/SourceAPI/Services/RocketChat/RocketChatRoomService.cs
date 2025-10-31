@@ -649,6 +649,57 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
+        /// <summary>
+        /// Get members of a specific room using user's token
+        /// </summary>
+        public async Task<RoomMembersResponse> GetRoomMembersAsync(string authToken, string rocketUserId, string roomId, string roomType = "group")
+        {
+            try
+            {
+                _logger.LogInformation($"Getting members for room {roomId} (type: {roomType}) as user {rocketUserId}");
+
+                // Create user-specific proxy with provided token
+                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
+
+                RoomMembersResponse response;
+
+                // Call appropriate endpoint based on room type
+                switch (roomType.ToLower())
+                {
+                    case "group":
+                    case "p":
+                        response = await userApi.GetGroupMembersAsync(roomId);
+                        break;
+                    case "channel":
+                    case "c":
+                        response = await userApi.GetChannelMembersAsync(roomId);
+                        break;
+                    case "direct":
+                    case "d":
+                        response = await userApi.GetDirectMessageMembersAsync(roomId);
+                        break;
+                    default:
+                        _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
+                        response = await userApi.GetGroupMembersAsync(roomId);
+                        break;
+                }
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get members for room {roomId}");
+                    return new RoomMembersResponse { Success = false, Members = new List<RoomMemberData>() };
+                }
+
+                _logger.LogInformation($"Retrieved {response.Members.Count} members for room {roomId}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting members for room {roomId}: {ex.Message}");
+                return new RoomMembersResponse { Success = false, Members = new List<RoomMemberData>() };
+            }
+        }
+
         #endregion
     }
 }

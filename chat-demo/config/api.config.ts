@@ -52,7 +52,7 @@ export const API_CONFIG = {
       addModerator: '/api/integrations/rocket/room/{roomId}/moderator/{rocketUserId}',
       removeModerator: '/api/integrations/rocket/room/{roomId}/moderator/{rocketUserId}',
       addOwner: '/api/integrations/rocket/room/{roomId}/owner/{rocketUserId}',
-      getRoomMembers: '/api/integrations/rocket/room/{roomMappingId}/members',
+      getRoomMembers: '/api/integrations/rocket/rooms/{roomId}/members',
 
       // Messaging
       sendMessage: '/api/integrations/rocket/send',

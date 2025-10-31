@@ -265,12 +265,19 @@ class RocketChatService {
   }
 
   /**
-   * Lấy danh sách members của room
-   * GET /api/integrations/rocket/room/{roomMappingId}/members?includeInactive=false
+   * Lấy danh sách members của room từ Rocket.Chat
+   * GET /api/integrations/rocket/rooms/{roomId}/members?roomType=group
+   * User must be a member of the room to access this
    */
-  async getRoomMembers(roomMappingId: number, includeInactive: boolean = false): Promise<{ success: boolean; roomMappingId: number; members: RoomMember[] }> {
-    const endpoint = this.endpoints.getRoomMembers.replace('{roomMappingId}', roomMappingId.toString());
-    return apiClient.get(`${endpoint}?includeInactive=${includeInactive}`);
+  async getRoomMembers(roomId: string, roomType: 'group' | 'channel' | 'direct' = 'group'): Promise<{ 
+    success: boolean; 
+    roomId: string; 
+    count: number;
+    total: number;
+    members: RoomMember[] 
+  }> {
+    const endpoint = this.endpoints.getRoomMembers.replace('{roomId}', roomId);
+    return apiClient.get(`${endpoint}?roomType=${roomType}`);
   }
 
   // ===== MESSAGING =====

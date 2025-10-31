@@ -623,23 +623,49 @@ namespace SourceAPI.Controllers.Integrations
         }
 
         /// <summary>
-        /// T-24: Get room members (reconcile with Rocket.Chat)
-        /// DoD: So sánh API vs DB; báo cáo chênh lệch
+        /// Get room members from Rocket.Chat
+        /// User must be a member of the room to access this
+        /// GET /api/integrations/rocket/rooms/{roomId}/members
         /// </summary>
-        [HttpGet("room/{roomMappingId}/members")]
+        [HttpGet("rooms/{roomId}/members")]
         [ProducesResponseType(200)]
-        public IActionResult GetRoomMembers(int roomMappingId, [FromQuery] bool includeInactive = false)
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> GetRoomMembers(string roomId, [FromQuery] string roomType = "group")
         {
-            // TODO: Không còn bảng RoomMemberMapping - lấy trực tiếp từ Rocket.Chat API
-            // Use: await _roomService.GetMembersAsync(rocketRoomId) instead
-            // var members = await _roomService.GetMembersAsync(rocketRoomId);
-
-            return Ok(new
+            try
             {
-                success = false,
-                message = "TODO: Get members directly from Rocket.Chat API - no longer using database",
-                hint = "Use RocketChatRoomService.GetMembersAsync(roomId)"
-            });
+                // Get Rocket.Chat token from header (injected by middleware)
+                var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
+                var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
+
+                if (string.IsNullOrEmpty(rocketToken) || string.IsNullOrEmpty(rocketUserId))
+                {
+                    return Unauthorized(new { message = "Rocket.Chat authentication required. Provide X-RocketChat-Token and X-RocketChat-UserId headers." });
+                }
+
+                _logger.LogInformation($"Getting members for room {roomId} (type: {roomType})");
+                var response = await _roomService.GetRoomMembersAsync(rocketToken, rocketUserId, roomId, roomType);
+
+                if (!response.Success)
+                {
+                    return StatusCode(403, new { message = "Failed to get room members. You may not have permission to access this room." });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    roomId,
+                    count = response.Count,
+                    total = response.Total,
+                    members = response.Members
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting members for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
         }
 
         #endregion

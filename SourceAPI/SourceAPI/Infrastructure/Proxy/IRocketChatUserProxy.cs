@@ -66,5 +66,18 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/groups.create")]
     Task<CreateRoomResponse> CreatePrivateGroupAsync([Body] CreateRoomRequest request);
+
+    // =====================================================
+    // Get room members
+    // =====================================================
+
+    [Get("/api/v1/groups.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetGroupMembersAsync(string roomId);
+
+    [Get("/api/v1/channels.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetChannelMembersAsync(string roomId);
+
+    [Get("/api/v1/im.members?roomId={roomId}")]
+    Task<RoomMembersResponse> GetDirectMessageMembersAsync(string roomId);
 }
 
