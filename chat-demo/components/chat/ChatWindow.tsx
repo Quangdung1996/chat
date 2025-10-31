@@ -43,6 +43,8 @@ function ChatWindow({ room }: ChatWindowProps) {
       try {
         const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
         if (response.success && response.messages) {
+          console.log('📥 Initial messages loaded:', response.messages.length);
+          console.log('🕐 First message:', response.messages[0]);
           setMessages(response.messages);
           setError(null);
         } else {
