@@ -25,7 +25,7 @@ interface User {
 }
 
 // ✅ SWR fetcher cho rooms - định nghĩa ngoài component
-const roomsFetcher = async ([_, userId]: [string, string]) => {
+const roomsFetcher = async ([_, userId]: [string, number]) => {
   const response = await rocketChatService.getUserRooms(userId);
   if (response.success && response.rooms) {
     return response.rooms;
