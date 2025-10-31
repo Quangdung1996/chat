@@ -185,13 +185,13 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               <>
                 {/* Backdrop */}
                 <div 
-                  className="fixed inset-0 z-[9998]" 
+                  className="fixed inset-0 z-[99998]" 
                   onClick={() => setShowMembers(false)}
                 />
                 {/* Dropdown */}
                 <div
                   ref={dropdownRef}
-                  className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
+                  className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[99999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
                 >
                 {/* Header */}
                 <div className="px-4 py-3 border-b dark:border-gray-700">
