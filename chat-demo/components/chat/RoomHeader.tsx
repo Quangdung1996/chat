@@ -6,6 +6,7 @@ import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
 import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
+import { useAuthStore } from '@/store/authStore';
 
 interface RoomHeaderProps {
   room: UserSubscription;
@@ -17,14 +18,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Get current user ID from Zustand store
+  const currentUserId = useAuthStore((state) => state.rocketChatUserId);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Check if current user is owner or moderator
-  const currentUserMember = members.find(m => m.id === currentUserId);
-  console.log('RoomHeader rendered for room:', currentUserId,);
-  console.log('RoomHeader rendered for room:', members);
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
@@ -90,14 +88,6 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
       alert('Có lỗi xảy ra khi rời group.');
     }
   };
-
-  // Get current user ID from localStorage
-  useEffect(() => {
-    const userId = localStorage.getItem('rocketChatUserId');
-    if (userId) {
-      setCurrentUserId(userId);
-    }
-  }, []);
 
   useEffect(() => {
     if (showMembers && members.length === 0) {
