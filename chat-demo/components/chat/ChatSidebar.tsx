@@ -236,11 +236,6 @@ export default function ChatSidebar({
                 // Only increment unread if message is from another user
                 if (messageUserId !== rocketChatUserId) {
                   unreadCount = (existingRoom.unreadCount || 0) + 1;
-                  console.log('🔔 [WS] New message in group, incrementing unread:', {
-                    room: room.fname || room.name,
-                    from: room.lastMessage.u?.username,
-                    newUnreadCount: unreadCount
-                  });
                 }
               }
             }
