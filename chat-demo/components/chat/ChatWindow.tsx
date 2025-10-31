@@ -16,19 +16,28 @@ interface ChatWindowProps {
 function ChatWindow({ room }: ChatWindowProps) {
   // ✅ Dùng selector function được memoize để tránh infinite loop
   const user = useAuthStore(useCallback((state) => state.user, []));
+  const hasHydrated = useAuthStore(useCallback((state) => state._hasHydrated, []));
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ✅ Lấy username một lần, tránh re-create fetcher khi user object thay đổi
+  const username = useMemo(() => user?.username, [user?.username]);
+
   // SWR fetcher function - memoize với useCallback để tránh infinite loop
   const messagesFetcher = useCallback(
     async ([_, roomId, roomType]: [string, string, string]) => {
+      // ⚠️ Nếu chưa có username, đừng fetch (đang đợi hydration)
+      if (!username) {
+        throw new Error('User not loaded yet');
+      }
+
       const response = await rocketChatService.getMessages(
         roomId,
         roomType,
         50,
         0,
-        user?.username
+        username
       );
       
       if (response.success && response.messages) {
@@ -36,13 +45,15 @@ function ChatWindow({ room }: ChatWindowProps) {
       }
       throw new Error('Failed to load messages');
     },
-    [user?.username] // Chỉ re-create khi username thay đổi
+    [username] // Chỉ re-create khi username thay đổi
   );
 
-  // ✅ Memoize SWR key để tránh infinite loop
+  // ✅ Memoize SWR key - CHỈ enable khi đã hydrate + có room + có username
   const swrKey = useMemo(
-    () => room?.roomId ? ['messages', room.roomId, room.type || 'p'] : null,
-    [room?.roomId, room?.type]
+    () => (hasHydrated && room?.roomId && username) 
+      ? ['messages', room.roomId, room.type || 'p'] 
+      : null,
+    [hasHydrated, room?.roomId, room?.type, username]
   );
 
   // Memoize scrollToBottom callback
@@ -109,6 +120,23 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   };
 
+  // ⚠️ Đợi hydration xong trước khi render
+  if (!hasHydrated || !username) {
+    return (
+      <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
+        <RoomHeader room={room} onRefresh={() => {}} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin inline-block w-7 h-7 border-[3px] border-current border-t-transparent rounded-full text-[#007aff]" />
+            <p className="mt-3 text-[15px] text-gray-600 dark:text-gray-400 font-normal">
+              Đang khởi tạo...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
@@ -120,7 +148,7 @@ function ChatWindow({ room }: ChatWindowProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin inline-block w-7 h-7 border-[3px] border-current border-t-transparent rounded-full text-[#007aff]" />
-              <p className="mt-3 text-[15px] text-gray-600 dark:text-gray-400 font-normal">Đang tải...</p>
+              <p className="mt-3 text-[15px] text-gray-600 dark:text-gray-400 font-normal">Đang tải tin nhắn...</p>
             </div>
           </div>
         ) : messages.length === 0 ? (

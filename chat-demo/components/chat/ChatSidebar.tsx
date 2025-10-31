@@ -30,6 +30,7 @@ export default function ChatSidebar({
   onCloseMobile,
 }: ChatSidebarProps) {
   const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const [rooms, setRooms] = useState<UserSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,11 +42,15 @@ export default function ChatSidebar({
   const [creatingDM, setCreatingDM] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
+    // ⚠️ CHỈ load khi đã hydrate xong + có user
+    if (hasHydrated && user?.id) {
       loadRooms();
       loadUsers(); // Load users for contact search
+    } else if (hasHydrated && !user?.id) {
+      // Hydrate xong nhưng không có user → Clear loading
+      setLoading(false);
     }
-  }, [user?.id]);
+  }, [hasHydrated, user?.id]);
 
   const loadRooms = async () => {
     if (!user?.id) {
