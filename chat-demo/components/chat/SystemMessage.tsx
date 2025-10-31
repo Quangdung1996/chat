@@ -5,7 +5,7 @@ import { UserPlus, UserMinus, LogIn, LogOut, Users } from 'lucide-react';
 interface SystemMessageProps {
   message: {
     text: string;
-    type: string | null;
+    type?: string | null;
     timestamp?: string;
     user?: {
       name?: string;
