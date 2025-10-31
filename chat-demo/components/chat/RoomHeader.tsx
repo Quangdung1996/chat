@@ -262,7 +262,12 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           {/* Actions - Minimalist */}
           <div className="flex items-center gap-0.5">
             <button
-              onClick={() => setShowInviteModal(true)}
+              onClick={() => {
+                setShowMembers(!showMembers);
+                if (!showMembers && members.length === 0) {
+                  loadMembers();
+                }
+              }}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
               title="Mời thành viên"
             >
