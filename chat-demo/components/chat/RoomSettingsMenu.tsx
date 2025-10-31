@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import type { UserSubscription } from '@/types/rocketchat';
 import {
@@ -153,7 +153,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
       {/* Rename Modal */}
       <RenameModal
         isOpen={showRenameModal}
-        currentName={room.roomName}
+        currentName={room.roomName || room.name}
         onRename={handleRename}
         onClose={() => setShowRenameModal(false)}
         loading={loading}
@@ -162,7 +162,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
       {/* Delete Confirmation */}
       <DeleteConfirmDialog
         isOpen={showDeleteConfirm}
-        roomName={room.roomName}
+        roomName={room.roomName || room.name}
         onConfirm={handleDelete}
         onClose={() => setShowDeleteConfirm(false)}
         loading={loading}
@@ -185,7 +185,14 @@ function RenameModal({
   onClose: () => void;
   loading: boolean;
 }) {
-  const [newName, setNewName] = useState(currentName);
+  const [newName, setNewName] = useState(currentName || '');
+  
+  // Update newName when currentName changes
+  useEffect(() => {
+    if (isOpen) {
+      setNewName(currentName || '');
+    }
+  }, [isOpen, currentName]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -218,7 +225,7 @@ function RenameModal({
           </Button>
           <Button
             onClick={() => onRename(newName)}
-            disabled={loading || !newName.trim()}
+            disabled={loading || !newName?.trim()}
           >
             {loading ? 'Renaming...' : 'Rename'}
           </Button>

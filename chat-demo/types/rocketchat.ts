@@ -89,6 +89,7 @@ export interface UserSubscription {
   roomId: string;
   name: string;
   fullName: string;
+  roomName?: string; // Room's display name
   type: string; // "d" = DM, "p" = private group, "c" = public channel
   user: {
     id: string;
@@ -98,6 +99,8 @@ export interface UserSubscription {
   unreadCount: number;
   alert: boolean;
   open: boolean;
+  isReadOnly?: boolean; // Whether the room is read-only
+  isArchived?: boolean; // Whether the room is archived
 }
 
 export interface GetUserRoomsResponse {
