@@ -149,43 +149,43 @@ export default function InviteMembersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-[550px] max-h-[90vh] p-0 gap-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2 mb-1">
-                <UserPlus className="w-6 h-6 text-primary" />
-                Thêm thành viên
+        <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2 mb-1">
+                <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                <span className="truncate">Thêm thành viên</span>
               </DialogTitle>
               {roomName && (
-                <DialogDescription className="text-base">
+                <DialogDescription className="text-xs sm:text-base">
                   Thêm người dùng vào <strong>{roomName}</strong>
                 </DialogDescription>
               )}
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
           {/* Messages */}
           {error && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="mb-3 sm:mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
-              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="mb-3 sm:mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2">
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
               <span>{success}</span>
             </div>
           )}
