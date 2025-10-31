@@ -356,8 +356,9 @@ export default function ChatSidebar({
                   <div className="px-2">
                     {filteredRooms.map((room) => {
                       const displayName = room.fullName || room.name;
-                      const hasUnread = room.unreadCount > 0;
                       const isActive = selectedRoom?.id === room.id;
+                      // Chỉ show badge khi có unread VÀ KHÔNG phải room đang active
+                      const hasUnread = room.unreadCount > 0 && !isActive;
 
                       // Get initials for avatar
                       const getInitials = (name: string) => {
