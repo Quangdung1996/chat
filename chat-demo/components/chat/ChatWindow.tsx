@@ -159,6 +159,12 @@ function ChatWindow({ room }: ChatWindowProps) {
         // Add new message to the end
         return [...currentMessages, newMessage];
       });
+
+      // ✅ Auto mark as read when receiving new messages in current room
+      // This ensures unread count stays at 0 while user is viewing the room
+      rocketChatWS.markRoomAsRead(roomId).catch(error => {
+        console.warn('Failed to auto-mark room as read:', error);
+      });
     };
 
     // Subscribe to room messages
