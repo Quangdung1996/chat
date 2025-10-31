@@ -719,6 +719,7 @@ namespace SourceAPI.Controllers.Integrations
                         fname = roomInfo?.FullName,
                         type = roomInfo?.Type,
                         readOnly = roomInfo?.ReadOnly ?? false,
+                        description = roomInfo?.Description,
                         usersCount = roomInfo?.UsersCount ?? 0,
                         messageCount = roomInfo?.MessageCount ?? 0,
                         u = roomInfo?.ChatUserInfo

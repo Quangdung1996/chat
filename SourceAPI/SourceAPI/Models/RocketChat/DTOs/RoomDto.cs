@@ -330,6 +330,9 @@ public class RoomInfo
     [JsonProperty("ro")]
     public bool ReadOnly { get; set; }
 
+    [JsonProperty("description")]
+    public string? Description { get; set; }
+
     [JsonProperty("sysMes")]
     public bool SystemMessages { get; set; }
 

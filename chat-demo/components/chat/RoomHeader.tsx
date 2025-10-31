@@ -21,6 +21,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [roomDescription, setRoomDescription] = useState<string | undefined>();
   
   // Confirm modal state
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -48,13 +49,14 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       if (response.success && response.room) {
         const readOnly = response.room.readOnly;
         setIsReadOnly(readOnly);
+        setRoomDescription(response.room.description);
         
         // ✅ Check if current user is the owner using room info
         const isOwner = response.room.u?._id === currentUserId;
         
         // Notify parent with readonly status and owner info
         onReadOnlyChange?.(readOnly, isOwner);
-        console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}, owner: ${response.room.u?.username}`);
+        console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}, owner: ${response.room.u?.username}, description: ${response.room.description}`);
       }
     } catch (error) {
       console.error('Failed to load room info:', error);
@@ -179,6 +181,11 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
               <h2 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
                 {room.fullName || room.name}
               </h2>
+              {roomDescription && (
+                <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                  {roomDescription}
+                </p>
+              )}
               <div className="flex items-center gap-2.5 mt-0.5">
                 {/* ✅ Chỉ show members count cho group/channel, không cần cho direct message */}
                 {room.type !== 'd' && (

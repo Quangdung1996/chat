@@ -228,6 +228,7 @@ export interface RoomInfo {
   fname: string;
   type: string;
   readOnly: boolean;
+  description?: string;
   usersCount: number;
   messageCount: number;
   u?: {
