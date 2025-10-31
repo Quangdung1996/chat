@@ -79,5 +79,17 @@ public interface IRocketChatUserProxy
 
     [Get("/api/v1/im.members?roomId={roomId}")]
     Task<RoomMembersResponse> GetDirectMessageMembersAsync(string roomId);
+
+    [Post("/api/v1/groups.kick")]
+    Task<ApiResponse> RemoveFromGroupAsync([Body] RemoveMemberRequest request);
+
+    [Post("/api/v1/channels.kick")]
+    Task<ApiResponse> RemoveFromChannelAsync([Body] RemoveMemberRequest request);
+
+    [Post("/api/v1/groups.addModerator")]
+    Task<ApiResponse> AddGroupModeratorAsync([Body] ModeratorRequest request);
+
+    [Post("/api/v1/channels.addModerator")]
+    Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
 }
 

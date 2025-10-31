@@ -24,6 +24,7 @@ namespace SourceAPI.Services.RocketChat
         private readonly ILogger<RocketChatRoomService> _logger;
         private readonly IRocketChatUserService _userService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IRocketChatContextService _rocketChatContext;
         public RocketChatRoomService(
             IRocketChatAdminProxy adminApi,
             IRocketChatUserProxyFactory userProxyFactory,
@@ -31,7 +32,8 @@ namespace SourceAPI.Services.RocketChat
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger,
             IRocketChatUserService service,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IRocketChatContextService rocketChatContext)
         {
             _adminApi = adminApi;
             _userProxyFactory = userProxyFactory;
@@ -40,6 +42,7 @@ namespace SourceAPI.Services.RocketChat
             _logger = logger;
             _userService = service;
             _currentUserService = currentUserService;
+            _rocketChatContext = rocketChatContext;
         }
 
         /// <summary>
@@ -477,17 +480,18 @@ namespace SourceAPI.Services.RocketChat
                     RoomId = roomId,
                     UserId = userId
                 };
+                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
                 {
                     if (action == "invite")
-                        response = await _adminApi.InviteToGroupAsync(request);
+                        response = await userApi.InviteToGroupAsync(request);
                     else if (action == "kick")
-                        response = await _adminApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await userApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action == "addModerator")
-                        response = await _adminApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await userApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }

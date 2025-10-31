@@ -39,7 +39,9 @@ public class CreateRoomRequest
 /// </summary>
 public class InviteMemberRequest
 {
+    [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    [JsonProperty("userId")]
     public string UserId { get; set; } = string.Empty;
 }
 
@@ -48,7 +50,9 @@ public class InviteMemberRequest
 /// </summary>
 public class RemoveMemberRequest
 {
+    [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    [JsonProperty("userId")]
     public string UserId { get; set; } = string.Empty;
 }
 
@@ -57,7 +61,9 @@ public class RemoveMemberRequest
 /// </summary>
 public class ModeratorRequest
 {
+    [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    [JsonProperty("userId")]
     public string UserId { get; set; } = string.Empty;
 }
 
