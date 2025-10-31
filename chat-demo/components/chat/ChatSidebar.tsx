@@ -226,8 +226,16 @@ export default function ChatSidebar({
 
   // ✅ Handle room selection: Clear unread count optimistically and mark as read via WebSocket
   const handleSelectRoom = async (room: UserSubscription) => {
+    console.log('🔵 handleSelectRoom called:', {
+      roomId: room.roomId,
+      name: room.name,
+      unreadCount: room.unreadCount,
+      wsConnected: rocketChatWS.isConnected()
+    });
+
     // Optimistic update: Reset unread count immediately
     if (room.unreadCount > 0) {
+      console.log('📝 Resetting unread count optimistically for room:', room.roomId);
       setRooms(currentRooms => 
         currentRooms.map(r => 
           r.id === room.id 
@@ -238,6 +246,7 @@ export default function ChatSidebar({
       
       // Mark as read via WebSocket
       try {
+        console.log('📤 Calling markRoomAsRead for:', room.roomId);
         await rocketChatWS.markRoomAsRead(room.roomId);
         console.log('✅ Room marked as read via WebSocket:', room.roomId);
       } catch (error) {
@@ -251,6 +260,8 @@ export default function ChatSidebar({
           )
         );
       }
+    } else {
+      console.log('ℹ️ Room has no unread messages, skipping mark as read');
     }
     
     // Call parent callback

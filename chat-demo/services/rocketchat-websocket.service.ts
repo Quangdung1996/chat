@@ -394,11 +394,24 @@ class RocketChatWebSocketService {
    */
   async markRoomAsRead(roomId: string): Promise<void> {
     try {
-      console.log('📖 Marking room as read:', roomId);
-      await this.callMethod('readMessages', [roomId]);
-      console.log('✅ Room marked as read');
+      console.log('📖 [WS] Marking room as read:', {
+        roomId,
+        connected: this.isConnected(),
+        authenticated: !!this.userId
+      });
+      
+      if (!this.isConnected()) {
+        throw new Error('WebSocket not connected');
+      }
+      
+      const result = await this.callMethod('readMessages', [roomId]);
+      console.log('✅ [WS] Room marked as read successfully:', { roomId, result });
+      return result;
     } catch (error) {
-      console.error('❌ Failed to mark room as read:', error);
+      console.error('❌ [WS] Failed to mark room as read:', {
+        roomId,
+        error: error instanceof Error ? error.message : error
+      });
       throw error;
     }
   }
