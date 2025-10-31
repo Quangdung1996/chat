@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useRef, useMemo, memo, useEffect } from 'react';
-import useSWR from 'swr';
+import { useState, useRef, memo, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import { useAuthStore } from '@/store/authStore';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
 import { Smile, Paperclip, Send } from 'lucide-react';
-import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
+import type { UserSubscription, SendMessageRequest, ChatMessage } from '@/types/rocketchat';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -17,21 +16,6 @@ const selectToken = (state: any) => state.token;
 interface ChatWindowProps {
   room: UserSubscription;
 }
-
-// ✅ SWR fetcher function - định nghĩa ở ngoài component để tránh infinite loop
-const messagesFetcher = async ([_, roomId, roomType]: [string, string, string]) => {
-  const response = await rocketChatService.getMessages(
-    roomId,
-    roomType,
-    50,
-    0
-  );
-  
-  if (response.success && response.messages) {
-    return response.messages;
-  }
-  throw new Error('Failed to load messages');
-};
 
 function ChatWindow({ room }: ChatWindowProps) {
   const [messageText, setMessageText] = useState('');
@@ -42,33 +26,38 @@ function ChatWindow({ room }: ChatWindowProps) {
   const user = useAuthStore(selectUser);
   const token = useAuthStore(selectToken);
 
-  // ✅ Extract primitive values FIRST to avoid reference changes
-  // room object can be recreated, but roomId/type strings are stable
+  // ✅ State management without useSWR
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Extract primitive values
   const roomId = room.roomId;
   const roomType = room.type || 'p';
 
-  // ✅ SWR key với primitive values - không cần useMemo vì strings đã stable
-  const swrKey = roomId ? ['messages', roomId, roomType] : null;
-
-  // SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
-  const { data: messages = [], error, isLoading, mutate } = useSWR(
-    swrKey,
-    messagesFetcher,
-    {
-      refreshInterval: 0, // ✅ Tắt polling - dùng WebSocket để nhận real-time
-      revalidateOnFocus: false, // Tắt auto reload - WebSocket đã handle
-      dedupingInterval: 2000,
-      keepPreviousData: false, // ✅ KHÔNG giữ data cũ - tránh hiển thị messages của room khác
-      revalidateOnMount: true, // ✨ Load ngay khi mount
-      compare: (a, b) => {
-        // ✅ So sánh messages để tránh re-render không cần thiết
-        if (!a || !b || a.length !== b.length) return false;
-        if (a.length === 0) return true;
-        // So sánh message cuối cùng
-        return a[a.length - 1]?.messageId === b[b.length - 1]?.messageId;
-      },
+  // ✅ Load messages when room changes
+  useEffect(() => {
+    const loadMessages = async () => {
+      setIsLoading(true);
+      try {
+        const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
+        if (response.success && response.messages) {
+          setMessages(response.messages);
+          setError(null);
+        } else {
+          throw new Error('Failed to load messages');
+        }
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (roomId) {
+      loadMessages();
     }
-  );
+  }, [roomId, roomType]);
 
   // ✅ Reset message text và scroll khi chuyển room
   useEffect(() => {
@@ -77,7 +66,7 @@ function ChatWindow({ room }: ChatWindowProps) {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-  }, [room.roomId]); // Chạy khi roomId thay đổi
+  }, [roomId]); // Chạy khi roomId thay đổi
 
   // ✅ Auto scroll khi messages thay đổi - tách riêng khỏi SWR options
   useEffect(() => {
@@ -110,14 +99,14 @@ function ChatWindow({ room }: ChatWindowProps) {
 
   // ✅ Rocket.Chat WebSocket: Subscribe to room messages
   useEffect(() => {
-    if (!room?.roomId || !rocketChatWS.isConnected()) return;
+    if (!roomId || !rocketChatWS.isConnected()) return;
 
     // Handler cho message mới từ WebSocket
     const handleNewMessage = (message: any) => {
       console.log('📨 New message from WebSocket:', message);
       
       // Convert WebSocket message format to local format
-      const newMessage = {
+      const newMessage: ChatMessage = {
         messageId: message._id,
         roomId: message.rid,
         text: message.msg,
@@ -130,25 +119,25 @@ function ChatWindow({ room }: ChatWindowProps) {
         updatedAt: message._updatedAt,
       };
 
-      // Update SWR cache with new message
-      mutate((currentMessages = []) => {
+      // Update messages state
+      setMessages(currentMessages => {
         // Check if message already exists (avoid duplicates)
         const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
         if (exists) return currentMessages;
         
         // Add new message to the end
         return [...currentMessages, newMessage];
-      }, false); // false = don't revalidate
+      });
     };
 
     // Subscribe to room messages
-    const subscriptionId = rocketChatWS.subscribeToRoomMessages(room.roomId, handleNewMessage);
+    const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, handleNewMessage);
 
     // Cleanup on unmount or room change
     return () => {
       rocketChatWS.unsubscribe(subscriptionId);
     };
-  }, [room?.roomId, mutate]);
+  }, [roomId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,10 +168,25 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   };
 
+  const handleRefresh = async () => {
+    if (!roomId) return;
+    setIsLoading(true);
+    try {
+      const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
+      if (response.success && response.messages) {
+        setMessages(response.messages);
+      }
+    } catch (err) {
+      console.error('Failed to refresh messages:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
-      <RoomHeader room={room} onRefresh={() => mutate()} />
+      <RoomHeader room={room} onRefresh={handleRefresh} />
 
       {/* Messages Area - Apple Style */}
       <div className="flex-1 overflow-y-auto px-4">

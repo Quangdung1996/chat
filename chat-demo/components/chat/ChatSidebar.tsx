@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import useSWR from 'swr';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
@@ -29,15 +28,6 @@ interface User {
   emails?: { address: string }[];
 }
 
-// ✅ SWR fetcher cho rooms - định nghĩa ngoài component
-const roomsFetcher = async ([_, userId]: [string, number]) => {
-  const response = await rocketChatService.getUserRooms(userId);
-  if (response.success && response.rooms) {
-    return response.rooms;
-  }
-  throw new Error('Failed to load rooms');
-};
-
 export default function ChatSidebar({
   selectedRoom,
   onSelectRoom,
@@ -50,28 +40,39 @@ export default function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   
+  // ✅ State management without useSWR
+  const [rooms, setRooms] = useState<UserSubscription[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
   // New states for user search
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [creatingDM, setCreatingDM] = useState<string | null>(null);
 
-  // ✅ Extract primitive value - user.id is already a number (stable)
-  const userId = user?.id;
-
-  // ✅ SWR key với primitive value - không cần useMemo
-  const roomsSwrKey = userId ? ['rooms', userId] : null;
-
-  // ✅ SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
-  const { data: rooms = [], error, isLoading, mutate } = useSWR(
-    roomsSwrKey,
-    roomsFetcher,
-    {
-      refreshInterval: 0, // ✅ Tắt polling - dùng WebSocket để nhận real-time updates
-      revalidateOnFocus: false, // Tắt auto reload - WebSocket đã handle
-      dedupingInterval: 5000,
-      revalidateOnMount: true, // Load ngay khi mount
-    }
-  );
+  // ✅ Load rooms on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const loadRooms = async () => {
+      setIsLoading(true);
+      try {
+        const response = await rocketChatService.getUserRooms(user.id);
+        if (response.success && response.rooms) {
+          setRooms(response.rooms);
+          setError(null);
+        } else {
+          throw new Error('Failed to load rooms');
+        }
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadRooms();
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
@@ -108,8 +109,8 @@ export default function ChatSidebar({
       
       if (!subscription) return;
 
-      // Update SWR cache with updated subscription
-      mutate((currentRooms = []) => {
+      // Update rooms state
+      setRooms(currentRooms => {
         const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
         
         if (roomIndex >= 0) {
@@ -119,13 +120,12 @@ export default function ChatSidebar({
             ...newRooms[roomIndex],
             unreadCount: subscription.unread || 0,
             alert: subscription.alert,
-            // Update other fields as needed
           };
           return newRooms;
         }
         
         return currentRooms;
-      }, false);
+      });
     };
 
     // Subscribe to user's subscription updates
@@ -137,7 +137,7 @@ export default function ChatSidebar({
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [user?.id, mutate]);
+  }, [user?.id]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function ChatSidebar({
           unreadCount: room.unread || 0,
         };
 
-        mutate((currentRooms = []) => {
+        setRooms(currentRooms => {
           const roomIndex = currentRooms.findIndex(r => r.roomId === updatedRoom.roomId);
           
           if (roomIndex >= 0) {
@@ -177,12 +177,12 @@ export default function ChatSidebar({
           }
           
           return currentRooms;
-        }, false);
+        });
       } else if (action === 'removed') {
         // Remove room from list
-        mutate((currentRooms = []) => {
+        setRooms(currentRooms => {
           return currentRooms.filter(r => r.roomId !== room._id);
-        }, false);
+        });
       }
     };
 
@@ -195,7 +195,7 @@ export default function ChatSidebar({
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [user?.id, mutate]);
+  }, [user?.id]);
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -228,15 +228,21 @@ export default function ChatSidebar({
       );
       
       if (response.success && response.roomId) {
-        // ✅ Reload rooms using SWR mutate
-        await mutate();
+        // ✅ Reload rooms
+        const roomsResponse = await rocketChatService.getUserRooms(currentUserId);
+        if (roomsResponse.success && roomsResponse.rooms) {
+          setRooms(roomsResponse.rooms);
+        }
         
         // Wait a bit for the room to appear in the list
         setTimeout(() => {
-          const newRoom = rooms.find(r => r.roomId === response.roomId);
-          if (newRoom) {
-            onSelectRoom(newRoom);
-          }
+          setRooms(currentRooms => {
+            const newRoom = currentRooms.find(r => r.roomId === response.roomId);
+            if (newRoom) {
+              onSelectRoom(newRoom);
+            }
+            return currentRooms;
+          });
         }, 500);
         
         // Clear search
@@ -516,7 +522,13 @@ export default function ChatSidebar({
       <CreateRoomModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={() => mutate()}
+        onSuccess={async () => {
+          if (!user?.id) return;
+          const response = await rocketChatService.getUserRooms(user.id);
+          if (response.success && response.rooms) {
+            setRooms(response.rooms);
+          }
+        }}
       />
     </>
   );
