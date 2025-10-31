@@ -18,20 +18,21 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if current user is owner or moderator
   const currentUserMember = members.find(m => m.id === currentUserId);
-  const isOwnerOrMod = currentUserMember?.roles?.includes('owner') || currentUserMember?.roles?.includes('moderator');
-
+  console.log('RoomHeader rendered for room:', currentUserId,);
+  console.log('RoomHeader rendered for room:', members);
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
       // Determine room type for API call
       const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
-      
+
       const response = await rocketChatService.getRoomMembers(room.roomId, roomType);
-      
+
       if (response.success && response.members) {
         setMembers(response.members);
         console.log(`✅ Loaded ${response.members.length} members for room ${room.roomId}`);
@@ -55,7 +56,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
     try {
       const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
       const response = await rocketChatService.manageMember(room.roomId, memberId, 'kick', roomType);
-      
+
       if (response.success) {
         // Reload members list
         await loadMembers();
@@ -77,7 +78,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
     try {
       const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
       const response = await rocketChatService.leaveRoom(room.roomId, roomType);
-      
+
       if (response.success) {
         onRefresh();
         setShowMembers(false);
@@ -187,8 +188,8 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
       {showMembers && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-[99998]" 
+          <div
+            className="fixed inset-0 z-[99998]"
             onClick={() => setShowMembers(false)}
           />
           {/* Dropdown */}
@@ -215,7 +216,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   const isOwner = member.roles?.includes('owner');
                   const isModerator = member.roles?.includes('moderator');
                   const isCurrentUser = member.id === currentUserId;
-                  
+
                   return (
                     <div
                       key={member.id}
@@ -231,7 +232,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                             <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
                           )}
                         </div>
-                        
+
                         {/* User info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -253,7 +254,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                             )}
                           </div>
                         </div>
-                        
+
                         {/* Kick button - show for all members except current user. API will handle permissions */}
                         {!isCurrentUser && (
                           <button
