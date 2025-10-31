@@ -10,7 +10,8 @@ interface MessageListProps {
 
 function MessageList({ messages }: MessageListProps) {
 
-  const formatTime = (timestamp: string) => {
+  const formatTime = (timestamp?: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
@@ -30,11 +31,12 @@ function MessageList({ messages }: MessageListProps) {
     }
   };
 
-  const getInitials = (username: string) => {
+  const getInitials = (username?: string) => {
+    if (!username) return '??';
     return username.slice(0, 2).toUpperCase();
   };
 
-  const getAvatarColor = (username: string) => {
+  const getAvatarColor = (username?: string) => {
     const colors = [
       'bg-gradient-to-br from-blue-400 to-blue-600',
       'bg-gradient-to-br from-purple-400 to-purple-600',
@@ -45,6 +47,7 @@ function MessageList({ messages }: MessageListProps) {
       'bg-gradient-to-br from-indigo-400 to-indigo-600',
       'bg-gradient-to-br from-teal-400 to-teal-600',
     ];
+    if (!username) return colors[0];
     const index = username.charCodeAt(0) % colors.length;
     return colors[index];
   };
@@ -52,8 +55,10 @@ function MessageList({ messages }: MessageListProps) {
   return (
     <div className="space-y-0.5">
       {messages.map((message, index) => {
-        const showAvatar = index === 0 || messages[index - 1].username !== message.username;
-        const isConsecutive = index > 0 && messages[index - 1].username === message.username;
+        const currentUsername = message.username || message.user?.username;
+        const prevUsername = index > 0 ? (messages[index - 1].username || messages[index - 1].user?.username) : null;
+        const showAvatar = index === 0 || prevUsername !== currentUsername;
+        const isConsecutive = index > 0 && prevUsername === currentUsername;
         const isCurrentUser = message.isCurrentUser;
 
         return (
@@ -70,10 +75,10 @@ function MessageList({ messages }: MessageListProps) {
                   {showAvatar ? (
                     <div
                       className={`w-7 h-7 rounded-full ${getAvatarColor(
-                        message.username
+                        currentUsername
                       )} flex items-center justify-center text-white font-semibold text-[11px] shadow-sm`}
                     >
-                      {getInitials(message.username)}
+                      {getInitials(currentUsername)}
                     </div>
                   ) : (
                     <div className="w-7 h-7" />
@@ -87,7 +92,7 @@ function MessageList({ messages }: MessageListProps) {
                 {showAvatar && !isCurrentUser && (
                   <div className="flex items-baseline gap-2 mb-1 px-1">
                     <span className="text-[13px] font-medium text-gray-900 dark:text-white">
-                      {message.username}
+                      {message.username || message.user?.username || 'Unknown User'}
                     </span>
                     {message.edited && (
                       <span className="text-[11px] text-gray-400 dark:text-gray-500">
