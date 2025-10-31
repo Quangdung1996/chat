@@ -52,10 +52,6 @@ export default function InviteMembersModal({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string>('');
-  
-  // Check if current user is owner or moderator
-  const currentUserMember = currentMembers.find(m => m.id === currentUserId);
-  const isOwnerOrMod = currentUserMember?.roles?.includes('owner') || currentUserMember?.roles?.includes('moderator');
 
   // Get current user ID from localStorage
   useEffect(() => {
@@ -158,9 +154,11 @@ export default function InviteMembersModal({
       } else {
         setError('Không thể xóa thành viên');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to remove member:', err);
-      setError('Có lỗi xảy ra khi xóa thành viên');
+      // Display specific error message from API or fallback
+      const errorMessage = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi xóa thành viên';
+      setError(errorMessage);
     }
   };
 
@@ -356,8 +354,8 @@ export default function InviteMembersModal({
 
                           {/* Action buttons area */}
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* Remove button - only show for existing members if user is owner/mod and not self */}
-                            {isCurrentMember && isOwnerOrMod && !isSelf && (
+                            {/* Remove button - show for all existing members except self. API will handle permissions */}
+                            {isCurrentMember && !isSelf && (
                               <button
                                 type="button"
                                 onClick={(e) => handleRemoveMember(user._id, displayName, e)}

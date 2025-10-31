@@ -509,10 +509,18 @@ namespace SourceAPI.Services.RocketChat
 
                 return response?.Success ?? false;
             }
+            catch (Refit.ApiException apiEx)
+            {
+                // Refit throws ApiException when API returns error (403, 400, etc.)
+                _logger.LogWarning(apiEx, $"Rocket.Chat API error invoking {action} on room {roomId} for user {userId}: {apiEx.StatusCode} - {apiEx.Message}");
+                
+                // Re-throw with more context for controller to handle
+                throw new InvalidOperationException($"Không có quyền thực hiện thao tác này hoặc thao tác không hợp lệ", apiEx);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error invoking {action} on room {roomId} for user {userId}: {ex.Message}");
-                return false;
+                throw;
             }
         }
 

@@ -532,6 +532,7 @@ namespace SourceAPI.Controllers.Integrations
         [HttpDelete("room/{roomId}/member/{rocketUserId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
         public async Task<IActionResult> RemoveMember(
             string roomId,
             string rocketUserId,
@@ -545,10 +546,16 @@ namespace SourceAPI.Controllers.Integrations
 
                 return Ok(new { success = result });
             }
+            catch (InvalidOperationException ex)
+            {
+                // Permission denied or invalid operation from Rocket.Chat
+                _logger.LogWarning(ex, $"Permission denied or invalid operation removing member from room {roomId}");
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error removing member from room {roomId}");
-                return StatusCode(500, new { message = "Internal server error" });
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi xóa thành viên" });
             }
         }
 
