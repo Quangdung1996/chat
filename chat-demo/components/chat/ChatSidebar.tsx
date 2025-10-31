@@ -213,6 +213,23 @@ export default function ChatSidebar({
     }
   };
 
+  // ✅ Handle room selection: Clear unread count optimistically
+  const handleSelectRoom = (room: UserSubscription) => {
+    // Optimistic update: Reset unread count immediately
+    if (room.unreadCount > 0) {
+      setRooms(currentRooms => 
+        currentRooms.map(r => 
+          r.id === room.id 
+            ? { ...r, unreadCount: 0 } 
+            : r
+        )
+      );
+    }
+    
+    // Call parent callback
+    onSelectRoom(room);
+  };
+
   const handleStartChat = async (contactUser: User) => {
     setCreatingDM(contactUser._id);
     try {
@@ -241,7 +258,7 @@ export default function ChatSidebar({
           setRooms(currentRooms => {
             const newRoom = currentRooms.find(r => r.roomId === response.roomId);
             if (newRoom) {
-              onSelectRoom(newRoom);
+              handleSelectRoom(newRoom);
             }
             return currentRooms;
           });
@@ -376,7 +393,7 @@ export default function ChatSidebar({
                         <button
                           key={room.id}
                           onClick={() => {
-                            onSelectRoom(room);
+                            handleSelectRoom(room);
                             onCloseMobile();
                           }}
                           className={`
