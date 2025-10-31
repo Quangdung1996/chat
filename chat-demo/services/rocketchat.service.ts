@@ -371,6 +371,7 @@ class RocketChatService {
           timestamp: parseTimestamp(msg.ts || msg.timestamp),
           deleted: msg.deleted || false,
           edited: msg.editedAt ? true : false,
+          type: msg.t || null, // ✨ Message type: null=normal, "au"=added user, "ru"=removed, etc.
           // ✅ Include user object with name for display
           user: {
             id: msg.u?._id || msg.u?.id,

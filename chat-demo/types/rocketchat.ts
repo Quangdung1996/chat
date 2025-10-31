@@ -163,6 +163,7 @@ export interface ChatMessage {
   deleted?: boolean;
   edited?: boolean;
   isCurrentUser?: boolean;
+  type?: string | null; // Message type: null=normal chat, "au"=added user, "ru"=removed user, "uj"=joined, "ul"=left
   user?: {
     id: string;
     username: string;

@@ -94,6 +94,9 @@ public class RoomMessage
     [JsonProperty("u")]
     public RoomMessageUser U { get; set; } = new(); // User info
     
+    [JsonProperty("t")]
+    public string? T { get; set; } // Message type: null=normal, "au"=added user, "ru"=removed user, "uj"=joined, "ul"=left
+    
     [JsonProperty("isCurrentUser")]
     public bool IsCurrentUser { get; set; } = false;
 }

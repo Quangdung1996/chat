@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ChatMessage } from '@/types/rocketchat';
+import SystemMessage from './SystemMessage';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -69,6 +70,16 @@ function MessageList({ messages, currentUserId, currentUsername }: MessageListPr
   return (
     <div className="space-y-0.5">
       {messages.map((message, index) => {
+        // ✨ Check if this is a system message
+        if (message.type) {
+          return (
+            <SystemMessage 
+              key={message.messageId} 
+              message={message}
+            />
+          );
+        }
+        
         // Extract username and display name
         const msgUsername = message.username || message.user?.username;
         const msgDisplayName = message.user?.name || msgUsername || 'Unknown User';
