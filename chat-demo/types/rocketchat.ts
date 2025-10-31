@@ -217,6 +217,11 @@ export interface RoomInfo {
   readOnly: boolean;
   usersCount: number;
   messageCount: number;
+  u?: {
+    _id: string;      // Owner's Rocket.Chat user ID
+    username: string; // Owner's username
+    name: string;     // Owner's display name
+  };
 }
 
 export interface GetRoomInfoResponse {
