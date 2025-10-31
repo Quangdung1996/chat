@@ -90,7 +90,7 @@ public class SetTopicRequest
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
-    
+
     [JsonProperty("topic")]
     public string Topic { get; set; } = string.Empty;
 }
@@ -102,7 +102,7 @@ public class SetAnnouncementRequest
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
-    
+
     [JsonProperty("announcement")]
     public string Announcement { get; set; } = string.Empty;
 }
@@ -318,6 +318,11 @@ public class RoomData
 
     [JsonProperty("description")]
     public string? Description { get; set; }
+    [JsonProperty("topic")]
+    public string? Topic { get; set; }
+
+    [JsonProperty("announcement")]
+    public string? Announcement { get; set; }
 }
 
 /// <summary>
