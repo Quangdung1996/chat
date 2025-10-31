@@ -122,8 +122,8 @@ export default function InviteMembersModal({
       if (response.success) {
         setSuccess(`Đã thêm ${response.successCount} thành viên thành công!`);
         setTimeout(() => {
-          onSuccess();
-          onClose();
+        onSuccess();
+        onClose();
         }, 1500);
       } else {
         setError('Không thể thêm thành viên');
@@ -205,7 +205,7 @@ export default function InviteMembersModal({
               {roomName && (
                 <DialogDescription className="text-[15px] text-gray-600 dark:text-gray-400">
                   Thêm người dùng vào <span className="font-semibold text-gray-900 dark:text-white">{roomName}</span>
-                </DialogDescription>
+          </DialogDescription>
               )}
             </div>
             <button
