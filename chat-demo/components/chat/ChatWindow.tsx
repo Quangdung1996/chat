@@ -141,6 +141,20 @@ function ChatWindow({ room }: ChatWindowProps) {
 
       // Update messages state
       setMessages(currentMessages => {
+        // Check if this is replacing an optimistic message (temp-*)
+        const optimisticIndex = currentMessages.findIndex(
+          msg => msg.messageId.startsWith('temp-') && 
+                 msg.text === newMessage.text &&
+                 msg.user?.username === newMessage.user?.username
+        );
+        
+        if (optimisticIndex !== -1) {
+          console.log('🔄 Replacing optimistic message with real message');
+          const updated = [...currentMessages];
+          updated[optimisticIndex] = newMessage;
+          return updated;
+        }
+        
         // Check if message already exists (avoid duplicates)
         const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
         if (exists) {
@@ -169,19 +183,45 @@ function ChatWindow({ room }: ChatWindowProps) {
     e.preventDefault();
     if (!messageText.trim() || sending) return;
 
+    const textToSend = messageText.trim();
     setSending(true);
+    
     try {
       const request: SendMessageRequest = {
         roomId: room.roomId,
-        text: messageText.trim(),
+        text: textToSend,
       };
+      
+      // Clear input immediately for better UX
+      setMessageText('');
+      
+      // ✅ Optimistically add message to UI with current timestamp
+      const optimisticMessage: ChatMessage = {
+        messageId: `temp-${Date.now()}`, // Temporary ID
+        roomId: room.roomId,
+        text: textToSend,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        user: {
+          id: user?.id || '',
+          username: user?.username || '',
+          name: user?.fullName || user?.username || '',
+        },
+        isCurrentUser: true,
+      };
+      
+      setMessages(currentMessages => [...currentMessages, optimisticMessage]);
+      
+      // Send to backend
       const response = await rocketChatService.sendMessage(request);
+      
       if (response.success) {
-        setMessageText('');
-        // No need to revalidate - WebSocket will automatically push the message
+        console.log('✅ Message sent successfully:', response.messageId);
+        // WebSocket will update with real message data
       }
     } catch (error) {
       alert('❌ Lỗi: ' + (error as Error).message);
+      // Optionally: remove optimistic message on error
     } finally {
       setSending(false);
     }
