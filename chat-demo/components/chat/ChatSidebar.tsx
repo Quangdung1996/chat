@@ -125,8 +125,6 @@ export default function ChatSidebar({
 
     // Handler cho subscription updates (unread count, etc)
     const handleSubscriptionUpdate = (data: any) => {
-      console.log('🔔 Subscription updated from WebSocket:', data);
-      
       const { action, subscription } = data;
       
       if (!subscription) return;
@@ -234,7 +232,6 @@ export default function ChatSidebar({
         });
       } else if (action === 'removed') {
         // Remove room from list
-        console.log('🗑️ Removing room:', room._id);
         setRooms(currentRooms => {
           return currentRooms.filter(r => r.roomId !== room._id);
         });
