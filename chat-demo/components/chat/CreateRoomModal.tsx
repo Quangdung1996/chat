@@ -40,6 +40,11 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  
+  // Debug selectedMembers changes
+  useEffect(() => {
+    console.log('🔄 selectedMembers changed:', selectedMembers);
+  }, [selectedMembers]);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<CreateGroupRequest>({
     groupCode: '',
@@ -80,6 +85,22 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     try {
       const response = await rocketChatService.getUsers(100, 0);
       if (response.success && response.users) {
+        console.log('📥 Loaded users:', response.users.map(u => ({ 
+          username: u.username, 
+          id: u._id,
+          idType: typeof u._id 
+        })));
+        
+        // Check for duplicate IDs
+        const ids = response.users.map(u => u._id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.error('⚠️ DUPLICATE USER IDs DETECTED!', {
+            total: ids.length,
+            unique: uniqueIds.size
+          });
+        }
+        
         setUsers(response.users);
       }
     } catch (err) {
@@ -410,15 +431,29 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                     </div>
                   ) : (
                     <div className="divide-y">
-                      {filteredUsers.map(user => {
+                      {filteredUsers.map((user, idx) => {
                         const isSelected = selectedMembers.includes(user._id);
                         const displayName = user.name || user.username;
+                        
+                        if (idx < 3) { // Log first 3 users only
+                          console.log(`👤 User #${idx}:`, {
+                            username: user.username,
+                            userId: user._id,
+                            userIdType: typeof user._id,
+                            isSelected,
+                            selectedMembers: [...selectedMembers],
+                            includesCheck: selectedMembers.includes(user._id)
+                          });
+                        }
                         
                         return (
                           <button
                             key={user._id}
                             type="button"
-                            onClick={() => toggleMember(user._id)}
+                            onClick={() => {
+                              console.log(`🖱️ Clicked user: ${user.username} (${user._id})`);
+                              toggleMember(user._id);
+                            }}
                             className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
                               isSelected ? 'bg-primary/5' : ''
                             }`}

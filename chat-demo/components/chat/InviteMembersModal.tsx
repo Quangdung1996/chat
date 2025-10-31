@@ -80,11 +80,15 @@ export default function InviteMembersModal({
   };
 
   const toggleMember = (userId: string) => {
-    setSelectedMembers(prev => 
-      prev.includes(userId) 
+    console.log('🔄 InviteModal toggleMember called with userId:', userId);
+    setSelectedMembers(prev => {
+      console.log('📋 InviteModal Current selectedMembers:', prev);
+      const newState = prev.includes(userId) 
         ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
+        : [...prev, userId];
+      console.log('✅ InviteModal New selectedMembers:', newState);
+      return newState;
+    });
   };
 
   const handleSubmit = async () => {
