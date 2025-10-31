@@ -194,80 +194,78 @@ export default function InviteMembersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[520px] max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
-        {/* Header - Apple Style */}
-        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-[22px] font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">
-                Thêm thành viên
-              </DialogTitle>
-              {roomName && (
-                <DialogDescription className="text-[15px] text-gray-600 dark:text-gray-400">
-                  Thêm người dùng vào <span className="font-semibold text-gray-900 dark:text-white">{roomName}</span>
-          </DialogDescription>
-              )}
+      <DialogContent className="w-[90vw] max-w-[460px] max-h-[80vh] p-0 gap-0 overflow-hidden flex flex-col bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl">
+        {/* Header - Compact & Clean */}
+        <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
+                  Quản lý thành viên
+                </DialogTitle>
+                {roomName && (
+                  <DialogDescription className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+                    {roomName}
+                  </DialogDescription>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-gray-100/80 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200 flex-shrink-0 group"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
               aria-label="Đóng"
             >
-              <X className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+              <X className="w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {/* Messages - Apple Alert Style */}
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          {/* Messages - Compact Style */}
           {error && (
-            <div className="mb-4 bg-red-50/80 dark:bg-red-900/10 border border-red-200/60 dark:border-red-800/40 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="leading-relaxed">{error}</span>
+            <div className="mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-[13px] flex items-center gap-2 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 bg-green-50/80 dark:bg-green-900/10 border border-green-200/60 dark:border-green-800/40 text-green-700 dark:text-green-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span className="leading-relaxed">{success}</span>
+            <div className="mb-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg text-[13px] flex items-center gap-2 animate-in fade-in duration-200">
+              <Check className="w-4 h-4 flex-shrink-0" />
+              <span>{success}</span>
             </div>
           )}
 
-          <div className="space-y-4">
-            {/* Search - Apple Style */}
-            <div className="relative group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400 dark:text-gray-500 group-focus-within:text-[#007aff] dark:group-focus-within:text-[#0a84ff] transition-colors" />
+          <div className="space-y-3">
+            {/* Search - Compact */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm kiếm theo tên hoặc username..."
-                className="pl-10 h-11 text-[15px] bg-gray-100/80 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 focus:bg-white dark:focus:bg-gray-800 focus:border-[#007aff] dark:focus:border-[#0a84ff] rounded-xl transition-all duration-200"
+                placeholder="Tìm kiếm..."
+                className="pl-9 h-9 text-[14px] bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:border-blue-500 dark:focus:border-blue-600 rounded-lg"
                 autoFocus
               />
             </div>
 
-            {/* Selected Members Count - Modern Badge */}
+            {/* Selected Members Count - Compact Badge */}
             {selectedMembers.length > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/40 dark:border-blue-800/30 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-full bg-[#007aff] dark:bg-[#0a84ff] flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-[14px] font-semibold text-gray-900 dark:text-white">
-                    Đã chọn {selectedMembers.length} thành viên
-                  </span>
-                </div>
-                <Button
+              <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
+                <span className="text-[13px] font-medium text-blue-700 dark:text-blue-400">
+                  Đã chọn {selectedMembers.length} người
+                </span>
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={() => setSelectedMembers([])}
-                  className="h-auto py-1.5 px-3 text-[13px] hover:bg-white/60 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300"
+                  className="text-[12px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                 >
                   Bỏ chọn
-                </Button>
+                </button>
               </div>
             )}
 
