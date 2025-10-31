@@ -676,6 +676,61 @@ namespace SourceAPI.Controllers.Integrations
         }
 
         /// <summary>
+        /// Get room information including readOnly status
+        /// GET /api/integrations/rocket/room/{roomId}/info?roomType=group
+        /// </summary>
+        [HttpGet("room/{roomId}/info")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> GetRoomInfo(string roomId, [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                // Get Rocket.Chat token from header (injected by middleware)
+                var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
+                var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
+
+                if (string.IsNullOrEmpty(rocketToken) || string.IsNullOrEmpty(rocketUserId))
+                {
+                    return Unauthorized(new { message = "Rocket.Chat authentication required. Provide X-RocketChat-Token and X-RocketChat-UserId headers." });
+                }
+
+                _logger.LogInformation($"Getting info for room {roomId} (type: {roomType})");
+                var response = await _roomService.GetRoomInfoAsync(rocketToken, rocketUserId, roomId, roomType);
+
+                if (!response.Success)
+                {
+                    return StatusCode(403, new { message = "Failed to get room info. You may not have permission to access this room." });
+                }
+
+                // Extract room info from appropriate field based on response
+                var roomInfo = response.Room ?? response.Group ?? response.Channel;
+
+                return Ok(new
+                {
+                    success = true,
+                    roomId,
+                    room = new
+                    {
+                        id = roomInfo?.Id,
+                        name = roomInfo?.Name,
+                        fname = roomInfo?.FullName,
+                        type = roomInfo?.Type,
+                        readOnly = roomInfo?.ReadOnly ?? false,
+                        usersCount = roomInfo?.UsersCount ?? 0,
+                        messageCount = roomInfo?.MessageCount ?? 0
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting info for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Leave a room (group or channel)
         /// POST /api/integrations/rocket/room/{roomId}/leave?roomType=group
         /// </summary>

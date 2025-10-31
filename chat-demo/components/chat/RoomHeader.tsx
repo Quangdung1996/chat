@@ -18,11 +18,28 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Get current user ID from Zustand store
   const currentUserId = useAuthStore((state) => state.rocketChatUserId);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const loadRoomInfo = async () => {
+    try {
+      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const response = await rocketChatService.getRoomInfo(room.roomId, roomType);
+      
+      if (response.success && response.room) {
+        setIsReadOnly(response.room.readOnly);
+        console.log(`✅ Room ${room.roomId} readOnly status: ${response.room.readOnly}`);
+      }
+    } catch (error) {
+      console.error('Failed to load room info:', error);
+      setIsReadOnly(false);
+    }
+  };
+
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
@@ -95,6 +112,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
     }
   }, [showMembers]);
 
+  // Load room info when component mounts or room changes
+  useEffect(() => {
+    loadRoomInfo();
+  }, [room.roomId]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -136,6 +158,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   <Users className="w-3.5 h-3.5" />
                   <span>{members.length || '...'} thành viên</span>
                 </button>
+                {isReadOnly && (
+                  <span className="flex items-center gap-1.5 text-[11px] bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 px-2 py-0.5 rounded-full font-medium">
+                    🔒 Read-only
+                  </span>
+                )}
                 {room.unreadCount > 0 && (
                   <span className="flex items-center gap-1.5 text-[11px] bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-2 py-0.5 rounded-full font-medium">
                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />

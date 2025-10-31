@@ -281,6 +281,27 @@ class RocketChatService {
   }
 
   /**
+   * Lấy thông tin chi tiết của room
+   * GET /api/integrations/rocket/room/{roomId}/info?roomType={type}
+   */
+  async getRoomInfo(roomId: string, roomType: 'group' | 'channel' | 'direct' = 'group'): Promise<{
+    success: boolean;
+    roomId: string;
+    room: {
+      _id: string;
+      name: string;
+      fname: string;
+      type: string;
+      readOnly: boolean;
+      usersCount: number;
+      messageCount: number;
+    };
+  }> {
+    const endpoint = `/api/integrations/rocket/room/${roomId}/info`;
+    return apiClient.get(`${endpoint}?roomType=${roomType}`);
+  }
+
+  /**
    * Quản lý member (invite/kick/addModerator) - uses existing removeMember API
    * POST /api/integrations/rocket/room/{roomId}/member/{rocketUserId}/manage
    */

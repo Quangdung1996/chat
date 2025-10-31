@@ -209,6 +209,22 @@ export interface SetTopicRequest {
   roomType?: string;
 }
 
+export interface RoomInfo {
+  _id: string;
+  name: string;
+  fname: string;
+  type: string;
+  readOnly: boolean;
+  usersCount: number;
+  messageCount: number;
+}
+
+export interface GetRoomInfoResponse {
+  success: boolean;
+  roomId: string;
+  room: RoomInfo;
+}
+
 // ===== PAGINATION =====
 export interface PaginationParams {
   pageSize?: number;

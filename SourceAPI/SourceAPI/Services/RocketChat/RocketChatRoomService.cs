@@ -758,6 +758,50 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
+        public async Task<RoomInfoResponse> GetRoomInfoAsync(string authToken, string rocketUserId, string roomId, string roomType = "group")
+        {
+            try
+            {
+                _logger.LogInformation($"Getting info for room {roomId} (type: {roomType}) as user {rocketUserId}");
+
+                // Create user-specific proxy with provided token
+                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
+
+                RoomInfoResponse response;
+
+                // Call appropriate endpoint based on room type
+                switch (roomType.ToLower())
+                {
+                    case "group":
+                    case "p":
+                        response = await userApi.GetGroupInfoAsync(roomId);
+                        break;
+                    case "channel":
+                    case "c":
+                        response = await userApi.GetChannelInfoAsync(roomId);
+                        break;
+                    default:
+                        _logger.LogWarning($"Unknown room type '{roomType}' for info request, defaulting to group");
+                        response = await userApi.GetGroupInfoAsync(roomId);
+                        break;
+                }
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get info for room {roomId}");
+                    return new RoomInfoResponse { Success = false };
+                }
+
+                _logger.LogInformation($"Retrieved info for room {roomId}, readOnly: {response.Room?.ReadOnly ?? response.Group?.ReadOnly ?? false}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting info for room {roomId}: {ex.Message}");
+                return new RoomInfoResponse { Success = false };
+            }
+        }
+
         #endregion
     }
 }
