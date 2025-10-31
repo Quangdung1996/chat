@@ -424,7 +424,7 @@ class RocketChatWebSocketService {
       params,
     });
 
-    console.log(`✅ Subscribed to ${name} with id ${id}`);
+    console.log(`✅ Subscribed to ${name} with id ${id}, params:`, params);
     return id;
   }
 
@@ -595,6 +595,19 @@ class RocketChatWebSocketService {
     return this.subscribe('stream-notify-user', [`${userId}/subscriptions-changed`, false], (data) => {
       if (data.type === 'changed' && data.fields?.args) {
         const [action, subscription] = data.fields.args;
+        
+        // 🐛 DEBUG: Log raw subscription data from WebSocket
+        console.log('📡 [WS] Raw subscription event:', {
+          action,
+          roomId: subscription?.rid,
+          type: subscription?.t,
+          name: subscription?.name,
+          fname: subscription?.fname,
+          unread: subscription?.unread,
+          alert: subscription?.alert,
+          allFields: Object.keys(subscription || {})
+        });
+        
         callback({ action, subscription });
       }
     });

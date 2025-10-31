@@ -62,6 +62,14 @@ export default function ChatSidebar({
       try {
         const response = await rocketChatService.getUserRooms(user.id);
         if (response.success && response.rooms) {
+          // 🐛 DEBUG: Log initial rooms data
+          console.log('📦 Initial rooms loaded:', response.rooms.map(r => ({
+            name: r.fullName || r.name,
+            type: r.type,
+            unreadCount: r.unreadCount,
+            alert: r.alert
+          })));
+          
           setRooms(response.rooms);
           setError(null);
         } else {
@@ -127,6 +135,16 @@ export default function ChatSidebar({
       
       if (!subscription) return;
 
+      // 🐛 DEBUG: Log subscription update
+      console.log('🔔 Subscription update:', {
+        action,
+        roomId: subscription.rid,
+        type: subscription.t,
+        unread: subscription.unread,
+        alert: subscription.alert,
+        name: subscription.name || subscription.fname
+      });
+
       // Update rooms state
       setRooms(currentRooms => {
         const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
@@ -145,10 +163,17 @@ export default function ChatSidebar({
             ...(subscription.name && { name: subscription.name }),
             ...(subscription.fname && { fullName: subscription.fname }),
           };
+
+          console.log('✅ Updated room:', {
+            name: newRooms[roomIndex].fullName || newRooms[roomIndex].name,
+            type: newRooms[roomIndex].type,
+            unreadCount: newRooms[roomIndex].unreadCount
+          });
           
           return newRooms;
         }
         
+        console.warn('⚠️ Room not found in currentRooms:', subscription.rid);
         return currentRooms;
       });
     };
