@@ -22,6 +22,7 @@ interface InviteMembersModalProps {
   roomId: string;
   roomName?: string;
   onSuccess: () => void;
+  isOwnerOrMod?: boolean;
 }
 
 interface User {
@@ -38,6 +39,7 @@ export default function InviteMembersModal({
   roomId,
   roomName,
   onSuccess,
+  isOwnerOrMod = true, // Default true for backward compatibility
 }: InviteMembersModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +181,17 @@ export default function InviteMembersModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Permission Warning */}
+          {!isOwnerOrMod && (
+            <div className="mb-4 bg-amber-50/80 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold mb-1">Không có quyền</p>
+                <p className="leading-relaxed text-[13px]">Chỉ chủ phòng hoặc moderator mới có thể thêm thành viên vào nhóm này.</p>
+              </div>
+            </div>
+          )}
+
           {/* Messages - Apple Alert Style */}
           {error && (
             <div className="mb-4 bg-red-50/80 dark:bg-red-900/10 border border-red-200/60 dark:border-red-800/40 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -263,7 +276,12 @@ export default function InviteMembersModal({
                           key={user._id}
                           type="button"
                           onClick={() => toggleMember(user._id)}
-                          className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-all duration-200 group ${
+                          disabled={!isOwnerOrMod}
+                          className={`w-full flex items-center gap-3 px-4 py-3.5 transition-all duration-200 group ${
+                            !isOwnerOrMod 
+                              ? 'cursor-not-allowed opacity-60' 
+                              : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/30'
+                          } ${
                             isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                           }`}
                         >
@@ -335,7 +353,7 @@ export default function InviteMembersModal({
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={loading || selectedMembers.length === 0}
+              disabled={loading || selectedMembers.length === 0 || !isOwnerOrMod}
               className="flex-1 h-11 text-[15px] font-semibold bg-[#007aff] hover:bg-[#0051d5] dark:bg-[#0a84ff] dark:hover:bg-[#0066cc] text-white rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 disabled:shadow-none disabled:opacity-50"
             >
               {loading ? (
