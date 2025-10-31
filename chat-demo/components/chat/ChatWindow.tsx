@@ -265,6 +265,8 @@ function ChatWindow({ room }: ChatWindowProps) {
     try {
       const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
       if (response.success && response.messages) {
+        console.log('📥 Loaded messages from API:', response.messages.length);
+        console.log('🕐 First message timestamp:', response.messages[0]?.timestamp, '| Type:', typeof response.messages[0]?.timestamp);
         setMessages(response.messages);
       }
     } catch (err) {
