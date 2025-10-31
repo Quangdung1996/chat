@@ -705,7 +705,8 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 // Extract room info from appropriate field based on response
-                var roomInfo = response.Room ?? response.Group ?? response.Channel;
+                var roomInfo = response.Group;
+
 
                 return Ok(new
                 {
