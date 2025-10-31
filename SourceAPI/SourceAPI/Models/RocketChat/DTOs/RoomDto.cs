@@ -1,6 +1,6 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 
 namespace SourceAPI.Models.RocketChat.DTOs;
 
@@ -26,8 +26,11 @@ public class CreateGroupRequest
 /// </summary>
 public class CreateRoomRequest
 {
+    [JsonProperty("name")]
     public string Name { get; set; } = string.Empty;
+    [JsonProperty("members")]
     public List<string> Members { get; set; } = new();
+    [JsonProperty("readOnly")]
     public bool ReadOnly { get; set; }
 }
 
@@ -112,16 +115,16 @@ public class CreateGroupResponse
 {
     [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
-    
+
     [JsonProperty("groupCode")]
     public string GroupCode { get; set; } = string.Empty;
-    
+
     [JsonProperty("name")]
     public string Name { get; set; } = string.Empty;
-    
+
     [JsonProperty("success")]
     public bool Success { get; set; }
-    
+
     [JsonProperty("message")]
     public string Message { get; set; } = string.Empty;
 }

@@ -1,5 +1,3 @@
-using SourceAPI.Infrastructure.Proxy;
-using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,7 +14,7 @@ namespace SourceAPI.Services.RocketChat
         /// T-17: Create private group
         /// DoD: Tạo group private; lưu RoomId/Name vào DB; tuỳ chọn readOnly hoạt động
         /// </summary>
-        Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request);
+        Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request, string rocketToken, string rocketUserId);
 
         /// <summary>
         /// T-18: Create public channel
