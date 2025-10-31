@@ -327,7 +327,6 @@ export default function ChatSidebar({
 
     // Optimistic update: Reset unread count immediately
     if (room.unreadCount > 0) {
-      console.log('📝 Resetting unread count optimistically for room:', room.roomId);
       setRooms(currentRooms => 
         currentRooms.map(r => 
           r.id === room.id 
@@ -338,9 +337,7 @@ export default function ChatSidebar({
       
       // Mark as read via WebSocket
       try {
-        console.log('📤 Calling markRoomAsRead for:', room.roomId);
         await rocketChatWS.markRoomAsRead(room.roomId);
-        console.log('✅ Room marked as read via WebSocket:', room.roomId);
       } catch (error) {
         console.error('❌ Failed to mark room as read:', error);
         // Revert optimistic update if failed
@@ -352,8 +349,6 @@ export default function ChatSidebar({
           )
         );
       }
-    } else {
-      console.log('ℹ️ Room has no unread messages, skipping mark as read');
     }
     
     // Call parent callback
