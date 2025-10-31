@@ -149,9 +149,9 @@ export default function InviteMembersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[550px] max-h-[90vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-[550px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b">
+        <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2 mb-1">
@@ -303,7 +303,7 @@ export default function InviteMembersModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
           <div className="flex items-center justify-between gap-2 sm:gap-3">
             <Button
               type="button"

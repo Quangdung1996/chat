@@ -168,9 +168,9 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b">
+        <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b">
           <div className="flex items-center justify-between mb-2">
             <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
               <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -456,7 +456,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
           <div className="flex items-center justify-between gap-2 sm:gap-3">
             {currentStep === 'info' ? (
               <>
