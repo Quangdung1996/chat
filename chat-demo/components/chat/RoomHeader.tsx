@@ -254,8 +254,8 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                           </div>
                         </div>
                         
-                        {/* Kick button - only show if current user is owner/mod and target is not current user */}
-                        {isOwnerOrMod && !isCurrentUser && (
+                        {/* Kick button - show for all members except current user. API will handle permissions */}
+                        {!isCurrentUser && (
                           <button
                             onClick={() => handleKickMember(member.id, displayName)}
                             className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
