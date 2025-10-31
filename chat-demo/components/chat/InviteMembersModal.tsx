@@ -284,7 +284,6 @@ export default function InviteMembersModal({
                           {/* Checkbox */}
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleMember(user._id)}
                             className="flex-shrink-0"
                           />
                         </button>

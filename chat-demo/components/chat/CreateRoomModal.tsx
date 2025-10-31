@@ -354,7 +354,6 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                     </div>
                     <Checkbox
                       checked={formData.isReadOnly}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isReadOnly: checked as boolean })}
                       className="flex-shrink-0"
                     />
                   </div>
@@ -442,7 +441,6 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                             {/* Checkbox */}
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={() => toggleMember(user._id)}
                             />
                           </button>
                         );
