@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Users, UserPlus, X, Check, AlertCircle, UserMinus } from 'lucide-react';
 import type { RoomMember } from '@/types/rocketchat';
+import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
 
 interface InviteMembersModalProps {
   isOpen: boolean;
@@ -52,6 +53,11 @@ export default function InviteMembersModal({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  
+  // Confirm modal state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [removingMember, setRemovingMember] = useState(false);
 
   // Get current user ID from localStorage
   useEffect(() => {
@@ -94,13 +100,10 @@ export default function InviteMembersModal({
   };
 
   const toggleMember = (userId: string) => {
-    console.log('🔄 InviteModal toggleMember called with userId:', userId);
     setSelectedMembers(prev => {
-      console.log('📋 InviteModal Current selectedMembers:', prev);
       const newState = prev.includes(userId) 
         ? prev.filter(id => id !== userId)
         : [...prev, userId];
-      console.log('✅ InviteModal New selectedMembers:', newState);
       return newState;
     });
   };
@@ -135,19 +138,28 @@ export default function InviteMembersModal({
     }
   };
 
-  const handleRemoveMember = async (memberId: string, memberName: string, event: React.MouseEvent) => {
+  const handleRemoveMemberClick = (memberId: string, memberName: string, event: React.MouseEvent) => {
     // Stop event propagation to prevent toggleMember from firing
     event.stopPropagation();
     
-    if (!confirm(`Bạn có chắc muốn xóa ${memberName} khỏi nhóm?`)) {
-      return;
-    }
+    // Open confirm modal
+    setMemberToRemove({ id: memberId, name: memberName });
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!memberToRemove) return;
+
+    setRemovingMember(true);
+    setError(null);
 
     try {
-      const response = await rocketChatService.removeMember(roomId, memberId, roomType);
+      const response = await rocketChatService.removeMember(roomId, memberToRemove.id, roomType);
       
       if (response.success) {
-        setSuccess(`Đã xóa ${memberName} khỏi nhóm!`);
+        setSuccess(`Đã xóa ${memberToRemove.name} khỏi nhóm!`);
+        setConfirmModalOpen(false);
+        setMemberToRemove(null);
         setTimeout(() => {
           onSuccess(); // Refresh member list
         }, 1000);
@@ -159,7 +171,14 @@ export default function InviteMembersModal({
       // Display specific error message from API or fallback
       const errorMessage = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi xóa thành viên';
       setError(errorMessage);
+    } finally {
+      setRemovingMember(false);
     }
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmModalOpen(false);
+    setMemberToRemove(null);
   };
 
   const filteredUsers = users.filter(user => {
@@ -339,7 +358,7 @@ export default function InviteMembersModal({
                             {isCurrentMember && !isSelf && (
                               <button
                                 type="button"
-                                onClick={(e) => handleRemoveMember(user._id, displayName, e)}
+                                onClick={(e) => handleRemoveMemberClick(user._id, displayName, e)}
                                 className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors group/remove"
                                 title="Xóa"
                               >
@@ -413,6 +432,15 @@ export default function InviteMembersModal({
           </div>
         </div>
       </DialogContent>
+      
+      {/* Confirm Remove Member Modal */}
+      <ConfirmRemoveMemberModal
+        isOpen={confirmModalOpen}
+        onClose={handleCancelRemove}
+        onConfirm={handleConfirmRemove}
+        memberName={memberToRemove?.name || ''}
+        loading={removingMember}
+      />
     </Dialog>
   );
 }
