@@ -88,7 +88,10 @@ public class RenameRoomRequest
 /// </summary>
 public class SetTopicRequest
 {
+    [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    
+    [JsonProperty("topic")]
     public string Topic { get; set; } = string.Empty;
 }
 
@@ -97,7 +100,10 @@ public class SetTopicRequest
 /// </summary>
 public class SetAnnouncementRequest
 {
+    [JsonProperty("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    
+    [JsonProperty("announcement")]
     public string Announcement { get; set; } = string.Empty;
 }
 
