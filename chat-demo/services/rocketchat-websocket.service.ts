@@ -388,6 +388,21 @@ class RocketChatWebSocketService {
     return this.ws?.readyState === WebSocket.OPEN && this.isAuthenticated;
   }
 
+  /**
+   * Mark room as read (clear unread count)
+   * @param roomId Room ID to mark as read
+   */
+  async markRoomAsRead(roomId: string): Promise<void> {
+    try {
+      console.log('📖 Marking room as read:', roomId);
+      await this.callMethod('readMessages', [roomId]);
+      console.log('✅ Room marked as read');
+    } catch (error) {
+      console.error('❌ Failed to mark room as read:', error);
+      throw error;
+    }
+  }
+
   // Convenience methods for common subscriptions
   
   /**
