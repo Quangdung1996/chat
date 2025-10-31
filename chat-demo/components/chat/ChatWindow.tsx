@@ -43,13 +43,29 @@ function ChatWindow({ room }: ChatWindowProps) {
     swrKey,
     messagesFetcher,
     {
-      refreshInterval: 5000, // ✨ Poll mỗi 5 giây
+      refreshInterval: 5000, // ✨ Poll messages mỗi 5 giây
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
-      keepPreviousData: true, // ✨ GIỮ data cũ khi switching
+      keepPreviousData: false, // ✅ KHÔNG giữ data cũ - tránh hiển thị messages của room khác
       revalidateOnMount: true, // ✨ Load ngay khi mount
+      compare: (a, b) => {
+        // ✅ So sánh messages để tránh re-render không cần thiết
+        if (!a || !b || a.length !== b.length) return false;
+        if (a.length === 0) return true;
+        // So sánh message cuối cùng
+        return a[a.length - 1]?.messageId === b[b.length - 1]?.messageId;
+      },
     }
   );
+
+  // ✅ Reset message text và scroll khi chuyển room
+  useEffect(() => {
+    setMessageText(''); // Clear input khi chuyển room
+    // Scroll to bottom after a short delay
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }, [room.roomId]); // Chạy khi roomId thay đổi
 
   // ✅ Auto scroll khi messages thay đổi - tách riêng khỏi SWR options
   useEffect(() => {
@@ -187,6 +203,9 @@ function ChatWindow({ room }: ChatWindowProps) {
 
 // ✨ Memoize ChatWindow để tránh re-render không cần thiết
 export default memo(ChatWindow, (prevProps, nextProps) => {
-  // Chỉ re-render khi roomId thay đổi
-  return prevProps.room.roomId === nextProps.room.roomId;
+  // ✅ Chỉ re-render khi roomId hoặc room type thay đổi
+  return (
+    prevProps.room.roomId === nextProps.room.roomId &&
+    prevProps.room.type === nextProps.room.type
+  );
 });

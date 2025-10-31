@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 import UserMenu from '@/components/UserMenu';
@@ -23,6 +24,15 @@ interface User {
   emails?: { address: string }[];
 }
 
+// ✅ SWR fetcher cho rooms - định nghĩa ngoài component
+const roomsFetcher = async ([_, userId]: [string, string]) => {
+  const response = await rocketChatService.getUserRooms(userId);
+  if (response.success && response.rooms) {
+    return response.rooms;
+  }
+  throw new Error('Failed to load rooms');
+};
+
 export default function ChatSidebar({
   selectedRoom,
   onSelectRoom,
@@ -30,8 +40,6 @@ export default function ChatSidebar({
   onCloseMobile,
 }: ChatSidebarProps) {
   const user = useAuthStore((state) => state.user);
-  const [rooms, setRooms] = useState<UserSubscription[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -40,33 +48,29 @@ export default function ChatSidebar({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [creatingDM, setCreatingDM] = useState<string | null>(null);
 
+  // ✅ SWR key cho rooms - memoize để tránh infinite loop
+  const roomsSwrKey = useMemo(
+    () => user?.id ? ['rooms', user.id] : null,
+    [user?.id]
+  );
+
+  // ✅ SWR hook - auto polling rooms mỗi 10 giây
+  const { data: rooms = [], error, isLoading, mutate } = useSWR(
+    roomsSwrKey,
+    roomsFetcher,
+    {
+      refreshInterval: 10000, // ✨ Poll rooms mỗi 10 giây để cập nhật unread count
+      revalidateOnFocus: true, // Auto reload khi quay lại tab
+      dedupingInterval: 5000, // Không gọi API 2 lần trong 5s
+      revalidateOnMount: true, // Load ngay khi mount
+    }
+  );
+
   useEffect(() => {
     if (user?.id) {
-      loadRooms();
       loadUsers(); // Load users for contact search
     }
   }, [user?.id]);
-
-  const loadRooms = async () => {
-    if (!user?.id) {
-      console.warn('User ID not available');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await rocketChatService.getUserRooms(user.id);
-      if (response.success && response.rooms) {
-        setRooms(response.rooms || []);
-      }
-    } catch (error) {
-      console.error('Failed to load rooms:', error);
-      setRooms([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -99,8 +103,8 @@ export default function ChatSidebar({
       );
       
       if (response.success && response.roomId) {
-        // Reload rooms to get the new DM
-        await loadRooms();
+        // ✅ Reload rooms using SWR mutate
+        await mutate();
         
         // Wait a bit for the room to appear in the list
         setTimeout(() => {
@@ -190,7 +194,7 @@ export default function ChatSidebar({
 
         {/* Rooms List - Apple Messages Style */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
+          {isLoading ? (
             <div className="p-12 text-center">
               <div className="animate-spin inline-block w-6 h-6 border-[2.5px] border-current border-t-transparent rounded-full text-[#007aff]" />
               <p className="mt-3 text-[15px] text-gray-500 dark:text-gray-400">Đang tải...</p>
@@ -387,7 +391,7 @@ export default function ChatSidebar({
       <CreateRoomModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={loadRooms}
+        onSuccess={() => mutate()}
       />
     </>
   );
