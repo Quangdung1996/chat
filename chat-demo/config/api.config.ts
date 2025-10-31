@@ -33,7 +33,7 @@ export const API_CONFIG = {
       // User Management
       getUsers: '/api/integrations/rocket/users',
       getUserInfo: '/api/integrations/rocket/user/{userId}/info',
-      getUserRooms: '/api/integrations/rocket/user/{userId}/rooms',
+      getUserRooms: '/api/integrations/rocket/rooms',
 
       // Room Management
       createGroup: '/api/integrations/rocket/create-group',

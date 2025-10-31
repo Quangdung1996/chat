@@ -70,13 +70,14 @@ class RocketChatService {
   /**
    * Lấy tất cả rooms của user (real-time từ Rocket.Chat)
    * Bao gồm: DMs, Groups, Channels
-   * GET /api/integrations/rocket/user/{userId}/rooms
+   * GET /api/integrations/rocket/rooms
+   * Uses Rocket.Chat token from header (automatically added by apiClient)
    */
   async getUserRooms(userId: number): Promise<GetUserRoomsResponse> {
-    const endpoint = this.endpoints.getUserRooms.replace('{userId}', userId.toString());
+    const endpoint = this.endpoints.getUserRooms;
     const response = await apiClient.get<{
       success: boolean;
-      userId: number;
+      rocketUserId: string;
       count: number;
       rooms: any[];
     }>(endpoint);
@@ -101,7 +102,7 @@ class RocketChatService {
 
       return {
         success: response.success,
-        userId: response.userId,
+        userId: userId,  // Keep using the input userId for compatibility
         count: response.count,
         rooms: transformedRooms,
       };
@@ -109,7 +110,7 @@ class RocketChatService {
 
     return {
       success: response.success || false,
-      userId: response.userId || userId,
+      userId: userId,
       count: 0,
       rooms: [],
     };

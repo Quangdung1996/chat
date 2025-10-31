@@ -209,60 +209,43 @@ namespace SourceAPI.Controllers.Integrations
         /// <summary>
         /// Get all rooms for a specific user (subscriptions)
         /// Returns all rooms user is participating in (DMs, groups, channels)
-        /// GET /api/integrations/rocket/user/{userId}/rooms
+        /// GET /api/integrations/rocket/rooms
         /// 
-        /// Supports two authentication methods:
-        /// 1. X-RocketChat-Token + X-RocketChat-UserId headers (preferred - direct Rocket.Chat auth)
-        /// 2. userId parameter (legacy - requires internal user mapping)
+        /// Requires Rocket.Chat authentication headers:
+        /// - X-RocketChat-Token: User's Rocket.Chat auth token
+        /// - X-RocketChat-UserId: User's Rocket.Chat user ID
         /// </summary>
-        [HttpGet("user/{userId}/rooms")]
+        [HttpGet("rooms")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> GetUserRooms(int userId)
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> GetUserRooms()
         {
             try
             {
-                // Priority 1: Use Rocket.Chat token from header if available
+                // Get Rocket.Chat token from header (injected by middleware)
                 var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
                 var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
 
-                if (!string.IsNullOrEmpty(rocketToken) && !string.IsNullOrEmpty(rocketUserId))
+                if (string.IsNullOrEmpty(rocketToken) || string.IsNullOrEmpty(rocketUserId))
                 {
-                    _logger.LogInformation($"Using Rocket.Chat token from header for user {rocketUserId}");
-                    var rooms = await _roomService.GetUserRoomsByTokenAsync(rocketToken, rocketUserId);
-
-                    return Ok(new
-                    {
-                        success = true,
-                        rocketUserId,
-                        authMethod = "rocket-token",
-                        count = rooms.Count,
-                        rooms
-                    });
+                    return Unauthorized(new { message = "Rocket.Chat authentication required. Provide X-RocketChat-Token and X-RocketChat-UserId headers." });
                 }
 
-                // Priority 2: Fallback to userId (legacy method)
-                if (userId <= 0)
-                {
-                    return BadRequest(new { message = "UserId is required or provide X-RocketChat-Token header" });
-                }
-
-                _logger.LogInformation($"Using internal userId {userId} (legacy method)");
-                var userRooms = await _roomService.GetUserRoomsAsync(userId);
+                _logger.LogInformation($"Getting rooms for Rocket.Chat user {rocketUserId}");
+                var rooms = await _roomService.GetUserRoomsByTokenAsync(rocketToken, rocketUserId);
 
                 return Ok(new
                 {
                     success = true,
-                    userId,
-                    authMethod = "internal-userId",
-                    count = userRooms.Count,
-                    rooms = userRooms
+                    rocketUserId,
+                    count = rooms.Count,
+                    rooms
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting rooms for user {userId}");
+                _logger.LogError(ex, $"Error getting rooms");
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }

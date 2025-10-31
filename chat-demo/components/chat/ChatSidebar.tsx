@@ -12,6 +12,7 @@ import type { UserSubscription } from '@/types/rocketchat';
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
 const selectToken = (state: any) => state.token;
+const selectRocketChatUserId = (state: any) => state.rocketChatUserId;
 
 interface ChatSidebarProps {
   selectedRoom: UserSubscription | null;
@@ -37,6 +38,7 @@ export default function ChatSidebar({
   // ✅ Use stable selector functions
   const user = useAuthStore(selectUser);
   const token = useAuthStore(selectToken);
+  const rocketChatUserId = useAuthStore(selectRocketChatUserId);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -99,7 +101,7 @@ export default function ChatSidebar({
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
   useEffect(() => {
-    if (!user?.id || !rocketChatWS.isConnected()) return;
+    if (!rocketChatUserId || !rocketChatWS.isConnected()) return;
 
     // Handler cho subscription updates (unread count, etc)
     const handleSubscriptionUpdate = (data: any) => {
@@ -128,20 +130,20 @@ export default function ChatSidebar({
       });
     };
 
-    // Subscribe to user's subscription updates
+    // Subscribe to user's subscription updates using Rocket.Chat userId
     const subId = rocketChatWS.subscribeToUserSubscriptions(
-      user.id.toString(),
+      rocketChatUserId,
       handleSubscriptionUpdate
     );
 
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [user?.id]);
+  }, [rocketChatUserId]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
   useEffect(() => {
-    if (!user?.id || !rocketChatWS.isConnected()) return;
+    if (!rocketChatUserId || !rocketChatWS.isConnected()) return;
 
     // Handler cho room updates (new rooms, room deleted, etc)
     const handleRoomUpdate = (data: any) => {
@@ -186,16 +188,16 @@ export default function ChatSidebar({
       }
     };
 
-    // Subscribe to user's room updates
+    // Subscribe to user's room updates using Rocket.Chat userId
     const subId = rocketChatWS.subscribeToUserRooms(
-      user.id.toString(),
+      rocketChatUserId,
       handleRoomUpdate
     );
 
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [user?.id]);
+  }, [rocketChatUserId]);
 
   const loadUsers = async () => {
     setLoadingUsers(true);

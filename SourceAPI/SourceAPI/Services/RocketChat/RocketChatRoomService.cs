@@ -619,46 +619,6 @@ namespace SourceAPI.Services.RocketChat
         }
 
         /// <summary>
-        /// Get all rooms user is subscribed to (real-time from Rocket.Chat)
-        /// </summary>
-        public async Task<List<SubscriptionData>> GetUserRoomsAsync(int userId)
-        {
-            try
-            {
-                _logger.LogInformation($"Getting rooms for user {userId}");
-
-                // Get user mapping to retrieve username
-                var mapping = await _userService.GetMappingAsync(userId);
-                if (mapping == null)
-                {
-                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
-                    return new List<SubscriptionData>();
-                }
-
-                // Get user token and create user-specific proxy
-                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(userId, mapping.RocketUsername);
-                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
-
-                // Get user's subscriptions (rooms they're in)
-                var response = await userApi.GetUserSubscriptionsAsync();
-
-                if (response == null || !response.Success)
-                {
-                    _logger.LogWarning($"Failed to get rooms for user {userId}");
-                    return new List<SubscriptionData>();
-                }
-
-                _logger.LogInformation($"Retrieved {response.Update.Count} rooms for user {userId} ({mapping.RocketUsername})");
-                return response.Update;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error getting rooms for user {userId}: {ex.Message}");
-                return new List<SubscriptionData>();
-            }
-        }
-
-        /// <summary>
         /// Get all rooms user is subscribed to using Rocket.Chat token from header
         /// Direct authentication with Rocket.Chat without internal userId mapping
         /// </summary>

@@ -96,11 +96,6 @@ namespace SourceAPI.Services.RocketChat
         Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0);
 
         /// <summary>
-        /// Get all rooms user is subscribed to
-        /// </summary>
-        Task<List<SubscriptionData>> GetUserRoomsAsync(int userId);
-
-        /// <summary>
         /// Get all rooms user is subscribed to using Rocket.Chat token from header
         /// Direct authentication with Rocket.Chat without internal userId mapping
         /// </summary>
