@@ -556,7 +556,6 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                roomType = "d";
                 var userId = _currentUserService.UserId;
                 // Get user mapping to retrieve username
                 var mapping = await _userService.GetMappingAsync(userId);
@@ -576,7 +575,7 @@ namespace SourceAPI.Services.RocketChat
                 RoomMessagesResponse response;
 
                 // Call appropriate API based on room type
-                if (roomType == "group")
+                if (roomType == "group" || roomType == "p")
                 {
                     response = await userApi.GetGroupMessagesAsync(roomId, count, offset);
                 }
