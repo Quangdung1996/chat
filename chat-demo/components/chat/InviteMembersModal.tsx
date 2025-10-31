@@ -347,17 +347,27 @@ export default function InviteMembersModal({
                               </button>
                             )}
 
-                            {/* Checkbox */}
+                            {/* Checkbox - Clickable */}
                             {!isCurrentMember && (
-                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-                                isSelected 
-                                  ? 'bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600' 
-                                  : 'border-gray-300 dark:border-gray-600'
-                              }`}>
-                                {isSelected && (
-                                  <Check className="w-2.5 h-2.5 text-white" />
-                                )}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMember(user._id);
+                                }}
+                                className="p-0.5 hover:opacity-80 transition-opacity"
+                                title={isSelected ? 'Bỏ chọn' : 'Chọn'}
+                              >
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                  isSelected 
+                                    ? 'bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600' 
+                                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                                }`}>
+                                  {isSelected && (
+                                    <Check className="w-2.5 h-2.5 text-white" />
+                                  )}
+                                </div>
+                              </button>
                             )}
                           </div>
                         </div>
