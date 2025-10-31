@@ -116,11 +116,17 @@ function ChatWindow({ room }: ChatWindowProps) {
         return new Date().toISOString();
       };
       
+      // ✅ Validate message has required fields
+      if (!message._id || !message.rid || !message.u || !message.u._id) {
+        console.warn('⚠️ Received invalid message from WebSocket, skipping:', message);
+        return;
+      }
+      
       // Convert WebSocket message format to local format
       const newMessage: ChatMessage = {
         messageId: message._id,
         roomId: message.rid,
-        text: message.msg,
+        text: message.msg || '',
         timestamp: parseTimestamp(message.ts),
         createdAt: parseTimestamp(message.ts),
         user: {
