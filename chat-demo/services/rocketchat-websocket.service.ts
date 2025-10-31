@@ -423,7 +423,8 @@ class RocketChatWebSocketService {
         throw new Error('WebSocket not connected');
       }
       
-      const result = await this.callMethod('readMessages', [roomId]);
+      // Try subscriptions.read method (correct RocketChat method name)
+      const result = await this.callMethod('subscriptions.read', roomId);
       console.log('✅ [WS] Room marked as read successfully:', { roomId, result });
       return result;
     } catch (error) {
