@@ -714,13 +714,14 @@ namespace SourceAPI.Controllers.Integrations
                     roomId,
                     room = new
                     {
-                        id = roomInfo?.Id,
+                        _id = roomInfo?.Id,
                         name = roomInfo?.Name,
                         fname = roomInfo?.FullName,
                         type = roomInfo?.Type,
                         readOnly = roomInfo?.ReadOnly ?? false,
                         usersCount = roomInfo?.UsersCount ?? 0,
-                        messageCount = roomInfo?.MessageCount ?? 0
+                        messageCount = roomInfo?.MessageCount ?? 0,
+                        u = roomInfo?.ChatUserInfo
                     }
                 });
             }

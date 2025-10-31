@@ -164,5 +164,17 @@ public class RocketChatUser
     public string AvatarUrl { get; set; } = string.Empty;
 }
 
+public class RocketChatUserInfo
+{
+    [JsonProperty("_id")]
+    public string _id { get; set; } = string.Empty;
+
+    [JsonProperty("username")]
+    public string Username { get; set; } = string.Empty;
+
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+}
+
 #endregion
 

@@ -288,6 +288,8 @@ public class RoomData
 
     [JsonProperty("ro")]
     public bool ReadOnly { get; set; }
+    [JsonProperty("u")]
+    public RocketChatUserInfo ChatUserInfo { get; set; }
 }
 
 /// <summary>
@@ -324,6 +326,8 @@ public class RoomInfo
 
     [JsonProperty("_updatedAt")]
     public DateTime UpdatedAt { get; set; }
+    [JsonProperty("u")]
+    public RocketChatUserInfo ChatUserInfo { get; set; }
 }
 
 /// <summary>
