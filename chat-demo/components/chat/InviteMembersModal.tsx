@@ -212,6 +212,7 @@ export default function InviteMembersModal({
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[90vw] max-w-[440px] max-h-[75vh] p-0 gap-0 overflow-hidden flex flex-col bg-white dark:bg-[#1c1c1e] shadow-2xl rounded-xl border-0">
         {/* Header - Modern & Clean */}
@@ -432,15 +433,16 @@ export default function InviteMembersModal({
           </div>
         </div>
       </DialogContent>
-      
-      {/* Confirm Remove Member Modal */}
-      <ConfirmRemoveMemberModal
-        isOpen={confirmModalOpen}
-        onClose={handleCancelRemove}
-        onConfirm={handleConfirmRemove}
-        memberName={memberToRemove?.name || ''}
-        loading={removingMember}
-      />
     </Dialog>
+    
+    {/* Confirm Remove Member Modal - OUTSIDE parent Dialog */}
+    <ConfirmRemoveMemberModal
+      isOpen={confirmModalOpen}
+      onClose={handleCancelRemove}
+      onConfirm={handleConfirmRemove}
+      memberName={memberToRemove?.name || ''}
+      loading={removingMember}
+    />
+    </>
   );
 }
