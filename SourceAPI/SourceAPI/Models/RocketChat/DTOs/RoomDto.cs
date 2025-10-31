@@ -167,7 +167,9 @@ public class RoomInfoResponse : ApiResponse
 {
     [JsonProperty("room")]
     public RoomInfo Room { get; set; } = null!;
+    [JsonProperty("group")]
     public RoomData Group { get; set; } = new();
+    [JsonProperty("channel")]
     public RoomData Channel { get; set; } = new();
 }
 

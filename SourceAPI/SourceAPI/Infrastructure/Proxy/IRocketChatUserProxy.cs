@@ -97,5 +97,10 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/channels.leave")]
     Task<ApiResponse> LeaveChannelAsync([Body] LeaveRoomRequest request);
+    [Get("/api/v1/groups.info")]
+    Task<RoomInfoResponse> GetGroupInfoAsync([Query] string roomId);
+
+    [Get("/api/v1/channels.info")]
+    Task<RoomInfoResponse> GetChannelInfoAsync([Query] string roomId);
 }
 
