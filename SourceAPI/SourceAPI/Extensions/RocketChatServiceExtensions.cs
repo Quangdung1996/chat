@@ -113,6 +113,7 @@ namespace SourceAPI.Extensions
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IRocketChatContextService, RocketChatContextService>();
 
             return services;
         }

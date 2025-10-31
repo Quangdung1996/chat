@@ -2,6 +2,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
+using SourceAPI.Services;
 using SourceAPI.Services.RocketChat;
 using System;
 using System.Collections.Generic;
@@ -21,17 +22,20 @@ namespace SourceAPI.Controllers.Integrations
         private readonly IRocketChatUserService _userService;
         private readonly IRocketChatRoomService _roomService;
         private readonly IRocketChatAutoLoginService _autoLoginService;
+        private readonly IRocketChatContextService _rocketChatContext;
         private readonly ILogger<RocketChatIntegrationController> _logger;
 
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
             IRocketChatAutoLoginService autoLoginService,
+            IRocketChatContextService rocketChatContext,
             ILogger<RocketChatIntegrationController> logger)
         {
             _userService = userService;
             _roomService = roomService;
             _autoLoginService = autoLoginService;
+            _rocketChatContext = rocketChatContext;
             _logger = logger;
         }
 
@@ -660,17 +664,19 @@ namespace SourceAPI.Controllers.Integrations
                     return BadRequest(new { message = "RoomId and Text are required" });
                 }
 
-                // ✅ Get Rocket.Chat credentials from headers (added by frontend apiClient)
-                var rocketToken = Request.Headers["X-RocketChat-Token"].FirstOrDefault();
-                var rocketUserId = Request.Headers["X-RocketChat-UserId"].FirstOrDefault();
-
-                if (string.IsNullOrWhiteSpace(rocketToken) || string.IsNullOrWhiteSpace(rocketUserId))
+                // ✅ Get Rocket.Chat credentials from context service (populated by middleware)
+                if (!_rocketChatContext.HasRocketChatAuth)
                 {
                     return BadRequest(new { message = "X-RocketChat-Token and X-RocketChat-UserId headers are required" });
                 }
 
                 // ✅ Send message using Rocket.Chat token directly (no database lookup)
-                var messageId = await _roomService.SendMessageAsync(rocketToken, rocketUserId, request.RoomId, request.Text, request.Alias);
+                var messageId = await _roomService.SendMessageAsync(
+                    _rocketChatContext.RocketChatToken!, 
+                    _rocketChatContext.RocketChatUserId!, 
+                    request.RoomId, 
+                    request.Text, 
+                    request.Alias);
 
                 if (string.IsNullOrWhiteSpace(messageId))
                 {
