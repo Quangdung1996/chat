@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, memo } from 'react';
+import { useState, useRef, useMemo, memo, useCallback } from 'react';
 import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
@@ -14,7 +14,8 @@ interface ChatWindowProps {
 }
 
 function ChatWindow({ room }: ChatWindowProps) {
-  const { user } = useAuthStore();
+  // ✅ Dùng selector function được memoize để tránh infinite loop
+  const user = useAuthStore(useCallback((state) => state.user, []));
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
