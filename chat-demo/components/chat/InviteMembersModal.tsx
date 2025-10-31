@@ -153,66 +153,68 @@ export default function InviteMembersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[550px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b">
-          <div className="flex items-center justify-between gap-3">
+      <DialogContent className="w-[95vw] max-w-[520px] max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
+        {/* Header - Apple Style */}
+        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2 mb-1">
-                <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-                <span className="truncate">Thêm thành viên</span>
+              <DialogTitle className="text-[22px] font-bold text-gray-900 dark:text-white mb-1.5 tracking-tight">
+                Thêm thành viên
               </DialogTitle>
               {roomName && (
-                <DialogDescription className="text-xs sm:text-base">
-                  Thêm người dùng vào <strong>{roomName}</strong>
+                <DialogDescription className="text-[15px] text-gray-600 dark:text-gray-400">
+                  Thêm người dùng vào <span className="font-semibold text-gray-900 dark:text-white">{roomName}</span>
                 </DialogDescription>
               )}
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 hover:bg-gray-100/80 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200 flex-shrink-0 group"
+              aria-label="Đóng"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Messages - Apple Alert Style */}
           {error && (
-            <div className="mb-3 sm:mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="mb-4 bg-red-50/80 dark:bg-red-900/10 border border-red-200/60 dark:border-red-800/40 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-3 sm:mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2">
-              <Check className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
-              <span>{success}</span>
+            <div className="mb-4 bg-green-50/80 dark:bg-green-900/10 border border-green-200/60 dark:border-green-800/40 text-green-700 dark:text-green-300 px-4 py-3 rounded-xl text-[14px] flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{success}</span>
             </div>
           )}
 
-          <div className="space-y-3 sm:space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+          <div className="space-y-4">
+            {/* Search - Apple Style */}
+            <div className="relative group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400 dark:text-gray-500 group-focus-within:text-[#007aff] dark:group-focus-within:text-[#0a84ff] transition-colors" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm kiếm theo tên hoặc username..."
-                className="pl-9 sm:pl-10 h-10 sm:h-11 text-sm sm:text-base"
+                className="pl-10 h-11 text-[15px] bg-gray-100/80 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 focus:bg-white dark:focus:bg-gray-800 focus:border-[#007aff] dark:focus:border-[#0a84ff] rounded-xl transition-all duration-200"
                 autoFocus
               />
             </div>
 
-            {/* Selected Members Count */}
+            {/* Selected Members Count - Modern Badge */}
             {selectedMembers.length > 0 && (
-              <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-primary/10 border border-primary/20 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">
+              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/40 dark:border-blue-800/30 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-[#007aff] dark:bg-[#0a84ff] flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-[14px] font-semibold text-gray-900 dark:text-white">
                     Đã chọn {selectedMembers.length} thành viên
                   </span>
                 </div>
@@ -221,35 +223,37 @@ export default function InviteMembersModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedMembers([])}
-                  className="h-auto py-1 px-2 text-[10px] sm:text-xs"
+                  className="h-auto py-1.5 px-3 text-[13px] hover:bg-white/60 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300"
                 >
-                  Bỏ chọn tất cả
+                  Bỏ chọn
                 </Button>
               </div>
             )}
 
-            {/* User List */}
-            <div className="border rounded-lg overflow-hidden">
-              <ScrollArea className="h-[300px] sm:h-[360px]">
+            {/* User List - Refined Design */}
+            <div className="border border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden bg-white/50 dark:bg-gray-900/20">
+              <ScrollArea className="h-[340px]">
                 {loadingUsers ? (
-                  <div className="p-6 sm:p-8 text-center">
-                    <div className="animate-spin inline-block w-5 h-5 sm:w-6 sm:h-6 border-2 border-current border-t-transparent rounded-full text-primary" />
-                    <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground">Đang tải danh sách...</p>
+                  <div className="p-12 text-center">
+                    <div className="animate-spin inline-block w-8 h-8 border-3 border-[#007aff] dark:border-[#0a84ff] border-t-transparent rounded-full" />
+                    <p className="mt-4 text-[14px] font-medium text-gray-600 dark:text-gray-400">Đang tải danh sách...</p>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="p-6 sm:p-8 text-center">
-                    <Users className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground/50 mb-2 sm:mb-3" />
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                    </div>
+                    <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1">
                       {searchTerm ? 'Không tìm thấy người dùng' : 'Không có người dùng'}
                     </p>
                     {searchTerm && (
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400">
                         Thử từ khóa tìm kiếm khác
                       </p>
                     )}
                   </div>
                 ) : (
-                  <div className="divide-y">
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
                     {filteredUsers.map(user => {
                       const isSelected = selectedMembers.includes(user._id);
                       const displayName = user.name || user.username;
@@ -259,37 +263,47 @@ export default function InviteMembersModal({
                           key={user._id}
                           type="button"
                           onClick={() => toggleMember(user._id)}
-                          className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-                            isSelected ? 'bg-primary/5' : ''
+                          className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-all duration-200 group ${
+                            isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                           }`}
                         >
-                          {/* Avatar */}
-                          <div className={`relative flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-sm`}>
-                            {getInitials(displayName)}
-                            {/* Online status indicator */}
+                          {/* Avatar with enhanced shadow */}
+                          <div className="relative flex-shrink-0">
+                            <div className={`w-10 h-10 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-[13px] shadow-md group-hover:shadow-lg transition-shadow duration-200`}>
+                              {getInitials(displayName)}
+                            </div>
+                            {/* Online status indicator - enhanced */}
                             {user.status === 'online' && (
-                              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-[2.5px] border-white dark:border-[#1c1c1e] rounded-full shadow-sm" />
                             )}
                           </div>
                           
-                          {/* Info */}
+                          {/* Info - Better typography */}
                           <div className="flex-1 min-w-0 text-left">
-                            <div className="text-xs sm:text-sm font-medium truncate">
+                            <div className="text-[15px] font-semibold text-gray-900 dark:text-white truncate leading-tight mb-0.5">
                               {displayName}
                             </div>
-                            <div className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                              @{user.username}
+                            <div className="text-[13px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
+                              <span>@{user.username}</span>
                               {user.status === 'online' && (
-                                <span className="ml-1 sm:ml-2 text-green-600 dark:text-green-400">● Trực tuyến</span>
+                                <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                  Online
+                                </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Checkbox */}
-                          <Checkbox
-                            checked={isSelected}
-                            className="flex-shrink-0 pointer-events-none"
-                          />
+                          {/* Checkbox - Custom styled with checkmark animation */}
+                          <div className={`flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-[#007aff] dark:bg-[#0a84ff] border-[#007aff] dark:border-[#0a84ff] scale-110' 
+                              : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
+                          }`}>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-white animate-in zoom-in-50 duration-200" />
+                            )}
+                          </div>
                         </button>
                       );
                     })}
@@ -298,22 +312,23 @@ export default function InviteMembersModal({
               </ScrollArea>
             </div>
 
-            {/* Info text */}
-            <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
-              💡 Chọn người dùng bạn muốn thêm vào nhóm
-            </p>
+            {/* Info text - Subtle hint */}
+            <div className="flex items-center justify-center gap-2 text-[13px] text-gray-500 dark:text-gray-400">
+              <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500" />
+              <span>Chọn người dùng bạn muốn thêm vào nhóm</span>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
+        {/* Footer - Apple Style with gradient */}
+        <div className="flex-shrink-0 px-5 py-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-b from-transparent to-gray-50/30 dark:to-gray-900/30">
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
+              className="flex-1 h-11 text-[15px] font-semibold border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200"
             >
               Hủy bỏ
             </Button>
@@ -321,18 +336,18 @@ export default function InviteMembersModal({
               type="button"
               onClick={handleSubmit}
               disabled={loading || selectedMembers.length === 0}
-              className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
+              className="flex-1 h-11 text-[15px] font-semibold bg-[#007aff] hover:bg-[#0051d5] dark:bg-[#0a84ff] dark:hover:bg-[#0066cc] text-white rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 disabled:shadow-none disabled:opacity-50"
             >
               {loading ? (
-                <>
-                  <div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full mr-1 sm:mr-2" />
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
                   Đang thêm...
-                </>
+                </span>
               ) : (
-                <>
-                  <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
                   Thêm {selectedMembers.length > 0 ? `(${selectedMembers.length})` : ''}
-                </>
+                </span>
               )}
             </Button>
           </div>
