@@ -194,100 +194,91 @@ export default function InviteMembersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-[460px] max-h-[80vh] p-0 gap-0 overflow-hidden flex flex-col bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl">
-        {/* Header - Compact & Clean */}
-        <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+      <DialogContent className="w-[90vw] max-w-[440px] max-h-[75vh] p-0 gap-0 overflow-hidden flex flex-col bg-white dark:bg-[#1c1c1e] shadow-2xl rounded-xl border-0">
+        {/* Header - Modern & Clean */}
+        <div className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800/50 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-900/20">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <Users className="w-5 h-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
-                  Quản lý thành viên
+                <DialogTitle className="text-[16px] font-bold text-gray-900 dark:text-white">
+                  Thêm thành viên
                 </DialogTitle>
                 {roomName && (
-                  <DialogDescription className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+                  <DialogDescription className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">
                     {roomName}
                   </DialogDescription>
                 )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Đóng"
-            >
-              <X className="w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
-            </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          {/* Messages - Compact Style */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Messages - Minimal Style */}
           {error && (
-            <div className="mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-[13px] flex items-center gap-2 animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-[12px] flex items-center gap-2">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg text-[13px] flex items-center gap-2 animate-in fade-in duration-200">
-              <Check className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg text-[12px] flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{success}</span>
             </div>
           )}
 
           <div className="space-y-3">
-            {/* Search - Compact */}
+            {/* Search Bar - Clean */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="pl-9 h-9 text-[14px] bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:border-blue-500 dark:focus:border-blue-600 rounded-lg"
+                placeholder="Tìm kiếm tên hoặc username..."
+                className="pl-9 pr-3 h-10 text-[13px] bg-gray-50/80 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 dark:focus:border-blue-500 rounded-lg transition-colors"
                 autoFocus
               />
             </div>
 
-            {/* Selected Members Count - Compact Badge */}
+            {/* Selected Count Badge - Minimal */}
             {selectedMembers.length > 0 && (
-              <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
-                <span className="text-[13px] font-medium text-blue-700 dark:text-blue-400">
-                  Đã chọn {selectedMembers.length} người
+              <div className="flex items-center justify-between px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <span className="text-[12px] font-medium text-blue-700 dark:text-blue-400">
+                  {selectedMembers.length} người được chọn
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedMembers([])}
-                  className="text-[12px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
-                  Bỏ chọn
+                  Xóa
                 </button>
               </div>
             )}
 
-            {/* User List - Compact & Clean Design */}
-            <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50/50 dark:bg-gray-900/50">
-              <ScrollArea className="h-[320px]">
+            {/* User List - Minimal Height Items */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+              <ScrollArea className="h-[300px]">
                 {loadingUsers ? (
                   <div className="p-8 text-center">
-                    <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" />
-                    <p className="mt-3 text-[13px] text-gray-500 dark:text-gray-400">Đang tải...</p>
+                    <div className="animate-spin inline-block w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                    <p className="mt-2 text-[12px] text-gray-500 dark:text-gray-400">Đang tải...</p>
                   </div>
                 ) : filteredUsers.length === 0 ? (
                   <div className="p-8 text-center">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <Users className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                    </div>
-                    <p className="text-[14px] font-medium text-gray-700 dark:text-gray-300">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                    <p className="text-[13px] font-medium text-gray-600 dark:text-gray-400">
                       {searchTerm ? 'Không tìm thấy' : 'Không có người dùng'}
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  <div>
                     {filteredUsers.map(user => {
                       const isSelected = selectedMembers.includes(user._id);
                       const displayName = user.name || user.username;
@@ -297,72 +288,74 @@ export default function InviteMembersModal({
                       return (
                         <div
                           key={user._id}
-                          className={`relative flex items-center gap-2.5 px-3 py-2.5 transition-colors group ${
-                            isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-white dark:hover:bg-gray-800'
+                          className={`relative flex items-center gap-2 px-3 py-2 border-b border-gray-50 dark:border-gray-800/50 last:border-0 transition-colors ${
+                            isSelected 
+                              ? 'bg-blue-50/50 dark:bg-blue-900/10' 
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'
                           }`}
                         >
                           <button
                             type="button"
                             onClick={() => !isCurrentMember && toggleMember(user._id)}
                             disabled={isCurrentMember}
-                            className="flex-1 flex items-center gap-2.5 text-left min-w-0"
+                            className="flex-1 flex items-center gap-2 text-left min-w-0"
                           >
-                            {/* Avatar - Compact */}
+                            {/* Avatar - Small */}
                             <div className="relative flex-shrink-0">
-                              <div className={`w-8 h-8 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-[11px] shadow-sm`}>
+                              <div className={`w-7 h-7 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-[10px]`}>
                                 {getInitials(displayName)}
                               </div>
                               {user.status === 'online' && (
-                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border border-white dark:border-gray-900 rounded-full" />
                               )}
                             </div>
                             
-                            {/* Info - Compact */}
+                            {/* Info - Minimal */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[14px] font-semibold text-gray-900 dark:text-white truncate">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <span className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">
                                   {displayName}
                                 </span>
                                 {isCurrentMember && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                                  <span className="text-[9px] font-medium px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-sm">
                                     Thành viên
                                   </span>
                                 )}
                                 {isSelf && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                                  <span className="text-[9px] font-medium px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-sm">
                                     Bạn
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[12px] text-gray-500 dark:text-gray-400 truncate">
+                              <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                                 @{user.username}
                               </div>
                             </div>
                           </button>
 
-                          {/* Action buttons - Compact */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {/* Remove button - RED & Prominent */}
+                          {/* Actions - Minimal */}
+                          <div className="flex items-center flex-shrink-0">
+                            {/* Remove button - Red */}
                             {isCurrentMember && !isSelf && (
                               <button
                                 type="button"
                                 onClick={(e) => handleRemoveMember(user._id, displayName, e)}
-                                className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-all duration-200 group/remove"
-                                title="Xóa khỏi nhóm"
+                                className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors group/remove"
+                                title="Xóa"
                               >
-                                <X className="w-4 h-4 text-red-500 dark:text-red-400 group-hover/remove:text-red-600 dark:group-hover/remove:text-red-300 transition-colors" />
+                                <X className="w-3.5 h-3.5 text-red-500 dark:text-red-400 group-hover/remove:text-red-600" />
                               </button>
                             )}
 
-                            {/* Checkbox - only show for non-members */}
+                            {/* Checkbox */}
                             {!isCurrentMember && (
-                              <div className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center transition-all ${
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                                 isSelected 
                                   ? 'bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600' 
                                   : 'border-gray-300 dark:border-gray-600'
                               }`}>
                                 {isSelected && (
-                                  <Check className="w-3 h-3 text-white" />
+                                  <Check className="w-2.5 h-2.5 text-white" />
                                 )}
                               </div>
                             )}
@@ -377,15 +370,15 @@ export default function InviteMembersModal({
           </div>
         </div>
 
-        {/* Footer - Compact */}
-        <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1c1c1e]">
-          <div className="flex items-center gap-2">
+        {/* Footer - Clean */}
+        <div className="flex-shrink-0 px-5 py-4 border-t border-gray-100 dark:border-gray-800/50 bg-gradient-to-t from-gray-50/30 to-transparent dark:from-gray-900/20">
+          <div className="flex items-center gap-2.5">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-9 text-[14px] font-medium border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg"
+              className="flex-1 h-10 text-[13px] font-semibold border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg"
             >
               Hủy
             </Button>
@@ -393,7 +386,7 @@ export default function InviteMembersModal({
               type="button"
               onClick={handleSubmit}
               disabled={loading || selectedMembers.length === 0}
-              className="flex-1 h-9 text-[14px] font-medium bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg shadow-sm disabled:opacity-50"
+              className="flex-1 h-10 text-[13px] font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none"
             >
               {loading ? (
                 <span className="flex items-center gap-1.5">
@@ -402,7 +395,7 @@ export default function InviteMembersModal({
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
-                  <UserPlus className="w-3.5 h-3.5" />
+                  <UserPlus className="w-4 h-4" />
                   Thêm {selectedMembers.length > 0 ? `(${selectedMembers.length})` : ''}
                 </span>
               )}
