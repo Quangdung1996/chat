@@ -305,7 +305,8 @@ class RocketChatService {
           timestamp: msg.ts || msg.timestamp,
           deleted: msg.deleted || false,
           edited: msg.editedAt ? true : false,
-          isCurrentUser: currentUsername ? username === currentUsername : false,
+          // ✨ Backend đã trả về isCurrentUser rồi, dùng luôn (fallback to compare nếu không có)
+          isCurrentUser: msg.isCurrentUse,
         };
       });
 
