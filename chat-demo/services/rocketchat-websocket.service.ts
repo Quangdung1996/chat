@@ -67,9 +67,9 @@ class RocketChatWebSocketService {
   }
 
   async connect(): Promise<void> {
-    // If already connected, return immediately
-    if (this.ws?.readyState === WebSocket.OPEN && !this.isConnecting) {
-      console.log('✅ Already connected');
+    // If already DDP connected, return immediately
+    if (this.isDDPConnected() && !this.isConnecting) {
+      console.log('✅ Already DDP connected');
       return;
     }
 
@@ -79,7 +79,7 @@ class RocketChatWebSocketService {
       // Wait for connection to complete (max 10 seconds)
       return new Promise((resolve, reject) => {
         const checkInterval = setInterval(() => {
-          if (this.ws?.readyState === WebSocket.OPEN && !this.isConnecting) {
+          if (this.isDDPConnected() && !this.isConnecting) {
             clearInterval(checkInterval);
             resolve();
           }
@@ -360,8 +360,8 @@ class RocketChatWebSocketService {
    * Authenticate with existing token
    */
   async authenticate(authToken: string, userId: string): Promise<void> {
-    // Ensure WebSocket is connected before authenticating
-    if (!this.isConnected()) {
+    // Ensure DDP connection is established before authenticating
+    if (!this.isDDPConnected()) {
       throw new Error('WebSocket not connected. Call connect() first.');
     }
 
@@ -484,8 +484,18 @@ class RocketChatWebSocketService {
     this.isAuthenticated = false;
   }
 
+  /**
+   * Check if WebSocket is connected (for external use - checks auth too)
+   */
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN && this.isAuthenticated;
+  }
+
+  /**
+   * Check if DDP connection is established (internal use - doesn't check auth)
+   */
+  private isDDPConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
   }
 
   /**
