@@ -239,6 +239,12 @@ class RocketChatWebSocketService {
 
       console.log('✅ Got token from backend, authenticating WebSocket...');
       
+      // Save token to localStorage for future use
+      localStorage.setItem('rc_token', tokenResponse.authToken);
+      localStorage.setItem('rc_uid', tokenResponse.userId);
+      
+      console.log('💾 Saved new token to localStorage');
+      
       // Authenticate WebSocket with the token
       await this.authenticate(tokenResponse.authToken, tokenResponse.userId);
       
@@ -256,6 +262,10 @@ class RocketChatWebSocketService {
     return new Promise((resolve, reject) => {
       this.authToken = authToken;
       this.userId = userId;
+
+      // Save token to localStorage
+      localStorage.setItem('rc_token', authToken);
+      localStorage.setItem('rc_uid', userId);
 
       const id = this.getNextId();
       this.callbacks.set(id, (result: any) => {
