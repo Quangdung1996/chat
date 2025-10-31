@@ -46,6 +46,7 @@ export default function ChatSidebar({
   const [rooms, setRooms] = useState<UserSubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [wsReady, setWsReady] = useState(false); // ✅ Track when WebSocket is ready
   
   // New states for user search
   const [users, setUsers] = useState<User[]>([]);
@@ -85,11 +86,15 @@ export default function ChatSidebar({
   // ✅ Auto-connect WebSocket when entering home page (if not already connected)
   useEffect(() => {
     const initWebSocket = async () => {
-      if (!token || !rocketChatUserId) return;
+      if (!token || !rocketChatUserId) {
+        setWsReady(false);
+        return;
+      }
 
       // Check if already connected
       if (rocketChatWS.isConnected()) {
         console.log('✅ WebSocket already connected');
+        setWsReady(true);
         return;
       }
 
@@ -98,8 +103,10 @@ export default function ChatSidebar({
         await rocketChatWS.connect();
         await rocketChatWS.authenticateWithStoredToken();
         console.log('✅ WebSocket connected and authenticated');
+        setWsReady(true); // ✅ Mark as ready AFTER successful authentication
       } catch (error) {
         console.error('❌ Failed to connect WebSocket:', error);
+        setWsReady(false);
       }
     };
 
@@ -109,7 +116,12 @@ export default function ChatSidebar({
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
   // 🔥 IMPORTANT: This runs ALWAYS when connected, not just when selectedRoom exists
   useEffect(() => {
-    if (!rocketChatUserId || !rocketChatWS.isConnected()) return;
+    if (!rocketChatUserId || !wsReady) {
+      console.log('⏳ Waiting for WebSocket to be ready...', { rocketChatUserId, wsReady });
+      return;
+    }
+
+    console.log('🔔 Subscribing to user subscriptions for:', rocketChatUserId);
 
     // Handler cho subscription updates (unread count, etc)
     const handleSubscriptionUpdate = (data: any) => {
@@ -156,13 +168,14 @@ export default function ChatSidebar({
     );
 
     return () => {
+      console.log('🔕 Unsubscribing from user subscriptions');
       rocketChatWS.unsubscribe(subId);
     };
-  }, [rocketChatUserId, selectedRoom?.roomId]); // ✅ Only re-subscribe when userId or selected roomId changes
+  }, [rocketChatUserId, wsReady, selectedRoom?.roomId]); // ✅ Subscribe when WS ready
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
   useEffect(() => {
-    if (!rocketChatUserId || !rocketChatWS.isConnected()) return;
+    if (!rocketChatUserId || !wsReady) return;
 
     // Handler cho room updates (new rooms, room deleted, etc)
     const handleRoomUpdate = (data: any) => {
@@ -216,7 +229,7 @@ export default function ChatSidebar({
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [rocketChatUserId]);
+  }, [rocketChatUserId, wsReady]);
 
   const loadUsers = async () => {
     setLoadingUsers(true);
