@@ -213,7 +213,11 @@ function ChatWindow({ room }: ChatWindowProps) {
           </div>
         ) : (
           <div className="py-6">
-            <MessageList messages={messages} />
+            <MessageList 
+              messages={messages} 
+              currentUserId={user?.id}
+              currentUsername={room.user?.username}
+            />
             <div ref={messagesEndRef} />
           </div>
         )}
