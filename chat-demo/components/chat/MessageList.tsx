@@ -13,40 +13,36 @@ interface MessageListProps {
 function MessageList({ messages, currentUserId, currentUsername }: MessageListProps) {
 
   const formatTime = (timestamp?: string) => {
-    if (!timestamp) {
-      console.warn('⚠️ No timestamp provided');
-      return 'Vừa xong';
-    }
+    if (!timestamp) return 'Vừa xong';
     
-    console.log('🕐 Formatting timestamp:', timestamp);
     const date = new Date(timestamp);
-    
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      console.error('❌ Invalid timestamp format:', timestamp, '| Type:', typeof timestamp);
-      return 'Vừa xong';
-    }
+    if (isNaN(date.getTime())) return 'Vừa xong';
     
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
+    const diffInMinutes = diffInSeconds / 60;
+    const diffInHours = diffInMinutes / 60;
 
-    if (diffInHours < 24) {
-      const formatted = date.toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      console.log('✅ Formatted time (today):', formatted);
-      return formatted;
-    } else {
-      const formatted = date.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      console.log('✅ Formatted time (past):', formatted);
-      return formatted;
+    // Tin nhắn trong vòng 1 phút
+    if (diffInMinutes < 1) {
+      return 'Vừa xong';
     }
+
+    // Tin nhắn trong vòng 24 giờ
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    // Tin nhắn cũ hơn 24 giờ
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const getInitials = (name?: string) => {

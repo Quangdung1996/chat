@@ -43,8 +43,6 @@ function ChatWindow({ room }: ChatWindowProps) {
       try {
         const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
         if (response.success && response.messages) {
-          console.log('📥 Initial messages loaded:', response.messages.length);
-          console.log('🕐 First message:', response.messages[0]);
           setMessages(response.messages);
           setError(null);
         } else {
@@ -83,22 +81,17 @@ function ChatWindow({ room }: ChatWindowProps) {
   // ✅ Rocket.Chat WebSocket: Connect and authenticate
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log('🔌 Attempting WebSocket connection...');
     
     // Connect to WebSocket
     rocketChatWS.connect()
       .then(() => {
-        console.log('✅ WebSocket connected, authenticating...');
         // Authenticate using backend API to get Rocket.Chat token
         return rocketChatWS.authenticateWithBackend(user.id);
       })
       .then(() => {
-        console.log('✅ WebSocket authenticated successfully');
         setWsConnected(true);
       })
-      .catch(err => {
-        console.error('❌ Failed to connect/authenticate WebSocket:', err);
+      .catch(() => {
         setWsConnected(false);
       });
 
@@ -110,44 +103,16 @@ function ChatWindow({ room }: ChatWindowProps) {
 
   // ✅ Rocket.Chat WebSocket: Subscribe to room messages
   useEffect(() => {
-    if (!roomId) {
-      console.log('⏭️ No roomId, skipping subscription');
-      return;
-    }
-    
-    if (!wsConnected) {
-      console.log('⚠️ WebSocket not connected yet, waiting... (wsConnected:', wsConnected, ')');
-      return;
-    }
-
-    console.log('🔔 Subscribing to room messages:', roomId);
+    if (!roomId || !wsConnected) return;
 
     // Handler cho message mới từ WebSocket
     const handleNewMessage = (message: any) => {
-      console.log('📨 New message from WebSocket:', message);
-      console.log('🕐 Raw timestamp from WebSocket:', message.ts, '| Type:', typeof message.ts);
-      
       // Helper to parse Rocket.Chat timestamp format
       const parseTimestamp = (ts: any): string => {
-        if (!ts) {
-          console.log('⚠️ No timestamp provided, using current time');
-          return new Date().toISOString();
-        }
-        if (typeof ts === 'string') {
-          console.log('✅ String timestamp:', ts);
-          return ts;
-        }
-        if (ts.$date) {
-          const parsed = new Date(ts.$date).toISOString();
-          console.log('✅ $date timestamp:', ts.$date, '→', parsed);
-          return parsed;
-        }
-        if (typeof ts === 'number') {
-          const parsed = new Date(ts).toISOString();
-          console.log('✅ Number timestamp:', ts, '→', parsed);
-          return parsed;
-        }
-        console.warn('⚠️ Unknown timestamp format:', ts, 'using current time');
+        if (!ts) return new Date().toISOString();
+        if (typeof ts === 'string') return ts;
+        if (ts.$date) return new Date(ts.$date).toISOString();
+        if (typeof ts === 'number') return new Date(ts).toISOString();
         return new Date().toISOString();
       };
       
@@ -176,7 +141,6 @@ function ChatWindow({ room }: ChatWindowProps) {
         );
         
         if (optimisticIndex !== -1) {
-          console.log('🔄 Replacing optimistic message with real message');
           const updated = [...currentMessages];
           updated[optimisticIndex] = newMessage;
           return updated;
@@ -184,12 +148,8 @@ function ChatWindow({ room }: ChatWindowProps) {
         
         // Check if message already exists (avoid duplicates)
         const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
-        if (exists) {
-          console.log('⏭️ Message already exists, skipping');
-          return currentMessages;
-        }
+        if (exists) return currentMessages;
         
-        console.log('✅ Adding new message to state');
         // Add new message to the end
         return [...currentMessages, newMessage];
       });
@@ -197,11 +157,9 @@ function ChatWindow({ room }: ChatWindowProps) {
 
     // Subscribe to room messages
     const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, handleNewMessage);
-    console.log('✅ Subscribed with ID:', subscriptionId);
 
     // Cleanup on unmount or room change
     return () => {
-      console.log('🧹 Unsubscribing from room:', roomId);
       rocketChatWS.unsubscribe(subscriptionId);
     };
   }, [roomId, wsConnected]);
@@ -240,12 +198,8 @@ function ChatWindow({ room }: ChatWindowProps) {
       setMessages(currentMessages => [...currentMessages, optimisticMessage]);
       
       // Send to backend
-      const response = await rocketChatService.sendMessage(request);
-      
-      if (response.success) {
-        console.log('✅ Message sent successfully:', response.messageId);
-        // WebSocket will update with real message data
-      }
+      await rocketChatService.sendMessage(request);
+      // WebSocket will update with real message data
     } catch (error) {
       alert('❌ Lỗi: ' + (error as Error).message);
       // Optionally: remove optimistic message on error
@@ -267,12 +221,8 @@ function ChatWindow({ room }: ChatWindowProps) {
     try {
       const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
       if (response.success && response.messages) {
-        console.log('📥 Loaded messages from API:', response.messages.length);
-        console.log('🕐 First message timestamp:', response.messages[0]?.timestamp, '| Type:', typeof response.messages[0]?.timestamp);
         setMessages(response.messages);
       }
-    } catch (err) {
-      console.error('Failed to refresh messages:', err);
     } finally {
       setIsLoading(false);
     }
