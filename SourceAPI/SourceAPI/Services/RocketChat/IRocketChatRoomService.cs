@@ -99,6 +99,12 @@ namespace SourceAPI.Services.RocketChat
         /// Get all rooms user is subscribed to
         /// </summary>
         Task<List<SubscriptionData>> GetUserRoomsAsync(int userId);
+
+        /// <summary>
+        /// Get all rooms user is subscribed to using Rocket.Chat token from header
+        /// Direct authentication with Rocket.Chat without internal userId mapping
+        /// </summary>
+        Task<List<SubscriptionData>> GetUserRoomsByTokenAsync(string authToken, string rocketUserId);
     }
 }
 

@@ -23,13 +23,20 @@ class ApiClient {
     // Request interceptor - Thêm token và API key vào request
     this.axiosInstance.interceptors.request.use(
       (config) => {
+        const authState = useAuthStore.getState();
+        
         // Add Bearer token for authentication
-        const token = useAuthStore.getState().token;
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        if (authState.token) {
+          config.headers.Authorization = `Bearer ${authState.token}`;
         }
 
-        // Add X-API-Key for Rocket.Chat endpoints
+        // Add Rocket.Chat tokens to header for all requests
+        if (authState.rocketChatToken && authState.rocketChatUserId) {
+          config.headers['X-RocketChat-Token'] = authState.rocketChatToken;
+          config.headers['X-RocketChat-UserId'] = authState.rocketChatUserId;
+        }
+
+        // Add X-API-Key for Rocket.Chat endpoints (legacy support)
         if (config.url?.includes('/integrations/rocket') || config.url?.includes('/webhooks/rocketchat')) {
           config.headers['X-API-Key'] = API_CONFIG.apiKey;
         }

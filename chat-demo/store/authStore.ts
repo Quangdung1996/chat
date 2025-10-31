@@ -27,10 +27,15 @@ interface AuthState {
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   
+  // Rocket.Chat tokens
+  rocketChatToken: string | null;
+  rocketChatUserId: string | null;
+  
   // Actions
   setAuth: (token: string, refreshToken: string, user: User) => void;
   clearAuth: () => void;
   setUser: (user: User) => void;
+  setRocketChatAuth: (authToken: string, userId: string) => void;
   setHasHydrated: (state: boolean) => void;
 }
 
@@ -43,6 +48,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       _hasHydrated: false,
+      rocketChatToken: null,
+      rocketChatUserId: null,
 
       // Set auth info sau khi login
       setAuth: (token, refreshToken, user) =>
@@ -60,10 +67,19 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           user: null,
           isAuthenticated: false,
+          rocketChatToken: null,
+          rocketChatUserId: null,
         }),
 
       // Update user info
       setUser: (user) => set({ user }),
+
+      // Set Rocket.Chat auth tokens
+      setRocketChatAuth: (authToken, userId) =>
+        set({
+          rocketChatToken: authToken,
+          rocketChatUserId: userId,
+        }),
 
       // Set hydration state
       setHasHydrated: (state) => set({ _hasHydrated: state }),
@@ -76,6 +92,8 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        rocketChatToken: state.rocketChatToken,
+        rocketChatUserId: state.rocketChatUserId,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

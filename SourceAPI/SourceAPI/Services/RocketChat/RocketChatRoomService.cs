@@ -658,6 +658,38 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
+        /// <summary>
+        /// Get all rooms user is subscribed to using Rocket.Chat token from header
+        /// Direct authentication with Rocket.Chat without internal userId mapping
+        /// </summary>
+        public async Task<List<SubscriptionData>> GetUserRoomsByTokenAsync(string authToken, string rocketUserId)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting rooms for Rocket.Chat user {rocketUserId} using token");
+
+                // Create user-specific proxy with provided token
+                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
+
+                // Get user's subscriptions (rooms they're in)
+                var response = await userApi.GetUserSubscriptionsAsync();
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get rooms for Rocket.Chat user {rocketUserId}");
+                    return new List<SubscriptionData>();
+                }
+
+                _logger.LogInformation($"Retrieved {response.Update.Count} rooms for Rocket.Chat user {rocketUserId}");
+                return response.Update;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting rooms for Rocket.Chat user {rocketUserId}: {ex.Message}");
+                return new List<SubscriptionData>();
+            }
+        }
+
         #endregion
     }
 }

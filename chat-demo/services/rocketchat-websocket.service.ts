@@ -7,6 +7,7 @@
 
 import { API_CONFIG } from '@/config/api.config';
 import { rocketChatService } from './rocketchat.service';
+import { useAuthStore } from '@/store/authStore';
 
 interface DDPMessage {
   msg: string;
@@ -239,11 +240,14 @@ class RocketChatWebSocketService {
 
       console.log('✅ Got token from backend, authenticating WebSocket...');
       
-      // Save token to localStorage for future use
+      // Save token to localStorage for future use (legacy support)
       localStorage.setItem('rc_token', tokenResponse.authToken);
       localStorage.setItem('rc_uid', tokenResponse.userId);
       
-      console.log('💾 Saved new token to localStorage');
+      // Save token to authStore for axios interceptor
+      useAuthStore.getState().setRocketChatAuth(tokenResponse.authToken, tokenResponse.userId);
+      
+      console.log('💾 Saved new token to localStorage and authStore');
       
       // Authenticate WebSocket with the token
       await this.authenticate(tokenResponse.authToken, tokenResponse.userId);
@@ -263,9 +267,12 @@ class RocketChatWebSocketService {
       this.authToken = authToken;
       this.userId = userId;
 
-      // Save token to localStorage
+      // Save token to localStorage (legacy support)
       localStorage.setItem('rc_token', authToken);
       localStorage.setItem('rc_uid', userId);
+
+      // Save token to authStore for axios interceptor
+      useAuthStore.getState().setRocketChatAuth(authToken, userId);
 
       const id = this.getNextId();
       this.callbacks.set(id, (result: any) => {

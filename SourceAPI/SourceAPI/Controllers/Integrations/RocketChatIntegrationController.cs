@@ -210,6 +210,10 @@ namespace SourceAPI.Controllers.Integrations
         /// Get all rooms for a specific user (subscriptions)
         /// Returns all rooms user is participating in (DMs, groups, channels)
         /// GET /api/integrations/rocket/user/{userId}/rooms
+        /// 
+        /// Supports two authentication methods:
+        /// 1. X-RocketChat-Token + X-RocketChat-UserId headers (preferred - direct Rocket.Chat auth)
+        /// 2. userId parameter (legacy - requires internal user mapping)
         /// </summary>
         [HttpGet("user/{userId}/rooms")]
         [ProducesResponseType(200)]
@@ -219,19 +223,41 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                if (userId <= 0)
+                // Priority 1: Use Rocket.Chat token from header if available
+                var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
+                var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
+
+                if (!string.IsNullOrEmpty(rocketToken) && !string.IsNullOrEmpty(rocketUserId))
                 {
-                    return BadRequest(new { message = "UserId is required" });
+                    _logger.LogInformation($"Using Rocket.Chat token from header for user {rocketUserId}");
+                    var rooms = await _roomService.GetUserRoomsByTokenAsync(rocketToken, rocketUserId);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        rocketUserId,
+                        authMethod = "rocket-token",
+                        count = rooms.Count,
+                        rooms
+                    });
                 }
 
-                var rooms = await _roomService.GetUserRoomsAsync(userId);
+                // Priority 2: Fallback to userId (legacy method)
+                if (userId <= 0)
+                {
+                    return BadRequest(new { message = "UserId is required or provide X-RocketChat-Token header" });
+                }
+
+                _logger.LogInformation($"Using internal userId {userId} (legacy method)");
+                var userRooms = await _roomService.GetUserRoomsAsync(userId);
 
                 return Ok(new
                 {
                     success = true,
                     userId,
-                    count = rooms.Count,
-                    rooms
+                    authMethod = "internal-userId",
+                    count = userRooms.Count,
+                    rooms = userRooms
                 });
             }
             catch (Exception ex)

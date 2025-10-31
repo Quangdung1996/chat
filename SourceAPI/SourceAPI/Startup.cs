@@ -20,6 +20,7 @@ using SourceAPI.Extensions;
 using SourceAPI.Shared.Engines;
 using SourceAPI.Shared.Helper;
 using SourceAPI.Shared.Services;
+using SourceAPI.Middleware;
 using System;
 using System.IO;
 using System.Linq;
@@ -122,6 +123,11 @@ namespace SourceOAWebAPI
                .AllowAnyHeader()
                .SetIsOriginAllowed(origin => true) // allow any origin
                .AllowCredentials()); // allow credentials
+            
+            // Rocket.Chat middlewares
+            app.UseRocketChatToken();      // Extract Rocket.Chat token from headers
+            app.UseRocketChatApiKey();     // Validate API key for integration endpoints
+            
             app.UseAuthentication();
             app.UseAuthorization();
 
