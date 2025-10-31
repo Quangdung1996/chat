@@ -310,6 +310,15 @@ class RocketChatService {
       },
     });
 
+    // Helper to parse Rocket.Chat timestamp format
+    const parseTimestamp = (ts: any): string => {
+      if (!ts) return new Date().toISOString();
+      if (typeof ts === 'string') return ts;
+      if (ts.$date) return new Date(ts.$date).toISOString();
+      if (typeof ts === 'number') return new Date(ts).toISOString();
+      return new Date().toISOString();
+    };
+
     // Transform backend response to match frontend expected format
     if (response.success && response.messages) {
       const transformedMessages = response.messages.map((msg: any) => {
@@ -319,7 +328,7 @@ class RocketChatService {
           roomId: msg.rid,
           username,
           text: msg.msg || msg.text || '',
-          timestamp: msg.ts || msg.timestamp,
+          timestamp: parseTimestamp(msg.ts || msg.timestamp),
           deleted: msg.deleted || false,
           edited: msg.editedAt ? true : false,
           // ✅ Include user object with name for display

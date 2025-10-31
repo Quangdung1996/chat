@@ -124,19 +124,43 @@ function ChatWindow({ room }: ChatWindowProps) {
     const handleNewMessage = (message: any) => {
       console.log('📨 New message from WebSocket:', message);
       
+      // Helper to parse Rocket.Chat timestamp format
+      const parseTimestamp = (ts: any): string => {
+        if (!ts) {
+          console.log('⚠️ No timestamp provided, using current time');
+          return new Date().toISOString();
+        }
+        if (typeof ts === 'string') {
+          console.log('✅ String timestamp:', ts);
+          return ts;
+        }
+        if (ts.$date) {
+          const parsed = new Date(ts.$date).toISOString();
+          console.log('✅ $date timestamp:', ts.$date, '→', parsed);
+          return parsed;
+        }
+        if (typeof ts === 'number') {
+          const parsed = new Date(ts).toISOString();
+          console.log('✅ Number timestamp:', ts, '→', parsed);
+          return parsed;
+        }
+        console.warn('⚠️ Unknown timestamp format:', ts, 'using current time');
+        return new Date().toISOString();
+      };
+      
       // Convert WebSocket message format to local format
       const newMessage: ChatMessage = {
         messageId: message._id,
         roomId: message.rid,
         text: message.msg,
-        timestamp: message.ts,
-        createdAt: message.ts,
+        timestamp: parseTimestamp(message.ts),
+        createdAt: parseTimestamp(message.ts),
         user: {
           id: message.u._id,
           username: message.u.username,
           name: message.u.name || message.u.username,
         },
-        updatedAt: message._updatedAt,
+        updatedAt: message._updatedAt ? parseTimestamp(message._updatedAt) : undefined,
       };
 
       // Update messages state
