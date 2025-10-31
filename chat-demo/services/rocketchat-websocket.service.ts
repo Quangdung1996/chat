@@ -34,7 +34,7 @@ class RocketChatWebSocketService {
   private ws: WebSocket | null = null;
   private messageId = 0;
   private subscriptions = new Map<string, Subscription>();
-  private callbacks = new Map<string, (data: any) => void>();
+  private callbacks = new Map<string, (data: any, error?: any) => void>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
@@ -180,7 +180,17 @@ class RocketChatWebSocketService {
         // Handle method call result
         if (data.id && this.callbacks.has(data.id)) {
           const callback = this.callbacks.get(data.id);
-          callback?.(data.result);
+          if (data.error) {
+            // Reject promise if server returned error
+            console.error('❌ Method call error:', {
+              id: data.id,
+              error: data.error
+            });
+            callback?.(null, data.error);
+          } else {
+            // Resolve with result
+            callback?.(data.result);
+          }
           this.callbacks.delete(data.id);
         }
         break;
@@ -348,8 +358,13 @@ class RocketChatWebSocketService {
     return new Promise((resolve, reject) => {
       const id = this.getNextId();
       
-      this.callbacks.set(id, (result: any) => {
-        resolve(result);
+      // Store both resolve and reject so we can handle errors
+      this.callbacks.set(id, (result: any, error?: any) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
       });
 
       this.send({
