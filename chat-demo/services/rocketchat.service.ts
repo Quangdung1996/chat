@@ -312,16 +312,10 @@ class RocketChatService {
 
     // Helper to parse Rocket.Chat timestamp format
     const parseTimestamp = (ts: any): string => {
-      console.log('🔍 Parsing timestamp:', ts, '| Type:', typeof ts);
       if (!ts) return new Date().toISOString();
       if (typeof ts === 'string') return ts;
-      if (ts.$date) {
-        const parsed = new Date(ts.$date).toISOString();
-        console.log('✅ Parsed $date:', ts.$date, '→', parsed);
-        return parsed;
-      }
+      if (ts.$date) return new Date(ts.$date).toISOString();
       if (typeof ts === 'number') return new Date(ts).toISOString();
-      console.warn('⚠️ Unhandled timestamp format:', ts);
       return new Date().toISOString();
     };
 
