@@ -82,7 +82,29 @@ export default function ChatSidebar({
     }
   }, [user?.id]);
 
-  // ✅ Rocket.Chat WebSocket: Already connected during login, no need to reconnect here
+  // ✅ Auto-connect WebSocket when entering home page (if not already connected)
+  useEffect(() => {
+    const initWebSocket = async () => {
+      if (!token || !rocketChatUserId) return;
+
+      // Check if already connected
+      if (rocketChatWS.isConnected()) {
+        console.log('✅ WebSocket already connected');
+        return;
+      }
+
+      try {
+        console.log('🔌 Connecting WebSocket...');
+        await rocketChatWS.connect();
+        await rocketChatWS.authenticateWithStoredToken();
+        console.log('✅ WebSocket connected and authenticated');
+      } catch (error) {
+        console.error('❌ Failed to connect WebSocket:', error);
+      }
+    };
+
+    initWebSocket();
+  }, [token, rocketChatUserId]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
   useEffect(() => {
