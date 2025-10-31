@@ -184,36 +184,14 @@ export default function ChatSidebar({
 
     // Handler cho room updates (new rooms, room deleted, etc)
     const handleRoomUpdate = (data: any) => {
-      console.log('🔔 Room updated from WebSocket:', data);
-      
       const { action, room } = data;
       
-      if (!room) {
-        console.log('⚠️ Room is null/undefined, skipping');
-        return;
-      }
-
-      console.log('🔍 Room details:', {
-        action,
-        _id: room._id,
-        name: room.name,
-        fname: room.fname,
-        t: room.t,
-        unread: room.unread,
-        allKeys: Object.keys(room)
-      });
+      if (!room) return;
 
       // Handle different actions
       if (action === 'inserted' || action === 'updated') {
         setRooms(currentRooms => {
-          console.log('🔍 Finding room in currentRooms:', {
-            searchingFor: room._id,
-            currentRoomIds: currentRooms.map(r => r.roomId)
-          });
-          
           const roomIndex = currentRooms.findIndex(r => r.roomId === room._id);
-          
-          console.log('🔍 Room index found:', roomIndex);
           
           if (roomIndex >= 0) {
             // ✅ Update existing room - ONLY update fields that exist
@@ -229,12 +207,6 @@ export default function ChatSidebar({
               ...(room.t && { type: room.t }),
               ...(room.unread !== undefined && { unreadCount: room.unread }),
             };
-            
-            console.log('✅ Updated existing room:', {
-              roomId: room._id,
-              beforeUpdate: existingRoom,
-              afterUpdate: newRooms[roomIndex]
-            });
             
             return newRooms;
           } else if (action === 'inserted') {
@@ -255,7 +227,6 @@ export default function ChatSidebar({
               },
             };
             
-            console.log('✅ Inserted new room:', newRoom);
             return [newRoom, ...currentRooms];
           }
           
