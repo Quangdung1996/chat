@@ -82,13 +82,13 @@ function ChatWindow({ room }: ChatWindowProps) {
 
   // ✅ Rocket.Chat WebSocket: Connect and authenticate
   useEffect(() => {
-    if (!user?.id || !token) return;
+    if (!user?.id) return;
 
     // Connect to WebSocket
     rocketChatWS.connect()
       .then(() => {
-        // Authenticate with Rocket.Chat
-        return rocketChatWS.authenticate(token, user.id.toString());
+        // Authenticate using backend API to get Rocket.Chat token
+        return rocketChatWS.authenticateWithBackend(user.id);
       })
       .catch(err => {
         console.error('❌ Failed to connect/authenticate WebSocket:', err);
@@ -98,7 +98,7 @@ function ChatWindow({ room }: ChatWindowProps) {
     return () => {
       // Note: Don't disconnect here, keep connection alive for other components
     };
-  }, [user?.id, token]);
+  }, [user?.id]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to room messages
   useEffect(() => {

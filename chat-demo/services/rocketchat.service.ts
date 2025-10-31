@@ -31,6 +31,21 @@ import type {
 class RocketChatService {
   private readonly endpoints = API_CONFIG.endpoints.rocketChat;
 
+  // ===== AUTHENTICATION =====
+  
+  /**
+   * Lấy Rocket.Chat login token từ backend
+   * POST /api/integrations/rocket/get-login-token
+   */
+  async getLoginToken(userId: number): Promise<{
+    success: boolean;
+    authToken: string;
+    userId: string;
+    expiresAt: string;
+  }> {
+    return apiClient.post(this.endpoints.getLoginToken, { userId });
+  }
+
   // ===== USER MANAGEMENT =====
   
   /**

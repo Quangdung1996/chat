@@ -27,6 +27,9 @@ export const API_CONFIG = {
     },
     // Rocket.Chat Integration endpoints
     rocketChat: {
+      // Authentication
+      getLoginToken: '/api/integrations/rocket/get-login-token',
+      
       // User Management
       getUsers: '/api/integrations/rocket/users',
       getUserInfo: '/api/integrations/rocket/user/{userId}/info',

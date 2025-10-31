@@ -76,19 +76,20 @@ export default function ChatSidebar({
 
   // ✅ Rocket.Chat WebSocket: Connect and authenticate (shared with ChatWindow)
   useEffect(() => {
-    if (!user?.id || !token) return;
+    if (!user?.id) return;
 
     // Connect to WebSocket (if not already connected)
     if (!rocketChatWS.isConnected()) {
       rocketChatWS.connect()
         .then(() => {
-          return rocketChatWS.authenticate(token, user.id.toString());
+          // Authenticate using backend API to get Rocket.Chat token
+          return rocketChatWS.authenticateWithBackend(user.id);
         })
         .catch(err => {
           console.error('❌ Failed to connect/authenticate WebSocket:', err);
         });
     }
-  }, [user?.id, token]);
+  }, [user?.id]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
   useEffect(() => {

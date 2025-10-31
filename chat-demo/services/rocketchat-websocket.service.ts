@@ -6,6 +6,7 @@
  */
 
 import { API_CONFIG } from '@/config/api.config';
+import { rocketChatService } from './rocketchat.service';
 
 interface DDPMessage {
   msg: string;
@@ -221,6 +222,36 @@ class RocketChatWebSocketService {
     }
   }
 
+  /**
+   * Authenticate with backend token
+   * Lấy token từ backend và authenticate WebSocket
+   */
+  async authenticateWithBackend(userId: number): Promise<void> {
+    try {
+      console.log('🔐 Getting Rocket.Chat token from backend for user:', userId);
+      
+      // Get token from backend API
+      const tokenResponse = await rocketChatService.getLoginToken(userId);
+      
+      if (!tokenResponse.success || !tokenResponse.authToken) {
+        throw new Error('Failed to get token from backend');
+      }
+
+      console.log('✅ Got token from backend, authenticating WebSocket...');
+      
+      // Authenticate WebSocket with the token
+      await this.authenticate(tokenResponse.authToken, tokenResponse.userId);
+      
+      console.log('✅ WebSocket authenticated successfully');
+    } catch (error) {
+      console.error('❌ Failed to authenticate with backend token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Authenticate with existing token
+   */
   async authenticate(authToken: string, userId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.authToken = authToken;
