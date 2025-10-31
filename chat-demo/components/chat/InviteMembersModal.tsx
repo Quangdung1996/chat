@@ -269,30 +269,25 @@ export default function InviteMembersModal({
               </div>
             )}
 
-            {/* User List - Refined Design */}
-            <div className="border border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden bg-white/50 dark:bg-gray-900/20">
-              <ScrollArea className="h-[340px]">
+            {/* User List - Compact & Clean Design */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50/50 dark:bg-gray-900/50">
+              <ScrollArea className="h-[320px]">
                 {loadingUsers ? (
-                  <div className="p-12 text-center">
-                    <div className="animate-spin inline-block w-8 h-8 border-3 border-[#007aff] dark:border-[#0a84ff] border-t-transparent rounded-full" />
-                    <p className="mt-4 text-[14px] font-medium text-gray-600 dark:text-gray-400">Đang tải danh sách...</p>
+                  <div className="p-8 text-center">
+                    <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+                    <p className="mt-3 text-[13px] text-gray-500 dark:text-gray-400">Đang tải...</p>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                     </div>
-                    <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1">
-                      {searchTerm ? 'Không tìm thấy người dùng' : 'Không có người dùng'}
+                    <p className="text-[14px] font-medium text-gray-700 dark:text-gray-300">
+                      {searchTerm ? 'Không tìm thấy' : 'Không có người dùng'}
                     </p>
-                    {searchTerm && (
-                      <p className="text-[13px] text-gray-500 dark:text-gray-400">
-                        Thử từ khóa tìm kiếm khác
-                      </p>
-                    )}
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
                     {filteredUsers.map(user => {
                       const isSelected = selectedMembers.includes(user._id);
                       const displayName = user.name || user.username;
@@ -302,77 +297,72 @@ export default function InviteMembersModal({
                       return (
                         <div
                           key={user._id}
-                          className={`relative flex items-center gap-3 px-4 py-3.5 transition-all duration-200 group ${
-                            isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/30'
+                          className={`relative flex items-center gap-2.5 px-3 py-2.5 transition-colors group ${
+                            isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-white dark:hover:bg-gray-800'
                           }`}
                         >
                           <button
                             type="button"
                             onClick={() => !isCurrentMember && toggleMember(user._id)}
                             disabled={isCurrentMember}
-                            className="flex-1 flex items-center gap-3 text-left"
+                            className="flex-1 flex items-center gap-2.5 text-left min-w-0"
                           >
-                            {/* Avatar with enhanced shadow */}
+                            {/* Avatar - Compact */}
                             <div className="relative flex-shrink-0">
-                              <div className={`w-10 h-10 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-[13px] shadow-md group-hover:shadow-lg transition-shadow duration-200`}>
+                              <div className={`w-8 h-8 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-[11px] shadow-sm`}>
                                 {getInitials(displayName)}
                               </div>
-                              {/* Online status indicator - enhanced */}
                               {user.status === 'online' && (
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-[2.5px] border-white dark:border-[#1c1c1e] rounded-full shadow-sm" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
                               )}
                             </div>
                             
-                            {/* Info - Better typography */}
+                            {/* Info - Compact */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-[15px] font-semibold text-gray-900 dark:text-white truncate leading-tight mb-0.5 flex items-center gap-2">
-                                {displayName}
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[14px] font-semibold text-gray-900 dark:text-white truncate">
+                                  {displayName}
+                                </span>
                                 {isCurrentMember && (
-                                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                                    Đã tham gia
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                                    Thành viên
                                   </span>
                                 )}
                                 {isSelf && (
-                                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
                                     Bạn
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[13px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
-                                <span>@{user.username}</span>
-                                {user.status === 'online' && (
-                                  <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                    Online
-                                  </span>
-                                )}
+                              <div className="text-[12px] text-gray-500 dark:text-gray-400 truncate">
+                                @{user.username}
                               </div>
                             </div>
                           </button>
 
-                          {/* Action buttons area */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* Remove button - show for all existing members except self. API will handle permissions */}
+                          {/* Action buttons - Compact */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {/* Remove button - RED & Prominent */}
                             {isCurrentMember && !isSelf && (
                               <button
                                 type="button"
                                 onClick={(e) => handleRemoveMember(user._id, displayName, e)}
-                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors group/remove"
+                                className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-all duration-200 group/remove"
                                 title="Xóa khỏi nhóm"
                               >
-                                <UserMinus className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover/remove:text-red-600 dark:group-hover/remove:text-red-400 transition-colors" />
+                                <X className="w-4 h-4 text-red-500 dark:text-red-400 group-hover/remove:text-red-600 dark:group-hover/remove:text-red-300 transition-colors" />
                               </button>
                             )}
 
                             {/* Checkbox - only show for non-members */}
                             {!isCurrentMember && (
-                              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                              <div className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center transition-all ${
                                 isSelected 
-                                  ? 'bg-[#007aff] dark:bg-[#0a84ff] border-[#007aff] dark:border-[#0a84ff] scale-110' 
-                                  : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
+                                  ? 'bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600' 
+                                  : 'border-gray-300 dark:border-gray-600'
                               }`}>
                                 {isSelected && (
-                                  <Check className="w-3.5 h-3.5 text-white animate-in zoom-in-50 duration-200" />
+                                  <Check className="w-3 h-3 text-white" />
                                 )}
                               </div>
                             )}
@@ -384,41 +374,35 @@ export default function InviteMembersModal({
                 )}
               </ScrollArea>
             </div>
-
-            {/* Info text - Subtle hint */}
-            <div className="flex items-center justify-center gap-2 text-[13px] text-gray-500 dark:text-gray-400">
-              <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500" />
-              <span>Chọn người dùng bạn muốn thêm vào nhóm</span>
-            </div>
           </div>
         </div>
 
-        {/* Footer - Apple Style with gradient */}
-        <div className="flex-shrink-0 px-5 py-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-b from-transparent to-gray-50/30 dark:to-gray-900/30">
-          <div className="flex items-center gap-3">
+        {/* Footer - Compact */}
+        <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1c1c1e]">
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-11 text-[15px] font-semibold border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200"
+              className="flex-1 h-9 text-[14px] font-medium border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg"
             >
-              Hủy bỏ
+              Hủy
             </Button>
             <Button
               type="button"
               onClick={handleSubmit}
               disabled={loading || selectedMembers.length === 0}
-              className="flex-1 h-11 text-[15px] font-semibold bg-[#007aff] hover:bg-[#0051d5] dark:bg-[#0a84ff] dark:hover:bg-[#0066cc] text-white rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 disabled:shadow-none disabled:opacity-50"
+              className="flex-1 h-9 text-[14px] font-medium bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg shadow-sm disabled:opacity-50"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                <span className="flex items-center gap-1.5">
+                  <div className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
                   Đang thêm...
                 </span>
               ) : (
-                <span className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
+                <span className="flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5" />
                   Thêm {selectedMembers.length > 0 ? `(${selectedMembers.length})` : ''}
                 </span>
               )}
