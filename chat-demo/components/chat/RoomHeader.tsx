@@ -205,11 +205,11 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                   const displayName = member.name || member.username;
                   const isOwner = member.roles?.includes('owner');
                   const isModerator = member.roles?.includes('moderator');
-                  const isCurrentUser = member.id === currentUserId;
+                  const isCurrentUser = member._id === currentUserId;
 
                   return (
                     <div
-                      key={member.id}
+                      key={member._id}
                       className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                         {/* Kick button - show for all members except current user. API will handle permissions */}
                         {!isCurrentUser && (
                           <button
-                            onClick={() => handleKickMember(member.id, displayName)}
+                            onClick={() => handleKickMember(member._id, displayName)}
                             className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                             title="Kick thành viên"
                           >

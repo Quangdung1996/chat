@@ -298,7 +298,7 @@ export default function InviteMembersModal({
                     {filteredUsers.map(user => {
                       const isSelected = selectedMembers.includes(user._id);
                       const displayName = user.name || user.username;
-                      const isCurrentMember = currentMembers.some(m => m.id === user._id);
+                      const isCurrentMember = currentMembers.some(m => m._id === user._id);
                       const isSelf = user._id === currentUserId;
                       
                       return (

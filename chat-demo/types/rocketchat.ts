@@ -112,7 +112,7 @@ export interface GetUserRoomsResponse {
 
 // ===== MEMBER TYPES =====
 export interface RoomMember {
-  id: string;           // Rocket.Chat user ID
+  _id: string;          // Rocket.Chat user ID (from API response)
   username: string;     // Username
   name: string;         // Display name / full name
   status?: string;      // "online", "away", "busy", "offline"
