@@ -80,10 +80,35 @@ class RocketChatWebSocketService {
 
         this.ws = new WebSocket(wsUrl);
 
-        this.ws.onopen = () => {
-          console.log('✅ WebSocket connected');
+        // Create a one-time callback for DDP 'connected' message
+        let connectTimeout: NodeJS.Timeout;
+        const onConnected = (data: DDPMessage) => {
+          if (data.msg === 'connected') {
+            console.log('✅ DDP connection established');
+            clearTimeout(connectTimeout);
+            this.isConnecting = false;
+            this.reconnectAttempts = 0;
+            
+            // Start ping to keep connection alive
+            this.startPing();
+            
+            resolve();
+          }
+        };
+
+        // Store the callback temporarily
+        const tempCallbackId = 'connect_callback';
+        this.callbacks.set(tempCallbackId, onConnected);
+
+        // Timeout after 10 seconds
+        connectTimeout = setTimeout(() => {
+          this.callbacks.delete(tempCallbackId);
           this.isConnecting = false;
-          this.reconnectAttempts = 0;
+          reject(new Error('DDP connection timeout'));
+        }, 10000);
+
+        this.ws.onopen = () => {
+          console.log('✅ WebSocket open, sending DDP connect...');
 
           // Send connect message (DDP protocol)
           this.send({
@@ -92,15 +117,7 @@ class RocketChatWebSocketService {
             support: ['1'],
           });
 
-          // Start ping to keep connection alive
-          this.startPing();
-
-          // Authenticate if we have token
-          if (this.authToken && this.userId) {
-            this.authenticate(this.authToken, this.userId);
-          }
-
-          resolve();
+          // Don't resolve here - wait for 'connected' message
         };
 
         this.ws.onmessage = (event) => {
@@ -169,6 +186,13 @@ class RocketChatWebSocketService {
     switch (data.msg) {
       case 'connected':
         console.log('✅ DDP connected, session:', data.id);
+        
+        // Notify the connect() Promise
+        if (this.callbacks.has('connect_callback')) {
+          const callback = this.callbacks.get('connect_callback');
+          callback?.(data);
+          this.callbacks.delete('connect_callback');
+        }
         break;
 
       case 'ping':

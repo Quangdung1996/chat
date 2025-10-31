@@ -82,22 +82,7 @@ export default function ChatSidebar({
     }
   }, [user?.id]);
 
-  // ✅ Rocket.Chat WebSocket: Connect and authenticate (shared with ChatWindow)
-  useEffect(() => {
-    if (!user?.id) return;
-
-    // Connect to WebSocket (if not already connected)
-    if (!rocketChatWS.isConnected()) {
-      rocketChatWS.connect()
-        .then(() => {
-          // Authenticate using stored token (đã get khi login)
-          return rocketChatWS.authenticateWithStoredToken();
-        })
-        .catch(err => {
-          console.error('❌ Failed to connect/authenticate WebSocket:', err);
-        });
-    }
-  }, [user?.id]);
+  // ✅ Rocket.Chat WebSocket: Already connected during login, no need to reconnect here
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
   useEffect(() => {

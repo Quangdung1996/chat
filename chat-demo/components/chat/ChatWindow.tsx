@@ -78,23 +78,13 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   }, [messages.length]); // Chỉ scroll khi số lượng messages thay đổi
 
-  // ✅ Rocket.Chat WebSocket: Connect and authenticate
+  // ✅ Rocket.Chat WebSocket: Check if connected (đã connect khi login)
   useEffect(() => {
     if (!user?.id) return;
     
-    // Connect to WebSocket
-    rocketChatWS.connect()
-      .then(() => {
-        // Authenticate using stored token (đã get khi login)
-        return rocketChatWS.authenticateWithStoredToken();
-      })
-      .then(() => {
-        setWsConnected(true);
-      })
-      .catch(() => {
-        setWsConnected(false);
-      });
-
+    // Check WebSocket connection status
+    setWsConnected(rocketChatWS.isConnected());
+    
     // Cleanup on unmount
     return () => {
       // Note: Don't disconnect here, keep connection alive for other components

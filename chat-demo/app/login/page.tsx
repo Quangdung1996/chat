@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import authService from '@/services/auth.service';
 import rocketChatService from '@/services/rocketchat.service';
+import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 
 // 🔧 Selector function - tránh infinite loop với Zustand
 const selectSetAuth = (state: any) => state.setAuth;
@@ -52,13 +53,26 @@ export default function LoginPage() {
         if (rocketToken.success && rocketToken.authToken) {
           setRocketChatAuth(rocketToken.authToken, rocketToken.userId);
           console.log('✅ RocketChat token saved to store');
+
+          // Step 5: Connect WebSocket and authenticate (sau khi có token)
+          console.log('🔌 Connecting WebSocket...');
+          try {
+            await rocketChatWS.connect();
+            console.log('✅ WebSocket connected');
+            
+            await rocketChatWS.authenticateWithStoredToken();
+            console.log('✅ WebSocket authenticated');
+          } catch (wsError) {
+            console.warn('⚠️ Failed to connect/auth WebSocket (non-blocking):', wsError);
+            // Non-blocking: user can still access app
+          }
         }
       } catch (rcError) {
         console.warn('⚠️ Failed to get RocketChat token (non-blocking):', rcError);
         // Non-blocking: user can still access app even if RC token fails
       }
 
-      // Step 5: Redirect to home
+      // Step 6: Redirect to home
       router.push('/');
     } catch (err) {
       setError((err as Error).message);
