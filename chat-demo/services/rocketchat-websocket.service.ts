@@ -182,9 +182,13 @@ class RocketChatWebSocketService {
           const callback = this.callbacks.get(data.id);
           if (data.error) {
             // Reject promise if server returned error
-            console.error('❌ Method call error:', {
+            console.error('❌ Method call error - Full response:', data);
+            console.error('❌ Error details:', {
               id: data.id,
-              error: data.error
+              error: data.error,
+              errorType: typeof data.error,
+              errorKeys: Object.keys(data.error || {}),
+              result: data.result
             });
             callback?.(null, data.error);
           } else {
