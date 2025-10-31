@@ -11,7 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 interface RoomHeaderProps {
   room: UserSubscription;
   onRefresh: () => void;
-  onReadOnlyChange?: (isReadOnly: boolean) => void;
+  onReadOnlyChange?: (isReadOnly: boolean, isOwner?: boolean) => void;
 }
 
 export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHeaderProps) {
@@ -42,8 +42,22 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       if (response.success && response.room) {
         const readOnly = response.room.readOnly;
         setIsReadOnly(readOnly);
-        onReadOnlyChange?.(readOnly);
-        console.log(`✅ Room ${room.roomId} readOnly status: ${readOnly}`);
+        
+        // If readonly, we need to check if user is owner to allow them to send messages
+        // Load members if we haven't already
+        if (readOnly && members.length === 0) {
+          // Will trigger owner check in loadMembers
+          await loadMembers();
+        } else if (readOnly && members.length > 0) {
+          // Already have members, just check owner status
+          const currentMember = members.find(m => m._id === currentUserId);
+          const isOwner = currentMember?.roles?.includes('owner') ?? false;
+          onReadOnlyChange?.(readOnly, isOwner);
+          console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}`);
+        } else {
+          onReadOnlyChange?.(readOnly);
+          console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}`);
+        }
       }
     } catch (error) {
       console.error('Failed to load room info:', error);
@@ -63,6 +77,16 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       if (response.success && response.members) {
         setMembers(response.members);
         console.log(`✅ Loaded ${response.members.length} members for room ${room.roomId}`);
+        
+        // ✅ Check if current user is owner
+        const currentMember = response.members.find(m => m._id === currentUserId);
+        const isOwner = currentMember?.roles?.includes('owner') ?? false;
+        console.log(`✅ Current user ${currentUserId} is owner: ${isOwner}`, currentMember?.roles);
+        
+        // Notify parent component about owner status
+        if (isReadOnly) {
+          onReadOnlyChange?.(isReadOnly, isOwner);
+        }
       } else {
         console.warn('Failed to load members:', response);
         setMembers([]);

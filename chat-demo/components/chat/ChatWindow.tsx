@@ -32,6 +32,7 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [error, setError] = useState<Error | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // Extract primitive values
   const roomId = room.roomId;
@@ -234,7 +235,14 @@ function ChatWindow({ room }: ChatWindowProps) {
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
-      <RoomHeader room={room} onRefresh={handleRefresh} onReadOnlyChange={setIsReadOnly} />
+      <RoomHeader 
+        room={room} 
+        onRefresh={handleRefresh} 
+        onReadOnlyChange={(readOnly, owner) => {
+          setIsReadOnly(readOnly);
+          setIsOwner(owner ?? false);
+        }} 
+      />
       
       {/* WebSocket Status Indicator */}
       {!wsConnected && (
@@ -282,10 +290,10 @@ function ChatWindow({ room }: ChatWindowProps) {
 
       {/* Message Input - MS Teams Style */}
       <div className="flex-shrink-0 bg-white dark:bg-[#292929] border-t border-gray-200 dark:border-gray-700 px-4 py-4">
-        {isReadOnly ? (
+        {isReadOnly && !isOwner ? (
           <div className="text-center py-2">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              🔒 Room này đang ở chế độ read-only. Bạn không thể gửi tin nhắn.
+              🔒 Room này đang ở chế độ read-only. Chỉ chủ phòng mới có thể gửi tin nhắn.
             </p>
           </div>
         ) : (
