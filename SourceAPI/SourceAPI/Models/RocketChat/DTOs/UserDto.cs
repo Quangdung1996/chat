@@ -31,7 +31,7 @@ public class CreateUserRequest
 
     [JsonProperty("requirePasswordChange")]
     public bool RequirePasswordChange { get; set; } = false;
-    
+
     [JsonProperty("active")]
     public bool Active { get; set; } = true;
 }
@@ -142,7 +142,7 @@ public class UserData
 /// </summary>
 public class RocketChatUser
 {
-    [JsonProperty("id")]
+    [JsonProperty("_id")]
     public string _id { get; set; } = string.Empty;
 
     [JsonProperty("username")]

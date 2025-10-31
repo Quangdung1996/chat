@@ -1,4 +1,3 @@
-using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
@@ -277,7 +276,7 @@ namespace SourceAPI.Controllers.Integrations
 
                 // Create new group
                 var result = request.IsPrivate
-                    ? await _roomService.CreateGroupAsync(request)
+                    ? await _roomService.CreateGroupAsync(request, _rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId)
                     : await _roomService.CreateChannelAsync(request);
 
                 if (!result.Success)
@@ -672,10 +671,10 @@ namespace SourceAPI.Controllers.Integrations
 
                 // ✅ Send message using Rocket.Chat token directly (no database lookup)
                 var messageId = await _roomService.SendMessageAsync(
-                    _rocketChatContext.RocketChatToken!, 
-                    _rocketChatContext.RocketChatUserId!, 
-                    request.RoomId, 
-                    request.Text, 
+                    _rocketChatContext.RocketChatToken!,
+                    _rocketChatContext.RocketChatUserId!,
+                    request.RoomId,
+                    request.Text,
                     request.Alias);
 
                 if (string.IsNullOrWhiteSpace(messageId))

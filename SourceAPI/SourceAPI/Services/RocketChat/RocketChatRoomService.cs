@@ -46,9 +46,9 @@ namespace SourceAPI.Services.RocketChat
         /// T-17: Create private group
         /// DoD: Tạo group private; lưu RoomId/Name vào DB; tuỳ chọn readOnly hoạt động
         /// </summary>
-        public async Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request)
+        public async Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request, string rocketToken, string rocketUserId)
         {
-            return await CreateRoomInternalAsync(request, "groups.create", "group");
+            return await CreateRoomInternalAsync(request, "groups.create", "group", rocketToken, rocketUserId);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request)
         {
-            return await CreateRoomInternalAsync(request, "channels.create", "channel");
+            return await CreateRoomInternalAsync(request, "channels.create", "channel", null, null);
         }
 
         /// <summary>
@@ -127,7 +127,8 @@ namespace SourceAPI.Services.RocketChat
         private async Task<CreateGroupResponse> CreateRoomInternalAsync(
             CreateGroupRequest request,
             string apiEndpoint,
-            string roomType)
+            string roomType,
+            string rocketToken, string rocketUserId)
         {
             try
             {
@@ -184,7 +185,11 @@ namespace SourceAPI.Services.RocketChat
                 CreateRoomResponse rocketResponse;
                 if (roomType == "group")
                 {
-                    rocketResponse = await _adminApi.CreatePrivateGroupAsync(createRequest);
+                    // ✅ Create user-specific proxy with provided Rocket.Chat token (no database lookup)
+                    var userApi = _userProxyFactory.CreateUserProxy(rocketToken, rocketUserId);
+
+                    // Use Refit - DelegatingHandler auto adds auth headers
+                    rocketResponse = await userApi.CreatePrivateGroupAsync(createRequest);
                 }
                 else
                 {
@@ -429,6 +434,7 @@ namespace SourceAPI.Services.RocketChat
         /// T-36b: Send message to room
         /// </summary>
         public async Task<string?> SendMessageAsync(string rocketToken, string rocketUserId, string roomId, string text, string? alias = null)
+
         {
             try
             {
@@ -440,7 +446,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // ✅ Create user-specific proxy with provided Rocket.Chat token (no database lookup)
                 var userApi = _userProxyFactory.CreateUserProxy(rocketToken, rocketUserId);
-                
+
                 // Use Refit - DelegatingHandler auto adds auth headers
                 var response = await userApi.PostMessageAsync(request);
 
