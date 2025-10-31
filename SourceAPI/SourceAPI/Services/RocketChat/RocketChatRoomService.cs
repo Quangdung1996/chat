@@ -437,7 +437,6 @@ namespace SourceAPI.Services.RocketChat
         /// T-36b: Send message to room
         /// </summary>
         public async Task<string?> SendMessageAsync(string rocketToken, string rocketUserId, string roomId, string text, string? alias = null)
-
         {
             try
             {
