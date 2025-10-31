@@ -277,6 +277,14 @@ class RocketChatWebSocketService {
   }
 
   private handleCollectionChange(data: DDPMessage) {
+    // 🐛 DEBUG: Log ALL collection changes
+    console.log('📨 [WS] Collection change:', {
+      msg: data.msg,
+      collection: data.collection,
+      eventName: data.fields?.eventName,
+      hasArgs: !!data.fields?.args,
+    });
+    
     // Find matching subscription by collection
     for (const [subId, sub] of this.subscriptions.entries()) {
       // Call subscription callback with the data

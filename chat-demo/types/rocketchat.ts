@@ -102,6 +102,17 @@ export interface UserSubscription {
   isReadOnly?: boolean; // Whether the room is read-only
   isArchived?: boolean; // Whether the room is archived
   lastMessageTime?: Date; // Timestamp of last message for sorting
+  lastMessage?: {
+    _id: string;
+    msg: string;
+    u?: {
+      _id: string;
+      username: string;
+      name?: string;
+    };
+    ts?: { $date: number };
+    _updatedAt?: { $date: number };
+  };
 }
 
 export interface GetUserRoomsResponse {

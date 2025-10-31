@@ -195,10 +195,20 @@ export default function ChatSidebar({
     if (!rocketChatUserId || !wsReady) return;
 
     // Handler cho room updates (new rooms, room deleted, etc)
-    const handleRoomUpdate = (data: any) => {
+    const handleRoomUpdate = async (data: any) => {
       const { action, room } = data;
       
       if (!room) return;
+
+      // 🐛 DEBUG: Log room update
+      console.log('🏠 [WS] Room update:', {
+        action,
+        roomId: room._id,
+        type: room.t,
+        name: room.name || room.fname,
+        hasUnread: room.unread !== undefined,
+        unread: room.unread
+      });
 
       // Handle different actions
       if (action === 'inserted' || action === 'updated') {
@@ -210,6 +220,31 @@ export default function ChatSidebar({
             const existingRoom = currentRooms[roomIndex];
             const newRooms = [...currentRooms];
             
+            // ⚠️ WORKAROUND: rooms-changed event doesn't have unread count
+            // For groups (type='p'), infer unread count from lastMessage
+            let unreadCount = existingRoom.unreadCount || 0;
+            
+            if (room.t === 'p' && room.lastMessage) {
+              // Check if this is a NEW message (different from last known message)
+              const lastMsgId = room.lastMessage._id;
+              const prevLastMsgId = existingRoom.lastMessage?._id;
+              
+              if (lastMsgId && lastMsgId !== prevLastMsgId) {
+                // New message arrived
+                const messageUserId = room.lastMessage.u?._id;
+                
+                // Only increment unread if message is from another user
+                if (messageUserId !== rocketChatUserId) {
+                  unreadCount = (existingRoom.unreadCount || 0) + 1;
+                  console.log('🔔 [WS] New message in group, incrementing unread:', {
+                    room: room.fname || room.name,
+                    from: room.lastMessage.u?.username,
+                    newUnreadCount: unreadCount
+                  });
+                }
+              }
+            }
+            
             newRooms[roomIndex] = {
               ...existingRoom, // Keep all existing fields
               // ✅ Only update fields if they exist in WebSocket data
@@ -217,9 +252,16 @@ export default function ChatSidebar({
               ...(room.name && { name: room.name }),
               ...(room.fname && { fullName: room.fname }),
               ...(room.t && { type: room.t }),
-              ...(room.unread !== undefined && { unreadCount: room.unread }),
+              ...(room.lastMessage && { lastMessage: room.lastMessage }),
+              unreadCount,
               lastMessageTime: new Date(), // ✅ Update timestamp on room update
             };
+            
+            console.log('✅ [WS] Updated room state:', {
+              name: newRooms[roomIndex].fullName || newRooms[roomIndex].name,
+              type: newRooms[roomIndex].type,
+              unreadCount: newRooms[roomIndex].unreadCount
+            });
             
             return newRooms;
           } else if (action === 'inserted') {
