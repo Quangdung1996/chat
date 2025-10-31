@@ -184,7 +184,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
             {showMembers && (
               <div
                 ref={dropdownRef}
-                className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[500px] overflow-hidden flex flex-col"
+                className="fixed top-[60px] right-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[500px] overflow-hidden flex flex-col"
               >
                 {/* Header */}
                 <div className="px-4 py-3 border-b dark:border-gray-700">
