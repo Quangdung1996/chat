@@ -54,6 +54,15 @@ public class MessageData
     
     [JsonProperty("msg")]
     public string Msg { get; set; } = string.Empty;
+    
+    [JsonProperty("u")]
+    public RoomMessageUser? U { get; set; }
+    
+    [JsonProperty("ts")]
+    public System.DateTime? Ts { get; set; }
+    
+    [JsonProperty("_updatedAt")]
+    public System.DateTime? UpdatedAt { get; set; }
 }
 
 /// <summary>

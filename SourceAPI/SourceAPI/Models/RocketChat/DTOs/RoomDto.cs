@@ -264,6 +264,9 @@ public class SubscriptionData
 
     [JsonProperty("ls")]
     public DateTime? LastSeen { get; set; }
+
+    [JsonProperty("lastMessage")]
+    public MessageData? LastMessage { get; set; }
 }
 
 /// <summary>
