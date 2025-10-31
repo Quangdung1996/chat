@@ -258,6 +258,12 @@ public class SubscriptionData
 
     [JsonProperty("open")]
     public bool Open { get; set; }
+
+    [JsonProperty("_updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+
+    [JsonProperty("ls")]
+    public DateTime? LastSeen { get; set; }
 }
 
 /// <summary>

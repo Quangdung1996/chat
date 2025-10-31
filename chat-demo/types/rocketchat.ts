@@ -101,6 +101,7 @@ export interface UserSubscription {
   open: boolean;
   isReadOnly?: boolean; // Whether the room is read-only
   isArchived?: boolean; // Whether the room is archived
+  lastMessageTime?: Date; // Timestamp of last message for sorting
 }
 
 export interface GetUserRoomsResponse {

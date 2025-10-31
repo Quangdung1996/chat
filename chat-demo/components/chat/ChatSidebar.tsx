@@ -140,6 +140,7 @@ export default function ChatSidebar({
             ...existingRoom, // Keep all existing fields
             unreadCount: subscription.unread || 0,
             alert: subscription.alert !== undefined ? subscription.alert : existingRoom.alert,
+            lastMessageTime: new Date(), // ✅ Update timestamp when subscription changes (new message)
             // ✅ Only update name/fullName if they exist in subscription
             ...(subscription.name && { name: subscription.name }),
             ...(subscription.fname && { fullName: subscription.fname }),
@@ -192,6 +193,7 @@ export default function ChatSidebar({
               ...(room.fname && { fullName: room.fname }),
               ...(room.t && { type: room.t }),
               ...(room.unread !== undefined && { unreadCount: room.unread }),
+              lastMessageTime: new Date(), // ✅ Update timestamp on room update
             };
             
             return newRooms;
@@ -211,6 +213,7 @@ export default function ChatSidebar({
                 username: '',
                 name: ''
               },
+              lastMessageTime: new Date(), // ✅ New rooms get current timestamp
             };
             
             return [newRoom, ...currentRooms];
@@ -339,10 +342,21 @@ export default function ChatSidebar({
     }
   };
 
-  const filteredRooms = (rooms || []).filter((room) =>
-    room.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRooms = (rooms || [])
+    .filter((room) =>
+      room.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      room.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Sort by lastMessageTime (newest first)
+      const timeA = a.lastMessageTime?.getTime() || 0;
+      const timeB = b.lastMessageTime?.getTime() || 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      // Fallback to name if timestamps are equal
+      return (a.fullName || a.name).localeCompare(b.fullName || b.name);
+    });
 
   const filteredUsers = users.filter((u) => {
     if (!searchQuery) return false; // Only show when searching
