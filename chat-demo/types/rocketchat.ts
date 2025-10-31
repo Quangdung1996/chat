@@ -112,15 +112,11 @@ export interface GetUserRoomsResponse {
 
 // ===== MEMBER TYPES =====
 export interface RoomMember {
-  id: number;
-  userId: number;
-  rocketUserId: string;
-  role: 'owner' | 'moderator' | 'member';
-  isActive: boolean;
-  joinedAt: string;
-  leftAt?: string;
-  username: string;
-  fullName: string;
+  id: string;           // Rocket.Chat user ID
+  username: string;     // Username
+  name: string;         // Display name / full name
+  status?: string;      // "online", "away", "busy", "offline"
+  roles?: string[];     // ["owner", "moderator"] - member role in the room
 }
 
 export interface AddMembersRequest {

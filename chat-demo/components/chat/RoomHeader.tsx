@@ -18,19 +18,24 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
-  // TODO: getRoomMembers needs to be updated to accept roomId instead of roomMappingId
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
-      // This API call may need to be updated
-      // const response = await rocketChatService.getRoomMembers(room.roomId);
-      // if (response.success && response.data) {
-      //   setMembers(response.data || []);
-      // }
-      console.warn('getRoomMembers API needs to be updated for UserSubscription');
-      setMembers([]);
+      // Determine room type for API call
+      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      
+      const response = await rocketChatService.getRoomMembers(room.roomId, roomType);
+      
+      if (response.success && response.members) {
+        setMembers(response.members);
+        console.log(`✅ Loaded ${response.members.length} members for room ${room.roomId}`);
+      } else {
+        console.warn('Failed to load members:', response);
+        setMembers([]);
+      }
     } catch (error) {
       console.error('Failed to load members:', error);
+      setMembers([]);
     } finally {
       setLoadingMembers(false);
     }
@@ -137,34 +142,50 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               </div>
             ) : (
               <div className="divide-y dark:divide-gray-700">
-                {members.map((member) => (
-                  <div key={member.userId} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                        {member.username.slice(0, 2).toUpperCase()}
+                {members.map((member) => {
+                  const displayName = member.name || member.username;
+                  const isOwner = member.roles?.includes('owner');
+                  const isModerator = member.roles?.includes('moderator');
+                  
+                  return (
+                    <div key={member.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with status */}
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
+                            {member.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          {member.status === 'online' && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                          )}
+                        </div>
+                        
+                        {/* User info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 dark:text-white truncate">
+                            {displayName}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            @{member.username}
+                          </p>
+                        </div>
+                        
+                        {/* Role badge */}
+                        {(isOwner || isModerator) && (
+                          <span
+                            className={`text-xs px-2 py-1 rounded flex-shrink-0 ${
+                              isOwner
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}
+                          >
+                            {isOwner ? '👑 Owner' : '⭐ Mod'}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {member.fullName}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          @{member.username}
-                        </p>
-                      </div>
-                      {member.role !== 'member' && (
-                        <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            member.role === 'owner'
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                          }`}
-                        >
-                          {member.role === 'owner' ? '👑 Owner' : '⭐ Mod'}
-                        </span>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
