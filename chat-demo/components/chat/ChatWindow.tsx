@@ -13,9 +13,12 @@ interface ChatWindowProps {
   room: UserSubscription;
 }
 
+// ✅ Định nghĩa selector ở ngoài component để tránh infinite loop
+const selectUser = (state: any) => state.user;
+
 function ChatWindow({ room }: ChatWindowProps) {
-  // ✅ Dùng selector function được memoize để tránh infinite loop
-  const user = useAuthStore(useCallback((state) => state.user, []));
+  // ✅ Sử dụng selector đã được cache
+  const user = useAuthStore(selectUser);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
