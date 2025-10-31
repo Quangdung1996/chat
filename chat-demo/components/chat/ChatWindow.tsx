@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useMemo, memo, useCallback } from 'react';
+import { useState, useRef, useMemo, memo } from 'react';
 import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
-import { useAuthStore } from '@/store/authStore';
 import { Smile, Paperclip, Send } from 'lucide-react';
 import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
 
@@ -13,34 +12,25 @@ interface ChatWindowProps {
   room: UserSubscription;
 }
 
-// ✅ Định nghĩa selector ở ngoài component để tránh infinite loop
-const selectUser = (state: any) => state.user;
+// ✅ SWR fetcher function - định nghĩa ở ngoài component để tránh infinite loop
+const messagesFetcher = async ([_, roomId, roomType]: [string, string, string]) => {
+  const response = await rocketChatService.getMessages(
+    roomId,
+    roomType,
+    50,
+    0
+  );
+  
+  if (response.success && response.messages) {
+    return response.messages;
+  }
+  throw new Error('Failed to load messages');
+};
 
 function ChatWindow({ room }: ChatWindowProps) {
-  // ✅ Sử dụng selector đã được cache
-  const user = useAuthStore(selectUser);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // SWR fetcher function - memoize với useCallback để tránh infinite loop
-  const messagesFetcher = useCallback(
-    async ([_, roomId, roomType]: [string, string, string]) => {
-      const response = await rocketChatService.getMessages(
-        roomId,
-        roomType,
-        50,
-        0,
-        user?.username
-      );
-      
-      if (response.success && response.messages) {
-        return response.messages;
-      }
-      throw new Error('Failed to load messages');
-    },
-    [user?.username] // Chỉ re-create khi username thay đổi
-  );
 
   // ✅ Memoize SWR key để tránh infinite loop
   const swrKey = useMemo(
@@ -48,18 +38,13 @@ function ChatWindow({ room }: ChatWindowProps) {
     [room?.roomId, room?.type]
   );
 
-  // Memoize scrollToBottom callback
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
-  // ✅ Memoize SWR options để tránh infinite loop
+  // ✅ Memoize SWR options ở ngoài để tránh infinite loop
   const swrOptions = useMemo(
     () => ({
-      refreshInterval: 5000, // ✨ Poll mỗi 5 giây (giảm từ 10s)
+      refreshInterval: 5000, // ✨ Poll mỗi 5 giây
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
-      keepPreviousData: true, // ✨ GIỮ data cũ khi switching, tránh flash
+      keepPreviousData: true, // ✨ GIỮ data cũ khi switching
       revalidateOnMount: true, // ✨ Load ngay khi mount
       compare: (a: any, b: any) => {
         // ✨ So sánh messages để tránh re-render không cần thiết
@@ -69,10 +54,12 @@ function ChatWindow({ room }: ChatWindowProps) {
       },
       onSuccess: () => {
         // Auto scroll sau khi load messages
-        setTimeout(() => scrollToBottom(), 100);
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     }),
-    [scrollToBottom]
+    [] // ✅ Không có dependencies - chỉ tạo 1 lần
   );
 
   // SWR hook - auto polling every 10s, auto revalidate on focus
