@@ -107,6 +107,7 @@ export default function ChatSidebar({
   }, [token, rocketChatUserId]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
+  // 🔥 IMPORTANT: This runs ALWAYS when connected, not just when selectedRoom exists
   useEffect(() => {
     if (!rocketChatUserId || !rocketChatWS.isConnected()) return;
 
@@ -157,7 +158,7 @@ export default function ChatSidebar({
     return () => {
       rocketChatWS.unsubscribe(subId);
     };
-  }, [rocketChatUserId, selectedRoom]);
+  }, [rocketChatUserId, selectedRoom?.roomId]); // ✅ Only re-subscribe when userId or selected roomId changes
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
   useEffect(() => {
