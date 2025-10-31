@@ -188,12 +188,32 @@ export default function ChatSidebar({
       
       const { action, room } = data;
       
-      if (!room) return;
+      if (!room) {
+        console.log('⚠️ Room is null/undefined, skipping');
+        return;
+      }
+
+      console.log('🔍 Room details:', {
+        action,
+        _id: room._id,
+        name: room.name,
+        fname: room.fname,
+        t: room.t,
+        unread: room.unread,
+        allKeys: Object.keys(room)
+      });
 
       // Handle different actions
       if (action === 'inserted' || action === 'updated') {
         setRooms(currentRooms => {
+          console.log('🔍 Finding room in currentRooms:', {
+            searchingFor: room._id,
+            currentRoomIds: currentRooms.map(r => r.roomId)
+          });
+          
           const roomIndex = currentRooms.findIndex(r => r.roomId === room._id);
+          
+          console.log('🔍 Room index found:', roomIndex);
           
           if (roomIndex >= 0) {
             // ✅ Update existing room - ONLY update fields that exist
