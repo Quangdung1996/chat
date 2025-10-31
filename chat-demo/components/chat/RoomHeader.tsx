@@ -157,17 +157,18 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
 
           {/* Actions - Minimalist */}
           <div className="flex items-center gap-0.5">
-            {isOwnerOrMod && (
-              <button
-                onClick={() => {
-                  setShowInviteModal(true);
-                }}
-                className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
-                title="Mời thành viên"
-              >
-                <UserPlus className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setShowMembers(!showMembers);
+                if (!showMembers && members.length === 0) {
+                  loadMembers();
+                }
+              }}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
+              title="Mời thành viên"
+            >
+              <UserPlus className="w-5 h-5" />
+            </button>
 
             <button
               onClick={onRefresh}
@@ -272,18 +273,16 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
 
             {/* Footer Actions */}
             <div className="border-t dark:border-gray-700 p-2">
-              {isOwnerOrMod && (
-                <button
-                  onClick={() => {
-                    setShowInviteModal(true);
-                    setShowMembers(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Add people</span>
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setShowInviteModal(true);
+                  setShowMembers(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add people</span>
+              </button>
               <button
                 onClick={handleLeaveGroup}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2 transition-colors"
@@ -301,8 +300,9 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         roomId={room.roomId}
-        roomName={room.fullName || room.name}
-        isOwnerOrMod={isOwnerOrMod}
+        roomName={room.name}
+        roomType={room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct'}
+        currentMembers={members}
         onSuccess={() => {
           loadMembers();
           onRefresh();
