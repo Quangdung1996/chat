@@ -168,64 +168,64 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 gap-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b">
+        <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b">
           <div className="flex items-center justify-between mb-2">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <Users className="w-6 h-6 text-primary" />
+            <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               Tạo nhóm chat mới
             </DialogTitle>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
           
           {/* Steps indicator */}
-          <div className="flex items-center gap-2 mt-4">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+          <div className="flex items-center gap-1 sm:gap-2 mt-3 sm:mt-4">
+            <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
               currentStep === 'info' 
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground'
             }`}>
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
                 1
               </span>
-              <span>Thông tin</span>
+              <span className="hidden sm:inline">Thông tin</span>
             </div>
             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+            <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
               currentStep === 'members' 
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground'
             }`}>
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
                 2
               </span>
-              <span>Thành viên</span>
+              <span className="hidden sm:inline">Thành viên</span>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
           {/* Error */}
           {error && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
-              <X className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="mb-3 sm:mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2">
+              <X className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Step 1: Info */}
           {currentStep === 'info' && (
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {/* Room Name */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-1">
+                <Label htmlFor="name" className="text-xs sm:text-sm font-semibold flex items-center gap-1">
                   Tên nhóm <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -233,7 +233,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ví dụ: Nhóm dự án Website 2024"
-                  className="h-11 text-base"
+                  className="h-10 sm:h-11 text-sm sm:text-base"
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
@@ -243,7 +243,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
               {/* Group Code */}
               <div className="space-y-2">
-                <Label htmlFor="groupCode" className="text-sm font-semibold">
+                <Label htmlFor="groupCode" className="text-xs sm:text-sm font-semibold">
                   Mã nhóm (tùy chọn)
                 </Label>
                 <Input
@@ -251,7 +251,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                   value={formData.groupCode}
                   onChange={(e) => setFormData({ ...formData, groupCode: e.target.value })}
                   placeholder="Ví dụ: PROJ-WEB-2024"
-                  className="h-11 text-base font-mono"
+                  className="h-10 sm:h-11 text-sm sm:text-base font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
                   Để trống, hệ thống sẽ tự động tạo mã duy nhất
@@ -275,29 +275,29 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
               {/* Room Type */}
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">Loại nhóm</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <Label className="text-xs sm:text-sm font-semibold">Loại nhóm</Label>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, isPrivate: true })}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
                       formData.isPrivate
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className={`p-1.5 sm:p-2 rounded-lg ${
                         formData.isPrivate ? 'bg-primary text-primary-foreground' : 'bg-gray-100 dark:bg-gray-800'
                       }`}>
-                        <Lock className="w-5 h-5" />
+                        <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div className="flex-1">
-                        <div className="font-semibold mb-1">Riêng tư</div>
-                        <div className="text-xs text-muted-foreground">Chỉ thành viên được mời</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1">Riêng tư</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Chỉ thành viên được mời</div>
                       </div>
                       {formData.isPrivate && (
-                        <Check className="w-5 h-5 text-primary" />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
                       )}
                     </div>
                   </button>
@@ -305,24 +305,24 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, isPrivate: false })}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
                       !formData.isPrivate
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className={`p-1.5 sm:p-2 rounded-lg ${
                         !formData.isPrivate ? 'bg-primary text-primary-foreground' : 'bg-gray-100 dark:bg-gray-800'
                       }`}>
-                        <Globe className="w-5 h-5" />
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div className="flex-1">
-                        <div className="font-semibold mb-1">Công khai</div>
-                        <div className="text-xs text-muted-foreground">Mọi người có thể tham gia</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1">Công khai</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Mọi người có thể tham gia</div>
                       </div>
                       {!formData.isPrivate && (
-                        <Check className="w-5 h-5 text-primary" />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
                       )}
                     </div>
                   </button>
@@ -334,27 +334,28 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, isReadOnly: !formData.isReadOnly })}
-                  className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                  className={`w-full p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
                     formData.isReadOnly
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                         formData.isReadOnly ? 'bg-primary text-primary-foreground' : 'bg-gray-100 dark:bg-gray-800'
                       }`}>
-                        <Eye className="w-5 h-5" />
+                        <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div>
-                        <div className="font-semibold">Chế độ chỉ đọc</div>
-                        <div className="text-xs text-muted-foreground">Chỉ quản trị viên được gửi tin nhắn</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-xs sm:text-sm">Chế độ chỉ đọc</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Chỉ quản trị viên được gửi tin nhắn</div>
                       </div>
                     </div>
                     <Checkbox
                       checked={formData.isReadOnly}
                       onCheckedChange={(checked) => setFormData({ ...formData, isReadOnly: checked as boolean })}
+                      className="flex-shrink-0"
                     />
                   </div>
                 </button>
@@ -455,25 +456,25 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
-          <div className="flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             {currentStep === 'info' ? (
               <>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onClose}
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                 >
                   Hủy bỏ
                 </Button>
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                 >
                   Tiếp theo
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 </Button>
               </>
             ) : (
@@ -482,25 +483,25 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                   type="button"
                   variant="outline"
                   onClick={handleBack}
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Quay lại
                 </Button>
                 <Button
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                      <div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full mr-1 sm:mr-2" />
                       Đang tạo...
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Tạo nhóm
                     </>
                   )}
