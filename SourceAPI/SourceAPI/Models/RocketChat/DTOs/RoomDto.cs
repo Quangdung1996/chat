@@ -315,6 +315,9 @@ public class RoomData
     public bool ReadOnly { get; set; }
     [JsonProperty("u")]
     public RocketChatUserInfo ChatUserInfo { get; set; }
+
+    [JsonProperty("description")]
+    public string? Description { get; set; }
 }
 
 /// <summary>
