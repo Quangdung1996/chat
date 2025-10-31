@@ -126,17 +126,17 @@ function ChatWindow({ room }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Message Input - Apple iMessage Style */}
-      <div className="flex-shrink-0 bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 px-4 py-3">
+      {/* Message Input - MS Teams Style */}
+      <div className="flex-shrink-0 bg-white dark:bg-[#292929] border-t border-gray-200 dark:border-gray-700 px-4 py-4">
         <form onSubmit={handleSendMessage}>
           <div className="flex items-end gap-2">
             {/* Action Button - Left */}
             <button
               type="button"
-              className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-full transition-all duration-200"
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-[#5b5fc7] dark:hover:text-[#5b5fc7] hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-all duration-200"
               title="Thêm"
             >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
               </svg>
             </button>
@@ -147,35 +147,35 @@ function ChatWindow({ room }: ChatWindowProps) {
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Tin nhắn"
+                placeholder="Nhập tin nhắn..."
                 rows={1}
-                className="w-full px-4 py-2.5 bg-white dark:bg-[#3a3a3c] border border-gray-200 dark:border-gray-700 rounded-[20px] text-[17px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-[#007aff]/20 dark:focus:ring-[#0a84ff]/20 focus:border-[#007aff] dark:focus:border-[#0a84ff] transition-all duration-200 shadow-sm"
-                style={{ minHeight: '36px', maxHeight: '120px', lineHeight: '1.3' }}
+                className="w-full px-3 py-2 bg-white dark:bg-[#3a3a3c] border border-gray-300 dark:border-gray-600 rounded text-[14px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#5b5fc7]/30 dark:focus:ring-[#5b5fc7]/30 focus:border-[#5b5fc7] dark:focus:border-[#5b5fc7] transition-all duration-200"
+                style={{ minHeight: '36px', maxHeight: '120px', lineHeight: '1.4' }}
               />
               
               {/* Emoji Button - Inside Input */}
               {!messageText && (
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
                   title="Emoji"
                 >
-                  <Smile className="w-5 h-5" />
+                  <Smile className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Send Button - Apple Blue */}
+            {/* Send Button - MS Teams Purple */}
             <button
               type="submit"
               disabled={!messageText.trim() || sending}
-              className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-[#007aff] hover:bg-[#0051d5] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md disabled:shadow-none disabled:opacity-40"
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded transition-all duration-200 disabled:opacity-50"
               title="Gửi"
             >
               {sending ? (
                 <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
               ) : (
-                <Send className="w-4 h-4 translate-x-[1px]" />
+                <Send className="w-4 h-4" />
               )}
             </button>
           </div>

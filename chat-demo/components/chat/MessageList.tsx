@@ -97,7 +97,7 @@ function MessageList({ messages }: MessageListProps) {
                   </div>
                 )}
 
-                {/* Message Bubble - iMessage Style */}
+                {/* Message Bubble - MS Teams Style */}
                 {message.deleted ? (
                   <span className="text-[13px] text-gray-400 dark:text-gray-500 italic flex items-center gap-1.5 px-3 py-2">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -106,25 +106,19 @@ function MessageList({ messages }: MessageListProps) {
                 ) : (
                   <div className="group/bubble relative">
                     <div
-                      className={`inline-block px-4 py-2 ${
+                      className={`inline-block px-3 py-2 ${
                         isCurrentUser
-                          ? 'bg-[#007aff] dark:bg-[#0a84ff] text-white rounded-[18px] shadow-sm'
-                          : 'bg-[#e9e9eb] dark:bg-[#3a3a3c] text-gray-900 dark:text-white rounded-[18px]'
-                      } ${
-                        isConsecutive
-                          ? isCurrentUser
-                            ? 'rounded-tr-[4px]'
-                            : 'rounded-tl-[4px]'
-                          : ''
+                          ? 'bg-[#5b5fc7] dark:bg-[#5b5fc7] text-white rounded-md shadow-sm'
+                          : 'bg-white dark:bg-[#292929] text-gray-900 dark:text-white rounded-md border border-gray-200 dark:border-gray-700'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words leading-[1.4] text-[17px]">
+                      <p className="whitespace-pre-wrap break-words leading-[1.4] text-[15px]">
                         {message.text}
                       </p>
                     </div>
                     
                     {/* Time - Always visible */}
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 px-1">
+                    <div className={`text-[11px] text-gray-500 dark:text-gray-400 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
                       {formatTime(message.timestamp)}
                     </div>
                   </div>
