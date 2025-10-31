@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
+import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
 import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +21,11 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  
+  // Confirm modal state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [removingMember, setRemovingMember] = useState(false);
 
   // Get current user ID from Zustand store
   const currentUserId = useAuthStore((state) => state.rocketChatUserId);
@@ -80,26 +86,37 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
     }
   };
 
-  const handleKickMember = async (memberId: string, memberName: string) => {
-    if (!confirm(`Bạn có chắc muốn kick ${memberName} khỏi group?`)) {
-      return;
-    }
+  const handleKickMember = (memberId: string, memberName: string) => {
+    setMemberToRemove({ id: memberId, name: memberName });
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!memberToRemove) return;
+
+    setRemovingMember(true);
 
     try {
       const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
-      const response = await rocketChatService.manageMember(room.roomId, memberId, 'kick', roomType);
+      const response = await rocketChatService.removeMember(room.roomId, memberToRemove.id, roomType);
 
       if (response.success) {
+        setConfirmModalOpen(false);
+        setMemberToRemove(null);
         // Reload members list
         await loadMembers();
         onRefresh();
-      } else {
-        alert('Không thể kick thành viên. Vui lòng thử lại.');
       }
     } catch (error) {
       console.error('Failed to kick member:', error);
-      alert('Có lỗi xảy ra khi kick thành viên.');
+    } finally {
+      setRemovingMember(false);
     }
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmModalOpen(false);
+    setMemberToRemove(null);
   };
 
   const handleLeaveGroup = async () => {
@@ -349,6 +366,15 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
           loadMembers();
           onRefresh();
         }}
+      />
+
+      {/* Confirm Remove Member Modal */}
+      <ConfirmRemoveMemberModal
+        isOpen={confirmModalOpen}
+        memberName={memberToRemove?.name || ''}
+        onConfirm={handleConfirmRemove}
+        onClose={handleCancelRemove}
+        loading={removingMember}
       />
     </>
   );
