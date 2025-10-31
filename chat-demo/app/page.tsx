@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
 import ChatSidebar from '@/components/chat/ChatSidebar';
@@ -9,26 +8,8 @@ import ChatWindow from '@/components/chat/ChatWindow';
 import type { UserSubscription } from '@/types/rocketchat';
 
 function HomeContent() {
-  const searchParams = useSearchParams();
   const [selectedRoom, setSelectedRoom] = useState<UserSubscription | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [targetRoomId, setTargetRoomId] = useState<string | null>(null);
-
-  // Stable callback để tránh re-render ChatSidebar
-  const handleSelectRoom = useCallback((room: UserSubscription) => {
-    console.log('📍 [HomePage] Selecting room:', room.name, room.roomId);
-    setSelectedRoom(room);
-  }, []);
-
-  // Đọc roomId từ URL khi component mount
-  useEffect(() => {
-    const roomId = searchParams.get('roomId');
-    console.log('🔍 [HomePage] URL roomId:', roomId);
-    if (roomId) {
-      console.log('✅ [HomePage] Setting targetRoomId:', roomId);
-      setTargetRoomId(roomId);
-    }
-  }, [searchParams]);
 
   return (
       <div className="flex h-screen overflow-hidden bg-[#f5f5f7] dark:bg-black">
@@ -41,8 +22,6 @@ function HomeContent() {
           onSelectRoom={setSelectedRoom}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
-          targetRoomId={targetRoomId}
-          onRoomSelected={() => setTargetRoomId(null)}
         />
 
         {/* Main Chat Window - Right Panel */}
