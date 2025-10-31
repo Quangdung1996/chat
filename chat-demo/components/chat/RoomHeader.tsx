@@ -239,7 +239,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                               {displayName}
                             </p>
                             {isCurrentUser && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">(You)</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">(Tôi)</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
