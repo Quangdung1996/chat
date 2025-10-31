@@ -31,6 +31,7 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Extract primitive values
   const roomId = room.roomId;
@@ -233,7 +234,7 @@ function ChatWindow({ room }: ChatWindowProps) {
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
-      <RoomHeader room={room} onRefresh={handleRefresh} />
+      <RoomHeader room={room} onRefresh={handleRefresh} onReadOnlyChange={setIsReadOnly} />
       
       {/* WebSocket Status Indicator */}
       {!wsConnected && (
@@ -281,58 +282,66 @@ function ChatWindow({ room }: ChatWindowProps) {
 
       {/* Message Input - MS Teams Style */}
       <div className="flex-shrink-0 bg-white dark:bg-[#292929] border-t border-gray-200 dark:border-gray-700 px-4 py-4">
-        <form onSubmit={handleSendMessage}>
-          <div className="flex items-end gap-2">
-            {/* Action Button - Left */}
-            <button
-              type="button"
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-[#5b5fc7] dark:hover:text-[#5b5fc7] hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-all duration-200"
-              title="Thêm"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-              </svg>
-            </button>
-
-            {/* Text Input Container */}
-            <div className="flex-1 relative">
-              <textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Nhập tin nhắn..."
-                rows={1}
-                className="w-full px-3 py-2 bg-white dark:bg-[#3a3a3c] border border-gray-300 dark:border-gray-600 rounded text-[14px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#5b5fc7]/30 dark:focus:ring-[#5b5fc7]/30 focus:border-[#5b5fc7] dark:focus:border-[#5b5fc7] transition-all duration-200"
-                style={{ minHeight: '36px', maxHeight: '120px', lineHeight: '1.4' }}
-              />
-              
-              {/* Emoji Button - Inside Input */}
-              {!messageText && (
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
-                  title="Emoji"
-                >
-                  <Smile className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Send Button - MS Teams Purple */}
-            <button
-              type="submit"
-              disabled={!messageText.trim() || sending}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded transition-all duration-200 disabled:opacity-50"
-              title="Gửi"
-            >
-              {sending ? (
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
+        {isReadOnly ? (
+          <div className="text-center py-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              🔒 Room này đang ở chế độ read-only. Bạn không thể gửi tin nhắn.
+            </p>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSendMessage}>
+            <div className="flex items-end gap-2">
+              {/* Action Button - Left */}
+              <button
+                type="button"
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-[#5b5fc7] dark:hover:text-[#5b5fc7] hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-all duration-200"
+                title="Thêm"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                </svg>
+              </button>
+
+              {/* Text Input Container */}
+              <div className="flex-1 relative">
+                <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Nhập tin nhắn..."
+                  rows={1}
+                  className="w-full px-3 py-2 bg-white dark:bg-[#3a3a3c] border border-gray-300 dark:border-gray-600 rounded text-[14px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#5b5fc7]/30 dark:focus:ring-[#5b5fc7]/30 focus:border-[#5b5fc7] dark:focus:border-[#5b5fc7] transition-all duration-200"
+                  style={{ minHeight: '36px', maxHeight: '120px', lineHeight: '1.4' }}
+                />
+                
+                {/* Emoji Button - Inside Input */}
+                {!messageText && (
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
+                    title="Emoji"
+                  >
+                    <Smile className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Send Button - MS Teams Purple */}
+              <button
+                type="submit"
+                disabled={!messageText.trim() || sending}
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded transition-all duration-200 disabled:opacity-50"
+                title="Gửi"
+              >
+                {sending ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

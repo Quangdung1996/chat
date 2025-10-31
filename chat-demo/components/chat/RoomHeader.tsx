@@ -11,9 +11,10 @@ import { useAuthStore } from '@/store/authStore';
 interface RoomHeaderProps {
   room: UserSubscription;
   onRefresh: () => void;
+  onReadOnlyChange?: (isReadOnly: boolean) => void;
 }
 
-export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
+export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHeaderProps) {
   const [showMembers, setShowMembers] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
@@ -31,12 +32,15 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
       const response = await rocketChatService.getRoomInfo(room.roomId, roomType);
       
       if (response.success && response.room) {
-        setIsReadOnly(response.room.readOnly);
-        console.log(`✅ Room ${room.roomId} readOnly status: ${response.room.readOnly}`);
+        const readOnly = response.room.readOnly;
+        setIsReadOnly(readOnly);
+        onReadOnlyChange?.(readOnly);
+        console.log(`✅ Room ${room.roomId} readOnly status: ${readOnly}`);
       }
     } catch (error) {
       console.error('Failed to load room info:', error);
       setIsReadOnly(false);
+      onReadOnlyChange?.(false);
     }
   };
 
