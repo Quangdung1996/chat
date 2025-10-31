@@ -136,17 +136,25 @@ export default function ChatSidebar({
         const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
         
         if (roomIndex >= 0) {
-          // Update existing room with new unread count
+          // ✅ ONLY update specific fields, don't spread subscription to avoid overwriting with undefined
+          const existingRoom = currentRooms[roomIndex];
           const newRooms = [...currentRooms];
+          
           newRooms[roomIndex] = {
-            ...newRooms[roomIndex],
+            ...existingRoom, // Keep all existing fields
             unreadCount: subscription.unread || 0,
-            alert: subscription.alert,
+            alert: subscription.alert !== undefined ? subscription.alert : existingRoom.alert,
+            // ✅ Only update name/fullName if they exist in subscription
+            ...(subscription.name && { name: subscription.name }),
+            ...(subscription.fname && { fullName: subscription.fname }),
           };
           
           console.log('✅ Updated room unread count:', {
             roomId: subscription.rid,
-            unreadCount: subscription.unread || 0
+            roomName: newRooms[roomIndex].name,
+            unreadCount: subscription.unread || 0,
+            beforeUpdate: existingRoom,
+            afterUpdate: newRooms[roomIndex]
           });
           
           return newRooms;
