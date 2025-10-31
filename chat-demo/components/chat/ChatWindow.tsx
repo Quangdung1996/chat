@@ -10,6 +10,10 @@ import RoomHeader from './RoomHeader';
 import { Smile, Paperclip, Send } from 'lucide-react';
 import type { UserSubscription, SendMessageRequest } from '@/types/rocketchat';
 
+// 🔧 Selector functions - tránh infinite loop với Zustand
+const selectUser = (state: any) => state.user;
+const selectToken = (state: any) => state.token;
+
 interface ChatWindowProps {
   room: UserSubscription;
 }
@@ -33,8 +37,10 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
+  
+  // ✅ Use stable selector functions
+  const user = useAuthStore(selectUser);
+  const token = useAuthStore(selectToken);
 
   // ✅ Memoize SWR key để tránh infinite loop
   const swrKey = useMemo(

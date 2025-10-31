@@ -10,6 +10,10 @@ import CreateRoomModal from './CreateRoomModal';
 import { Search, Plus, X, ChevronDown, MessageSquare, Loader2 } from 'lucide-react';
 import type { UserSubscription } from '@/types/rocketchat';
 
+// 🔧 Selector functions - tránh infinite loop với Zustand
+const selectUser = (state: any) => state.user;
+const selectToken = (state: any) => state.token;
+
 interface ChatSidebarProps {
   selectedRoom: UserSubscription | null;
   onSelectRoom: (room: UserSubscription) => void;
@@ -40,8 +44,9 @@ export default function ChatSidebar({
   isMobileOpen,
   onCloseMobile,
 }: ChatSidebarProps) {
-  const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
+  // ✅ Use stable selector functions
+  const user = useAuthStore(selectUser);
+  const token = useAuthStore(selectToken);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   

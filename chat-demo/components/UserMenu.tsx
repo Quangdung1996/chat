@@ -5,9 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import authService from '@/services/auth.service';
 
+// 🔧 Selector functions - tránh infinite loop với Zustand
+const selectUser = (state: any) => state.user;
+const selectToken = (state: any) => state.token;
+const selectClearAuth = (state: any) => state.clearAuth;
+
 export default function UserMenu() {
   const router = useRouter();
-  const { user, token, clearAuth } = useAuthStore();
+  const user = useAuthStore(selectUser);
+  const token = useAuthStore(selectToken);
+  const clearAuth = useAuthStore(selectClearAuth);
   const [showMenu, setShowMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 

@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
+// 🔧 Selector functions - tránh infinite loop với Zustand
+const selectIsAuthenticated = (state: any) => state.isAuthenticated;
+const selectHasHydrated = (state: any) => state._hasHydrated;
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const hasHydrated = useAuthStore(selectHasHydrated);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
