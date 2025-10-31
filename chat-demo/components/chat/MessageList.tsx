@@ -113,18 +113,27 @@ function MessageList({ messages }: MessageListProps) {
                     <div
                       className={`inline-block px-3 py-2 ${
                         isCurrentUser
-                          ? 'bg-[#5b5fc7] dark:bg-[#5b5fc7] text-white rounded-md shadow-sm'
-                          : 'bg-white dark:bg-[#292929] text-gray-900 dark:text-white rounded-md border border-gray-200 dark:border-gray-700'
+                          ? 'bg-[#5B5FC7] dark:bg-[#5B5FC7] text-white rounded-lg shadow-sm'
+                          : 'bg-white dark:bg-[#292929] text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words leading-[1.4] text-[15px]">
+                      <p className={`whitespace-pre-wrap break-words leading-[1.4] text-[15px] ${
+                        isCurrentUser ? 'text-white' : ''
+                      }`}>
                         {message.text}
                       </p>
                     </div>
                     
-                    {/* Time - Always visible */}
-                    <div className={`text-[11px] text-gray-500 dark:text-gray-400 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
+                    {/* Time - Always visible, positioned based on user */}
+                    <div className={`text-[11px] mt-1 px-1 ${
+                      isCurrentUser 
+                        ? 'text-right text-gray-500 dark:text-gray-400' 
+                        : 'text-left text-gray-500 dark:text-gray-400'
+                    }`}>
                       {formatTime(message.timestamp)}
+                      {message.edited && isCurrentUser && (
+                        <span className="ml-1.5">· đã chỉnh sửa</span>
+                      )}
                     </div>
                   </div>
                 )}
