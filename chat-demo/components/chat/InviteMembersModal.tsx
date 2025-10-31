@@ -217,7 +217,7 @@ export default function InviteMembersModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 px-5 py-4 overflow-hidden">
           {/* Messages - Minimal Style */}
           {error && (
             <div className="mb-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-[12px] flex items-center gap-2">
