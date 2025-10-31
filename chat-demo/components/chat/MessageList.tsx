@@ -13,20 +13,15 @@ interface MessageListProps {
 function MessageList({ messages, currentUserId, currentUsername }: MessageListProps) {
 
   const formatTime = (timestamp?: string) => {
-    if (!timestamp) return 'Vừa xong';
+    if (!timestamp) return '';
     
     const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return 'Vừa xong';
+    if (isNaN(date.getTime())) return '';
     
     const now = new Date();
     const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
     const diffInMinutes = diffInSeconds / 60;
     const diffInHours = diffInMinutes / 60;
-
-    // Tin nhắn trong vòng 1 phút
-    if (diffInMinutes < 1) {
-      return 'Vừa xong';
-    }
 
     // Tin nhắn trong vòng 24 giờ
     if (diffInHours < 24) {
