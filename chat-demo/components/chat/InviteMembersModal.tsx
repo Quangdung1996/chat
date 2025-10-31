@@ -190,25 +190,25 @@ export default function InviteMembersModal({
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm kiếm theo tên hoặc username..."
-                className="pl-10 h-11"
+                className="pl-9 sm:pl-10 h-10 sm:h-11 text-sm sm:text-base"
                 autoFocus
               />
             </div>
 
             {/* Selected Members Count */}
             {selectedMembers.length > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-primary/10 border border-primary/20 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium">
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">
                     Đã chọn {selectedMembers.length} thành viên
                   </span>
                 </div>
@@ -217,7 +217,7 @@ export default function InviteMembersModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedMembers([])}
-                  className="h-auto py-1 px-2 text-xs"
+                  className="h-auto py-1 px-2 text-[10px] sm:text-xs"
                 >
                   Bỏ chọn tất cả
                 </Button>
@@ -226,20 +226,20 @@ export default function InviteMembersModal({
 
             {/* User List */}
             <div className="border rounded-lg overflow-hidden">
-              <ScrollArea className="h-[360px]">
+              <ScrollArea className="h-[300px] sm:h-[360px]">
                 {loadingUsers ? (
-                  <div className="p-8 text-center">
-                    <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-primary" />
-                    <p className="mt-3 text-sm text-muted-foreground">Đang tải danh sách...</p>
+                  <div className="p-6 sm:p-8 text-center">
+                    <div className="animate-spin inline-block w-5 h-5 sm:w-6 sm:h-6 border-2 border-current border-t-transparent rounded-full text-primary" />
+                    <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground">Đang tải danh sách...</p>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  <div className="p-6 sm:p-8 text-center">
+                    <Users className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground/50 mb-2 sm:mb-3" />
+                    <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">
                       {searchTerm ? 'Không tìm thấy người dùng' : 'Không có người dùng'}
                     </p>
                     {searchTerm && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         Thử từ khóa tìm kiếm khác
                       </p>
                     )}
@@ -255,28 +255,28 @@ export default function InviteMembersModal({
                           key={user._id}
                           type="button"
                           onClick={() => toggleMember(user._id)}
-                          className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                          className={`w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
                             isSelected ? 'bg-primary/5' : ''
                           }`}
                         >
                           {/* Avatar */}
-                          <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
+                          <div className={`relative flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-sm`}>
                             {getInitials(displayName)}
                             {/* Online status indicator */}
                             {user.status === 'online' && (
-                              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
+                              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
                             )}
                           </div>
                           
                           {/* Info */}
                           <div className="flex-1 min-w-0 text-left">
-                            <div className="text-sm font-medium truncate">
+                            <div className="text-xs sm:text-sm font-medium truncate">
                               {displayName}
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-[10px] sm:text-xs text-muted-foreground truncate">
                               @{user.username}
                               {user.status === 'online' && (
-                                <span className="ml-2 text-green-600 dark:text-green-400">● Trực tuyến</span>
+                                <span className="ml-1 sm:ml-2 text-green-600 dark:text-green-400">● Trực tuyến</span>
                               )}
                             </div>
                           </div>
@@ -285,6 +285,7 @@ export default function InviteMembersModal({
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => toggleMember(user._id)}
+                            className="flex-shrink-0"
                           />
                         </button>
                       );
@@ -295,21 +296,21 @@ export default function InviteMembersModal({
             </div>
 
             {/* Info text */}
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
               💡 Chọn người dùng bạn muốn thêm vào nhóm
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
-          <div className="flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
             >
               Hủy bỏ
             </Button>
@@ -317,16 +318,16 @@ export default function InviteMembersModal({
               type="button"
               onClick={handleSubmit}
               disabled={loading || selectedMembers.length === 0}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  <div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full mr-1 sm:mr-2" />
                   Đang thêm...
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-4 h-4 mr-2" />
+                  <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Thêm {selectedMembers.length > 0 ? `(${selectedMembers.length})` : ''}
                 </>
               )}
