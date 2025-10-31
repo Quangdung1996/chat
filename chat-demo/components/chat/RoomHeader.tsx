@@ -28,7 +28,15 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   
   const loadRoomInfo = async () => {
     try {
-      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      // ✅ Chỉ fetch room info cho group/channel, không cần cho direct message
+      if (room.type === 'd') {
+        setIsReadOnly(false);
+        onReadOnlyChange?.(false);
+        console.log(`✅ Direct message room ${room.roomId} - skip room info`);
+        return;
+      }
+
+      const roomType = room.type === 'p' ? 'group' : 'channel';
       const response = await rocketChatService.getRoomInfo(room.roomId, roomType);
       
       if (response.success && response.room) {
@@ -150,18 +158,21 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
                 {room.fullName || room.name}
               </h2>
               <div className="flex items-center gap-2.5 mt-0.5">
-                <button
-                  onClick={() => {
-                    setShowMembers(!showMembers);
-                    if (!showMembers && members.length === 0) {
-                      loadMembers();
-                    }
-                  }}
-                  className="text-[13px] text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] flex items-center gap-1 transition-colors duration-200"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{members.length || '...'} thành viên</span>
-                </button>
+                {/* ✅ Chỉ show members count cho group/channel, không cần cho direct message */}
+                {room.type !== 'd' && (
+                  <button
+                    onClick={() => {
+                      setShowMembers(!showMembers);
+                      if (!showMembers && members.length === 0) {
+                        loadMembers();
+                      }
+                    }}
+                    className="text-[13px] text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] flex items-center gap-1 transition-colors duration-200"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{members.length || '...'} thành viên</span>
+                  </button>
+                )}
                 {isReadOnly && (
                   <span className="flex items-center gap-1.5 text-[11px] bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 px-2 py-0.5 rounded-full font-medium">
                     🔒 Read-only
@@ -179,18 +190,21 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
 
           {/* Actions - Minimalist */}
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => {
-                setShowMembers(!showMembers);
-                if (!showMembers && members.length === 0) {
-                  loadMembers();
-                }
-              }}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
-              title="Mời thành viên"
-            >
-              <UserPlus className="w-5 h-5" />
-            </button>
+            {/* ✅ Chỉ show invite button cho group/channel, không cần cho direct message */}
+            {room.type !== 'd' && (
+              <button
+                onClick={() => {
+                  setShowMembers(!showMembers);
+                  if (!showMembers && members.length === 0) {
+                    loadMembers();
+                  }
+                }}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
+                title="Mời thành viên"
+              >
+                <UserPlus className="w-5 h-5" />
+              </button>
+            )}
 
             <button
               onClick={onRefresh}
@@ -206,7 +220,8 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       </div>
 
       {/* Members Dropdown - MS Teams style - MOVED OUTSIDE to avoid stacking context */}
-      {showMembers && (
+      {/* ✅ Chỉ show members dropdown cho group/channel, không cần cho direct message */}
+      {showMembers && room.type !== 'd' && (
         <>
           {/* Backdrop */}
           <div
