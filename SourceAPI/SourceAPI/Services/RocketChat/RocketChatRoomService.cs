@@ -428,7 +428,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// T-36b: Send message to room
         /// </summary>
-        public async Task<string?> SendMessageAsync(string userId, string roomId, string text, string? alias = null)
+        public async Task<string?> SendMessageAsync(string rocketToken, string rocketUserId, string roomId, string text, string? alias = null)
         {
             try
             {
@@ -437,17 +437,10 @@ namespace SourceAPI.Services.RocketChat
                     RoomId = roomId,
                     Text = text
                 };
-                // Get user mapping to retrieve username
-                var mapping = await _userService.GetMappingAsync(int.Parse(userId));
-                if (mapping == null)
-                {
-                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
-                    return default;
-                }
 
-                // Get user token and create user-specific proxy
-                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(int.Parse(userId), mapping.RocketUsername);
-                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
+                // ✅ Create user-specific proxy with provided Rocket.Chat token (no database lookup)
+                var userApi = _userProxyFactory.CreateUserProxy(rocketToken, rocketUserId);
+                
                 // Use Refit - DelegatingHandler auto adds auth headers
                 var response = await userApi.PostMessageAsync(request);
 

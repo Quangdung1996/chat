@@ -646,6 +646,7 @@ namespace SourceAPI.Controllers.Integrations
         /// <summary>
         /// T-36b: Send message to room
         /// DoD: Gửi chủ động vào room bởi bot; hỗ trợ roomId/groupCode; trả về messageId
+        /// Updated: Uses Rocket.Chat token from X-RocketChat-Token header
         /// </summary>
         [HttpPost("send")]
         [ProducesResponseType(200)]
@@ -658,9 +659,18 @@ namespace SourceAPI.Controllers.Integrations
                 {
                     return BadRequest(new { message = "RoomId and Text are required" });
                 }
-                string sUserId = User.Identity.GetUserId();
 
-                var messageId = await _roomService.SendMessageAsync(sUserId, request.RoomId, request.Text, request.Alias);
+                // ✅ Get Rocket.Chat credentials from headers (added by frontend apiClient)
+                var rocketToken = Request.Headers["X-RocketChat-Token"].FirstOrDefault();
+                var rocketUserId = Request.Headers["X-RocketChat-UserId"].FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(rocketToken) || string.IsNullOrWhiteSpace(rocketUserId))
+                {
+                    return BadRequest(new { message = "X-RocketChat-Token and X-RocketChat-UserId headers are required" });
+                }
+
+                // ✅ Send message using Rocket.Chat token directly (no database lookup)
+                var messageId = await _roomService.SendMessageAsync(rocketToken, rocketUserId, request.RoomId, request.Text, request.Alias);
 
                 if (string.IsNullOrWhiteSpace(messageId))
                 {
