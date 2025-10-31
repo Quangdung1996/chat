@@ -354,6 +354,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                     </div>
                     <Checkbox
                       checked={formData.isReadOnly}
+                      onClick={(e) => e.stopPropagation()}
                       className="flex-shrink-0"
                     />
                   </div>
@@ -441,6 +442,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                             {/* Checkbox */}
                             <Checkbox
                               checked={isSelected}
+                              onClick={(e) => e.stopPropagation()}
                             />
                           </button>
                         );

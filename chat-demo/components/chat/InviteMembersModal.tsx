@@ -284,6 +284,7 @@ export default function InviteMembersModal({
                           {/* Checkbox */}
                           <Checkbox
                             checked={isSelected}
+                            onClick={(e) => e.stopPropagation()}
                             className="flex-shrink-0"
                           />
                         </button>
