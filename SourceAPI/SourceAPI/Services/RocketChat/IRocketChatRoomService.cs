@@ -104,6 +104,11 @@ namespace SourceAPI.Services.RocketChat
         /// User must be a member of the room to access this
         /// </summary>
         Task<RoomMembersResponse> GetRoomMembersAsync(string authToken, string rocketUserId, string roomId, string roomType = "group");
+
+        /// <summary>
+        /// Leave a room (group or channel)
+        /// </summary>
+        Task<bool> LeaveRoomAsync(string roomId, string roomType = "group");
     }
 }
 

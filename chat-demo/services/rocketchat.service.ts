@@ -280,6 +280,29 @@ class RocketChatService {
     return apiClient.get(`${endpoint}?roomType=${roomType}`);
   }
 
+  /**
+   * Quản lý member (invite/kick/addModerator) - uses existing removeMember API
+   * POST /api/integrations/rocket/room/{roomId}/member/{rocketUserId}/manage
+   */
+  async manageMember(roomId: string, userId: string, action: 'invite' | 'kick' | 'addModerator', roomType: string = 'group'): Promise<{ success: boolean }> {
+    if (action === 'kick') {
+      return this.removeMember(roomId, userId, roomType);
+    } else if (action === 'addModerator') {
+      return this.addModerator(roomId, userId, roomType);
+    } else {
+      return this.addMember(roomId, userId, roomType);
+    }
+  }
+
+  /**
+   * Rời khỏi room
+   * POST /api/integrations/rocket/room/{roomId}/leave?roomType=group
+   */
+  async leaveRoom(roomId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = `/api/integrations/rocket/room/${roomId}/leave`;
+    return apiClient.post(`${endpoint}?roomType=${roomType}`);
+  }
+
   // ===== MESSAGING =====
   
   /**

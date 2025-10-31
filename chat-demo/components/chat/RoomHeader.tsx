@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
-import { Users, UserPlus, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 
 interface RoomHeaderProps {
@@ -17,6 +17,12 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if current user is owner or moderator
+  const currentUserMember = members.find(m => m.id === currentUserId);
+  const isOwnerOrMod = currentUserMember?.roles?.includes('owner') || currentUserMember?.roles?.includes('moderator');
 
   const loadMembers = async () => {
     setLoadingMembers(true);
@@ -41,9 +47,74 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
     }
   };
 
+  const handleKickMember = async (memberId: string, memberName: string) => {
+    if (!confirm(`Bạn có chắc muốn kick ${memberName} khỏi group?`)) {
+      return;
+    }
+
+    try {
+      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const response = await rocketChatService.manageMember(room.roomId, memberId, 'kick', roomType);
+      
+      if (response.success) {
+        // Reload members list
+        await loadMembers();
+        onRefresh();
+      } else {
+        alert('Không thể kick thành viên. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Failed to kick member:', error);
+      alert('Có lỗi xảy ra khi kick thành viên.');
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!confirm('Bạn có chắc muốn rời khỏi group này?')) {
+      return;
+    }
+
+    try {
+      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const response = await rocketChatService.leaveRoom(room.roomId, roomType);
+      
+      if (response.success) {
+        onRefresh();
+        setShowMembers(false);
+      } else {
+        alert('Không thể rời group. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Failed to leave group:', error);
+      alert('Có lỗi xảy ra khi rời group.');
+    }
+  };
+
+  // Get current user ID from localStorage
+  useEffect(() => {
+    const userId = localStorage.getItem('rocketChatUserId');
+    if (userId) {
+      setCurrentUserId(userId);
+    }
+  }, []);
+
   useEffect(() => {
     if (showMembers && members.length === 0) {
       loadMembers();
+    }
+  }, [showMembers]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowMembers(false);
+      }
+    };
+
+    if (showMembers) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showMembers]);
 
@@ -61,9 +132,14 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
               <h2 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
                 {room.fullName || room.name}
               </h2>
-              <div className="flex items-center gap-2.5 mt-0.5">
+              <div className="flex items-center gap-2.5 mt-0.5 relative">
                 <button
-                  onClick={() => setShowMembers(!showMembers)}
+                  onClick={() => {
+                    setShowMembers(!showMembers);
+                    if (!showMembers && members.length === 0) {
+                      loadMembers();
+                    }
+                  }}
                   className="text-[13px] text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] flex items-center gap-1 transition-colors duration-200"
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -74,6 +150,110 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                     {room.unreadCount}
                   </span>
+                )}
+
+                {/* Members Dropdown - MS Teams style */}
+                {showMembers && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[500px] overflow-hidden flex flex-col"
+                  >
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b dark:border-gray-700">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        People ({members.length})
+                      </h3>
+                    </div>
+
+                    {/* Members List */}
+                    {loadingMembers ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-blue-600" />
+                      </div>
+                    ) : (
+                      <div className="overflow-y-auto flex-1">
+                        {members.map((member) => {
+                          const displayName = member.name || member.username;
+                          const isOwner = member.roles?.includes('owner');
+                          const isModerator = member.roles?.includes('moderator');
+                          const isCurrentUser = member.id === currentUserId;
+                          
+                          return (
+                            <div
+                              key={member.id}
+                              className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                            >
+                              <div className="flex items-center gap-3">
+                                {/* Avatar with status */}
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                                    {member.username.slice(0, 2).toUpperCase()}
+                                  </div>
+                                  {member.status === 'online' && (
+                                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                                  )}
+                                </div>
+                                
+                                {/* User info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {displayName}
+                                    </p>
+                                    {isCurrentUser && (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">(You)</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      @{member.username}
+                                    </p>
+                                    {(isOwner || isModerator) && (
+                                      <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                                        {isOwner ? '👑' : '⭐'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Kick button - only show if current user is owner/mod and target is not current user */}
+                                {isOwnerOrMod && !isCurrentUser && (
+                                  <button
+                                    onClick={() => handleKickMember(member.id, displayName)}
+                                    className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Kick thành viên"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Footer Actions */}
+                    <div className="border-t dark:border-gray-700 p-2">
+                      <button
+                        onClick={() => {
+                          setShowInviteModal(true);
+                          setShowMembers(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Add people</span>
+                      </button>
+                      <button
+                        onClick={handleLeaveGroup}
+                        className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Leave</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -112,85 +292,6 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           onRefresh();
         }}
       />
-
-      {/* Members Sidebar */}
-      {showMembers && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setShowMembers(false)}
-          />
-
-          {/* Sidebar */}
-          <div className="fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-gray-800 shadow-xl z-50 overflow-y-auto">
-            <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Thành viên ({members.length})
-              </h3>
-              <button
-                onClick={() => setShowMembers(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              >
-                ✕
-              </button>
-            </div>
-
-            {loadingMembers ? (
-              <div className="p-4 text-center">
-                <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-blue-600" />
-              </div>
-            ) : (
-              <div className="divide-y dark:divide-gray-700">
-                {members.map((member) => {
-                  const displayName = member.name || member.username;
-                  const isOwner = member.roles?.includes('owner');
-                  const isModerator = member.roles?.includes('moderator');
-                  
-                  return (
-                    <div key={member.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <div className="flex items-center gap-3">
-                        {/* Avatar with status */}
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                            {member.username.slice(0, 2).toUpperCase()}
-                          </div>
-                          {member.status === 'online' && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
-                          )}
-                        </div>
-                        
-                        {/* User info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 dark:text-white truncate">
-                            {displayName}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            @{member.username}
-                          </p>
-                        </div>
-                        
-                        {/* Role badge */}
-                        {(isOwner || isModerator) && (
-                          <span
-                            className={`text-xs px-2 py-1 rounded flex-shrink-0 ${
-                              isOwner
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                            }`}
-                          >
-                            {isOwner ? '👑 Owner' : '⭐ Mod'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </>
-      )}
     </>
   );
 }

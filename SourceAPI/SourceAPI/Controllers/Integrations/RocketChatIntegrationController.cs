@@ -668,6 +668,44 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
+        /// <summary>
+        /// Leave a room (group or channel)
+        /// POST /api/integrations/rocket/room/{roomId}/leave?roomType=group
+        /// </summary>
+        [HttpPost("room/{roomId}/leave")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> LeaveRoom(string roomId, [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                // Rocket.Chat token from header (injected by middleware)
+                var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
+                var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
+
+                if (string.IsNullOrEmpty(rocketToken) || string.IsNullOrEmpty(rocketUserId))
+                {
+                    return Unauthorized(new { message = "Rocket.Chat authentication required." });
+                }
+
+                _logger.LogInformation($"User {rocketUserId} leaving room {roomId} (type: {roomType})");
+                var success = await _roomService.LeaveRoomAsync(roomId, roomType);
+
+                if (!success)
+                {
+                    return StatusCode(403, new { message = "Failed to leave room." });
+                }
+
+                return Ok(new { success = true, message = "Left room successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error leaving room {roomId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
         #endregion
 
         #region Messaging (T-36b)

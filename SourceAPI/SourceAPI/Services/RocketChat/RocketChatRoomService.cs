@@ -655,6 +655,53 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// Get members of a specific room using user's token
         /// </summary>
+        public async Task<bool> LeaveRoomAsync(string roomId, string roomType = "group")
+        {
+            try
+            {
+                _logger.LogInformation($"User leaving room {roomId} (type: {roomType})");
+
+                // Get current user's token from context
+                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
+
+                var request = new LeaveRoomRequest { RoomId = roomId };
+                ApiResponse response;
+
+                // Call appropriate endpoint based on room type
+                switch (roomType.ToLower())
+                {
+                    case "group":
+                    case "p":
+                        response = await userApi.LeaveGroupAsync(request);
+                        break;
+                    case "channel":
+                    case "c":
+                        response = await userApi.LeaveChannelAsync(request);
+                        break;
+                    default:
+                        _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
+                        response = await userApi.LeaveGroupAsync(request);
+                        break;
+                }
+
+                if (response.Success)
+                {
+                    _logger.LogInformation($"✅ User left room {roomId} successfully");
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ Failed to leave room {roomId}: {response.Error}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error leaving room {roomId}");
+                return false;
+            }
+        }
+
         public async Task<RoomMembersResponse> GetRoomMembersAsync(string authToken, string rocketUserId, string roomId, string roomType = "group")
         {
             try

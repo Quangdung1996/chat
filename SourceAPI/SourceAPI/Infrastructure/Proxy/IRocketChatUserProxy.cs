@@ -91,5 +91,11 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/channels.addModerator")]
     Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
+
+    [Post("/api/v1/groups.leave")]
+    Task<ApiResponse> LeaveGroupAsync([Body] LeaveRoomRequest request);
+
+    [Post("/api/v1/channels.leave")]
+    Task<ApiResponse> LeaveChannelAsync([Body] LeaveRoomRequest request);
 }
 

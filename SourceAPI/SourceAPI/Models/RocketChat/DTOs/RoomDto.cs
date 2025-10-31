@@ -67,6 +67,12 @@ public class ModeratorRequest
     public string UserId { get; set; } = string.Empty;
 }
 
+public class LeaveRoomRequest
+{
+    [JsonProperty("roomId")]
+    public string RoomId { get; set; } = string.Empty;
+}
+
 /// <summary>
 /// Request to rename a room
 /// </summary>
