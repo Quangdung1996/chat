@@ -182,10 +182,17 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
 
             {/* Members Dropdown - MS Teams style */}
             {showMembers && (
-              <div
-                ref={dropdownRef}
-                className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[400px] overflow-hidden flex flex-col"
-              >
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 z-[9998]" 
+                  onClick={() => setShowMembers(false)}
+                />
+                {/* Dropdown */}
+                <div
+                  ref={dropdownRef}
+                  className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
+                >
                 {/* Header */}
                 <div className="px-4 py-3 border-b dark:border-gray-700">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -281,7 +288,8 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
                     <span>Leave</span>
                   </button>
                 </div>
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
