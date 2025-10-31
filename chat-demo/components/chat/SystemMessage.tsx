@@ -5,7 +5,7 @@ import { UserPlus, UserMinus, LogIn, LogOut, Users } from 'lucide-react';
 interface SystemMessageProps {
   message: {
     text: string;
-    type: string;
+    type: string | null;
     timestamp?: string;
     user?: {
       name?: string;
@@ -31,7 +31,7 @@ export default function SystemMessage({ message }: SystemMessageProps) {
   const getSystemMessageInfo = () => {
     const userName = user?.name || user?.username || 'Someone';
     
-    switch (type) {
+    switch (type || '') {
       case 'au': // Added user
         return {
           icon: <UserPlus className="w-3.5 h-3.5" />,
