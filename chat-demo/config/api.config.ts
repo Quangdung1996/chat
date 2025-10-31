@@ -7,6 +7,9 @@ export const API_CONFIG = {
   // URL của backend API
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:12391',
 
+  // URL của Rocket.Chat server (để kết nối WebSocket trực tiếp)
+  rocketChatURL: process.env.NEXT_PUBLIC_ROCKETCHAT_URL || 'http://localhost:3000',
+
   // Timeout cho API requests (ms)
   timeout: 30000,
 

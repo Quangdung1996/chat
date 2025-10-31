@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
+import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
 import { Search, Plus, X, ChevronDown, MessageSquare, Loader2 } from 'lucide-react';
@@ -40,6 +41,7 @@ export default function ChatSidebar({
   onCloseMobile,
 }: ChatSidebarProps) {
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -54,14 +56,14 @@ export default function ChatSidebar({
     [user?.id]
   );
 
-  // ✅ SWR hook - auto polling rooms mỗi 10 giây
+  // ✅ SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
   const { data: rooms = [], error, isLoading, mutate } = useSWR(
     roomsSwrKey,
     roomsFetcher,
     {
-      refreshInterval: 10000, // ✨ Poll rooms mỗi 10 giây để cập nhật unread count
-      revalidateOnFocus: true, // Auto reload khi quay lại tab
-      dedupingInterval: 5000, // Không gọi API 2 lần trong 5s
+      refreshInterval: 0, // ✅ Tắt polling - dùng WebSocket để nhận real-time updates
+      revalidateOnFocus: false, // Tắt auto reload - WebSocket đã handle
+      dedupingInterval: 5000,
       revalidateOnMount: true, // Load ngay khi mount
     }
   );
@@ -71,6 +73,123 @@ export default function ChatSidebar({
       loadUsers(); // Load users for contact search
     }
   }, [user?.id]);
+
+  // ✅ Rocket.Chat WebSocket: Connect and authenticate (shared with ChatWindow)
+  useEffect(() => {
+    if (!user?.id || !token) return;
+
+    // Connect to WebSocket (if not already connected)
+    if (!rocketChatWS.isConnected()) {
+      rocketChatWS.connect()
+        .then(() => {
+          return rocketChatWS.authenticate(token, user.id.toString());
+        })
+        .catch(err => {
+          console.error('❌ Failed to connect/authenticate WebSocket:', err);
+        });
+    }
+  }, [user?.id, token]);
+
+  // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
+  useEffect(() => {
+    if (!user?.id || !rocketChatWS.isConnected()) return;
+
+    // Handler cho subscription updates (unread count, etc)
+    const handleSubscriptionUpdate = (data: any) => {
+      console.log('🔔 Subscription updated from WebSocket:', data);
+      
+      const { action, subscription } = data;
+      
+      if (!subscription) return;
+
+      // Update SWR cache with updated subscription
+      mutate((currentRooms = []) => {
+        const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
+        
+        if (roomIndex >= 0) {
+          // Update existing room with new unread count
+          const newRooms = [...currentRooms];
+          newRooms[roomIndex] = {
+            ...newRooms[roomIndex],
+            unreadCount: subscription.unread || 0,
+            alert: subscription.alert,
+            // Update other fields as needed
+          };
+          return newRooms;
+        }
+        
+        return currentRooms;
+      }, false);
+    };
+
+    // Subscribe to user's subscription updates
+    const subId = rocketChatWS.subscribeToUserSubscriptions(
+      user.id.toString(),
+      handleSubscriptionUpdate
+    );
+
+    return () => {
+      rocketChatWS.unsubscribe(subId);
+    };
+  }, [user?.id, mutate]);
+
+  // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
+  useEffect(() => {
+    if (!user?.id || !rocketChatWS.isConnected()) return;
+
+    // Handler cho room updates (new rooms, room deleted, etc)
+    const handleRoomUpdate = (data: any) => {
+      console.log('🔔 Room updated from WebSocket:', data);
+      
+      const { action, room } = data;
+      
+      if (!room) return;
+
+      // Handle different actions
+      if (action === 'inserted' || action === 'updated') {
+        // Convert WebSocket room format to local format
+        const updatedRoom: Partial<UserSubscription> = {
+          id: room._id,
+          roomId: room._id,
+          name: room.name,
+          fullName: room.fname || room.name,
+          type: room.t,
+          unreadCount: room.unread || 0,
+        };
+
+        mutate((currentRooms = []) => {
+          const roomIndex = currentRooms.findIndex(r => r.roomId === updatedRoom.roomId);
+          
+          if (roomIndex >= 0) {
+            // Update existing room
+            const newRooms = [...currentRooms];
+            newRooms[roomIndex] = { ...newRooms[roomIndex], ...updatedRoom };
+            return newRooms;
+          } else if (action === 'inserted') {
+            // Add new room to the beginning
+            return [updatedRoom as UserSubscription, ...currentRooms];
+          }
+          
+          return currentRooms;
+        }, false);
+      } else if (action === 'removed') {
+        // Remove room from list
+        mutate((currentRooms = []) => {
+          return currentRooms.filter(r => r.roomId !== room._id);
+        }, false);
+      }
+    };
+
+    // Subscribe to user's room updates
+    const subId = rocketChatWS.subscribeToUserRooms(
+      user.id.toString(),
+      handleRoomUpdate
+    );
+
+    return () => {
+      rocketChatWS.unsubscribe(subId);
+    };
+  }, [user?.id, mutate]);
 
   const loadUsers = async () => {
     setLoadingUsers(true);

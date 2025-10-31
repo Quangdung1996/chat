@@ -3,6 +3,8 @@
 import { useState, useRef, useMemo, memo, useEffect } from 'react';
 import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
+import { rocketChatWS } from '@/services/rocketchat-websocket.service';
+import { useAuthStore } from '@/store/authStore';
 import MessageList from './MessageList';
 import RoomHeader from './RoomHeader';
 import { Smile, Paperclip, Send } from 'lucide-react';
@@ -31,6 +33,8 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
 
   // ✅ Memoize SWR key để tránh infinite loop
   const swrKey = useMemo(
@@ -38,14 +42,14 @@ function ChatWindow({ room }: ChatWindowProps) {
     [room?.roomId, room?.type]
   );
 
-  // SWR hook - auto polling every 5s, auto revalidate on focus
+  // SWR hook - initial load only, no polling (Rocket.Chat WebSocket handles real-time)
   const { data: messages = [], error, isLoading, mutate } = useSWR(
     swrKey,
     messagesFetcher,
     {
-      refreshInterval: 5000, // ✨ Poll messages mỗi 5 giây
-      revalidateOnFocus: true, // Auto reload khi quay lại tab
-      dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
+      refreshInterval: 0, // ✅ Tắt polling - dùng WebSocket để nhận real-time
+      revalidateOnFocus: false, // Tắt auto reload - WebSocket đã handle
+      dedupingInterval: 2000,
       keepPreviousData: false, // ✅ KHÔNG giữ data cũ - tránh hiển thị messages của room khác
       revalidateOnMount: true, // ✨ Load ngay khi mount
       compare: (a, b) => {
@@ -76,6 +80,68 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   }, [messages.length]); // Chỉ scroll khi số lượng messages thay đổi
 
+  // ✅ Rocket.Chat WebSocket: Connect and authenticate
+  useEffect(() => {
+    if (!user?.id || !token) return;
+
+    // Connect to WebSocket
+    rocketChatWS.connect()
+      .then(() => {
+        // Authenticate with Rocket.Chat
+        return rocketChatWS.authenticate(token, user.id.toString());
+      })
+      .catch(err => {
+        console.error('❌ Failed to connect/authenticate WebSocket:', err);
+      });
+
+    // Cleanup on unmount
+    return () => {
+      // Note: Don't disconnect here, keep connection alive for other components
+    };
+  }, [user?.id, token]);
+
+  // ✅ Rocket.Chat WebSocket: Subscribe to room messages
+  useEffect(() => {
+    if (!room?.roomId || !rocketChatWS.isConnected()) return;
+
+    // Handler cho message mới từ WebSocket
+    const handleNewMessage = (message: any) => {
+      console.log('📨 New message from WebSocket:', message);
+      
+      // Convert WebSocket message format to local format
+      const newMessage = {
+        messageId: message._id,
+        roomId: message.rid,
+        text: message.msg,
+        createdAt: message.ts,
+        user: {
+          id: message.u._id,
+          username: message.u.username,
+          name: message.u.name,
+        },
+        updatedAt: message._updatedAt,
+      };
+
+      // Update SWR cache with new message
+      mutate((currentMessages = []) => {
+        // Check if message already exists (avoid duplicates)
+        const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
+        if (exists) return currentMessages;
+        
+        // Add new message to the end
+        return [...currentMessages, newMessage];
+      }, false); // false = don't revalidate
+    };
+
+    // Subscribe to room messages
+    const subscriptionId = rocketChatWS.subscribeToRoomMessages(room.roomId, handleNewMessage);
+
+    // Cleanup on unmount or room change
+    return () => {
+      rocketChatWS.unsubscribe(subscriptionId);
+    };
+  }, [room?.roomId, mutate]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || sending) return;
@@ -89,8 +155,7 @@ function ChatWindow({ room }: ChatWindowProps) {
       const response = await rocketChatService.sendMessage(request);
       if (response.success) {
         setMessageText('');
-        // Revalidate messages sau khi gửi - SWR tự động fetch lại
-        setTimeout(() => mutate(), 500);
+        // No need to revalidate - WebSocket will automatically push the message
       }
     } catch (error) {
       alert('❌ Lỗi: ' + (error as Error).message);
