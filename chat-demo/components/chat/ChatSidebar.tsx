@@ -192,33 +192,58 @@ export default function ChatSidebar({
 
       // Handle different actions
       if (action === 'inserted' || action === 'updated') {
-        // Convert WebSocket room format to local format
-        const updatedRoom: Partial<UserSubscription> = {
-          id: room._id,
-          roomId: room._id,
-          name: room.name,
-          fullName: room.fname || room.name,
-          type: room.t,
-          unreadCount: room.unread || 0,
-        };
-
         setRooms(currentRooms => {
-          const roomIndex = currentRooms.findIndex(r => r.roomId === updatedRoom.roomId);
+          const roomIndex = currentRooms.findIndex(r => r.roomId === room._id);
           
           if (roomIndex >= 0) {
-            // Update existing room
+            // ✅ Update existing room - ONLY update fields that exist
+            const existingRoom = currentRooms[roomIndex];
             const newRooms = [...currentRooms];
-            newRooms[roomIndex] = { ...newRooms[roomIndex], ...updatedRoom };
+            
+            newRooms[roomIndex] = {
+              ...existingRoom, // Keep all existing fields
+              // ✅ Only update fields if they exist in WebSocket data
+              ...(room._id && { id: room._id, roomId: room._id }),
+              ...(room.name && { name: room.name }),
+              ...(room.fname && { fullName: room.fname }),
+              ...(room.t && { type: room.t }),
+              ...(room.unread !== undefined && { unreadCount: room.unread }),
+            };
+            
+            console.log('✅ Updated existing room:', {
+              roomId: room._id,
+              beforeUpdate: existingRoom,
+              afterUpdate: newRooms[roomIndex]
+            });
+            
             return newRooms;
           } else if (action === 'inserted') {
-            // Add new room to the beginning
-            return [updatedRoom as UserSubscription, ...currentRooms];
+            // ✅ Add new room - create full object with required fields
+            const newRoom: UserSubscription = {
+              id: room._id,
+              roomId: room._id,
+              name: room.name || room.fname || 'Unknown',
+              fullName: room.fname || room.name || 'Unknown',
+              type: room.t || 'd',
+              unreadCount: room.unread || 0,
+              alert: room.alert || false,
+              open: room.open !== undefined ? room.open : true,
+              user: room.user || {
+                id: rocketChatUserId || '',
+                username: '',
+                name: ''
+              },
+            };
+            
+            console.log('✅ Inserted new room:', newRoom);
+            return [newRoom, ...currentRooms];
           }
           
           return currentRooms;
         });
       } else if (action === 'removed') {
         // Remove room from list
+        console.log('🗑️ Removing room:', room._id);
         setRooms(currentRooms => {
           return currentRooms.filter(r => r.roomId !== room._id);
         });
