@@ -156,7 +156,7 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
           </div>
 
           {/* Actions - Minimalist */}
-          <div className="flex items-center gap-0.5 relative">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={() => {
                 setShowMembers(!showMembers);
@@ -179,121 +179,121 @@ export default function RoomHeader({ room, onRefresh }: RoomHeaderProps) {
             </button>
 
             <RoomSettingsMenu room={room} onUpdate={onRefresh} />
-
-            {/* Members Dropdown - MS Teams style */}
-            {showMembers && (
-              <>
-                {/* Backdrop */}
-                <div 
-                  className="fixed inset-0 z-[99998]" 
-                  onClick={() => setShowMembers(false)}
-                />
-                {/* Dropdown */}
-                <div
-                  ref={dropdownRef}
-                  className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[99999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
-                >
-                {/* Header */}
-                <div className="px-4 py-3 border-b dark:border-gray-700">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    People ({members.length})
-                  </h3>
-                </div>
-
-                {/* Members List */}
-                {loadingMembers ? (
-                  <div className="p-8 text-center">
-                    <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-blue-600" />
-                  </div>
-                ) : (
-                  <div className="overflow-y-auto flex-1">
-                    {members.map((member) => {
-                      const displayName = member.name || member.username;
-                      const isOwner = member.roles?.includes('owner');
-                      const isModerator = member.roles?.includes('moderator');
-                      const isCurrentUser = member.id === currentUserId;
-                      
-                      return (
-                        <div
-                          key={member.id}
-                          className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Avatar with status */}
-                            <div className="relative flex-shrink-0">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-semibold">
-                                {member.username.slice(0, 2).toUpperCase()}
-                              </div>
-                              {member.status === 'online' && (
-                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
-                              )}
-                            </div>
-                            
-                            {/* User info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {displayName}
-                                </p>
-                                {isCurrentUser && (
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">(You)</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  @{member.username}
-                                </p>
-                                {(isOwner || isModerator) && (
-                                  <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                                    {isOwner ? '👑' : '⭐'}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Kick button - only show if current user is owner/mod and target is not current user */}
-                            {isOwnerOrMod && !isCurrentUser && (
-                              <button
-                                onClick={() => handleKickMember(member.id, displayName)}
-                                className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                                title="Kick thành viên"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Footer Actions */}
-                <div className="border-t dark:border-gray-700 p-2">
-                  <button
-                    onClick={() => {
-                      setShowInviteModal(true);
-                      setShowMembers(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Add people</span>
-                  </button>
-                  <button
-                    onClick={handleLeaveGroup}
-                    className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Leave</span>
-                  </button>
-                </div>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Members Dropdown - MS Teams style - MOVED OUTSIDE to avoid stacking context */}
+      {showMembers && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-[99998]" 
+            onClick={() => setShowMembers(false)}
+          />
+          {/* Dropdown */}
+          <div
+            ref={dropdownRef}
+            className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[99999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
+          >
+            {/* Header */}
+            <div className="px-4 py-3 border-b dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                People ({members.length})
+              </h3>
+            </div>
+
+            {/* Members List */}
+            {loadingMembers ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full text-blue-600" />
+              </div>
+            ) : (
+              <div className="overflow-y-auto flex-1">
+                {members.map((member) => {
+                  const displayName = member.name || member.username;
+                  const isOwner = member.roles?.includes('owner');
+                  const isModerator = member.roles?.includes('moderator');
+                  const isCurrentUser = member.id === currentUserId;
+                  
+                  return (
+                    <div
+                      key={member.id}
+                      className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with status */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                            {member.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          {member.status === 'online' && (
+                            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                          )}
+                        </div>
+                        
+                        {/* User info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {displayName}
+                            </p>
+                            {isCurrentUser && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">(You)</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{member.username}
+                            </p>
+                            {(isOwner || isModerator) && (
+                              <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                                {isOwner ? '👑' : '⭐'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Kick button - only show if current user is owner/mod and target is not current user */}
+                        {isOwnerOrMod && !isCurrentUser && (
+                          <button
+                            onClick={() => handleKickMember(member.id, displayName)}
+                            className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                            title="Kick thành viên"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="border-t dark:border-gray-700 p-2">
+              <button
+                onClick={() => {
+                  setShowInviteModal(true);
+                  setShowMembers(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add people</span>
+              </button>
+              <button
+                onClick={handleLeaveGroup}
+                className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Leave</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Invite Members Modal */}
       <InviteMembersModal
