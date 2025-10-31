@@ -67,9 +67,29 @@ class RocketChatWebSocketService {
   }
 
   async connect(): Promise<void> {
-    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
-      console.log('⚠️ Already connected or connecting');
+    // If already connected, return immediately
+    if (this.ws?.readyState === WebSocket.OPEN && !this.isConnecting) {
+      console.log('✅ Already connected');
       return;
+    }
+
+    // If currently connecting, wait for it to complete
+    if (this.isConnecting) {
+      console.log('⏳ Connection in progress, waiting...');
+      // Wait for connection to complete (max 10 seconds)
+      return new Promise((resolve, reject) => {
+        const checkInterval = setInterval(() => {
+          if (this.ws?.readyState === WebSocket.OPEN && !this.isConnecting) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+        
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          reject(new Error('Connection wait timeout'));
+        }, 10000);
+      });
     }
 
     return new Promise((resolve, reject) => {
@@ -340,6 +360,11 @@ class RocketChatWebSocketService {
    * Authenticate with existing token
    */
   async authenticate(authToken: string, userId: string): Promise<void> {
+    // Ensure WebSocket is connected before authenticating
+    if (!this.isConnected()) {
+      throw new Error('WebSocket not connected. Call connect() first.');
+    }
+
     return new Promise((resolve, reject) => {
       this.authToken = authToken;
       this.userId = userId;
