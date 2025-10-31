@@ -20,21 +20,24 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // SWR fetcher function
-  const messagesFetcher = async ([_, roomId, roomType]: [string, string, string]) => {
-    const response = await rocketChatService.getMessages(
-      roomId,
-      roomType,
-      50,
-      0,
-      user?.username
-    );
-    
-    if (response.success && response.messages) {
-      return response.messages;
-    }
-    throw new Error('Failed to load messages');
-  };
+  // SWR fetcher function - memoize với useCallback để tránh infinite loop
+  const messagesFetcher = useCallback(
+    async ([_, roomId, roomType]: [string, string, string]) => {
+      const response = await rocketChatService.getMessages(
+        roomId,
+        roomType,
+        50,
+        0,
+        user?.username
+      );
+      
+      if (response.success && response.messages) {
+        return response.messages;
+      }
+      throw new Error('Failed to load messages');
+    },
+    [user?.username] // Chỉ re-create khi username thay đổi
+  );
 
   // SWR hook - auto polling every 10s, auto revalidate on focus
   const { data: messages = [], error, isLoading, mutate } = useSWR(
