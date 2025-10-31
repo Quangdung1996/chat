@@ -180,6 +180,17 @@ class RocketChatWebSocketService {
         // Handle method call result
         if (data.id && this.callbacks.has(data.id)) {
           const callback = this.callbacks.get(data.id);
+          
+          // Always log full response for debugging
+          console.log('🔍 [WS] Method result:', {
+            id: data.id,
+            hasError: !!data.error,
+            error: data.error,
+            hasResult: data.result !== undefined,
+            result: data.result,
+            allKeys: Object.keys(data)
+          });
+          
           if (data.error) {
             // Reject promise if server returned error
             console.error('❌ Method call error - Full response:', data);
@@ -193,6 +204,7 @@ class RocketChatWebSocketService {
             callback?.(null, data.error);
           } else {
             // Resolve with result
+            console.log('✅ Method call success:', { id: data.id, result: data.result });
             callback?.(data.result);
           }
           this.callbacks.delete(data.id);
@@ -423,12 +435,28 @@ class RocketChatWebSocketService {
         throw new Error('WebSocket not connected');
       }
       
-      // Try subscriptions.read method (correct RocketChat method name)
-      const result = await this.callMethod('subscriptions.read', roomId);
-      console.log('✅ [WS] Room marked as read successfully:', { roomId, result });
-      return result;
+      // Try different method names that RocketChat might support
+      // Common options: readMessages, subscriptions.read, rooms.read
+      try {
+        console.log('🔧 Trying: readMessages');
+        const result = await this.callMethod('readMessages', roomId);
+        console.log('✅ [WS] Room marked as read successfully with readMessages:', { roomId, result });
+        return result;
+      } catch (e1) {
+        console.log('❌ readMessages failed, trying subscriptions.read:', e1);
+        try {
+          const result = await this.callMethod('subscriptions.read', roomId);
+          console.log('✅ [WS] Room marked as read successfully with subscriptions.read:', { roomId, result });
+          return result;
+        } catch (e2) {
+          console.log('❌ subscriptions.read failed, trying rooms.read:', e2);
+          const result = await this.callMethod('rooms.read', roomId);
+          console.log('✅ [WS] Room marked as read successfully with rooms.read:', { roomId, result });
+          return result;
+        }
+      }
     } catch (error) {
-      console.error('❌ [WS] Failed to mark room as read:', {
+      console.error('❌ [WS] All mark-as-read methods failed:', {
         roomId,
         error: error instanceof Error ? error.message : error
       });
