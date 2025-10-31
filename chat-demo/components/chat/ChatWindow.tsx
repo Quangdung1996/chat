@@ -39,17 +39,26 @@ function ChatWindow({ room }: ChatWindowProps) {
     [user?.username] // Chỉ re-create khi username thay đổi
   );
 
-  // SWR hook - auto polling every 10s, auto revalidate on focus
-  const { data: messages = [], error, isLoading, mutate } = useSWR(
-    room?.roomId ? ['messages', room.roomId, room.type || 'p'] : null,
-    messagesFetcher,
-    {
+  // ✅ Memoize SWR key để tránh infinite loop
+  const swrKey = useMemo(
+    () => room?.roomId ? ['messages', room.roomId, room.type || 'p'] : null,
+    [room?.roomId, room?.type]
+  );
+
+  // Memoize scrollToBottom callback
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  // ✅ Memoize SWR options để tránh infinite loop
+  const swrOptions = useMemo(
+    () => ({
       refreshInterval: 5000, // ✨ Poll mỗi 5 giây (giảm từ 10s)
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
       keepPreviousData: true, // ✨ GIỮ data cũ khi switching, tránh flash
       revalidateOnMount: true, // ✨ Load ngay khi mount
-      compare: (a, b) => {
+      compare: (a: any, b: any) => {
         // ✨ So sánh messages để tránh re-render không cần thiết
         if (!a || !b) return false;
         if (a.length !== b.length) return false;
@@ -59,12 +68,16 @@ function ChatWindow({ room }: ChatWindowProps) {
         // Auto scroll sau khi load messages
         setTimeout(() => scrollToBottom(), 100);
       }
-    }
+    }),
+    [scrollToBottom]
   );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // SWR hook - auto polling every 10s, auto revalidate on focus
+  const { data: messages = [], error, isLoading, mutate } = useSWR(
+    swrKey,
+    messagesFetcher,
+    swrOptions
+  );
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
