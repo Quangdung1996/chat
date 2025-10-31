@@ -102,5 +102,21 @@ public interface IRocketChatUserProxy
 
     [Get("/api/v1/channels.info")]
     Task<RoomInfoResponse> GetChannelInfoAsync([Query] string roomId);
+
+    // =====================================================
+    // Set room topic/description and announcement
+    // =====================================================
+
+    [Post("/api/v1/groups.setTopic")]
+    Task<ApiResponse> SetGroupTopicAsync([Body] SetTopicRequest request);
+
+    [Post("/api/v1/channels.setTopic")]
+    Task<ApiResponse> SetChannelTopicAsync([Body] SetTopicRequest request);
+
+    [Post("/api/v1/groups.setAnnouncement")]
+    Task<ApiResponse> SetGroupAnnouncementAsync([Body] SetAnnouncementRequest request);
+
+    [Post("/api/v1/channels.setAnnouncement")]
+    Task<ApiResponse> SetChannelAnnouncementAsync([Body] SetAnnouncementRequest request);
 }
 

@@ -15,7 +15,8 @@ public class CreateGroupRequest
     public string GroupCode { get; set; } = string.Empty;
     public int? DepartmentId { get; set; }
     public int? ProjectId { get; set; }
-    public string Description { get; set; } = string.Empty;
+    public string? Topic { get; set; }
+    public string? Announcement { get; set; }
     public bool IsPrivate { get; set; } = true;
     public bool IsReadOnly { get; set; } = false;
     public List<string> Members { get; set; } = new();
@@ -89,6 +90,15 @@ public class SetTopicRequest
 {
     public string RoomId { get; set; } = string.Empty;
     public string Topic { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request to set room announcement
+/// </summary>
+public class SetAnnouncementRequest
+{
+    public string RoomId { get; set; } = string.Empty;
+    public string Announcement { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -330,8 +340,11 @@ public class RoomInfo
     [JsonProperty("ro")]
     public bool ReadOnly { get; set; }
 
-    [JsonProperty("description")]
-    public string? Description { get; set; }
+    [JsonProperty("topic")]
+    public string? Topic { get; set; }
+
+    [JsonProperty("announcement")]
+    public string? Announcement { get; set; }
 
     [JsonProperty("sysMes")]
     public bool SystemMessages { get; set; }

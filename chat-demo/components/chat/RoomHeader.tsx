@@ -49,14 +49,17 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       if (response.success && response.room) {
         const readOnly = response.room.readOnly;
         setIsReadOnly(readOnly);
-        setRoomDescription(response.room.description);
+        
+        // ✅ Priority: topic > announcement
+        const displayText = response.room.topic || response.room.announcement;
+        setRoomDescription(displayText);
         
         // ✅ Check if current user is the owner using room info
         const isOwner = response.room.u?._id === currentUserId;
         
         // Notify parent with readonly status and owner info
         onReadOnlyChange?.(readOnly, isOwner);
-        console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}, owner: ${response.room.u?.username}, description: ${response.room.description}`);
+        console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}, owner: ${response.room.u?.username}, topic: ${response.room.topic}, announcement: ${response.room.announcement}`);
       }
     } catch (error) {
       console.error('Failed to load room info:', error);

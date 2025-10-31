@@ -166,16 +166,6 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                // T-16: Prepare description with metadata
-                var description = request.Description;
-                if (request.DepartmentId.HasValue || request.ProjectId.HasValue)
-                {
-                    var metadata = $"Dept: {request.DepartmentId}, Project: {request.ProjectId}";
-                    description = string.IsNullOrWhiteSpace(description)
-                        ? metadata
-                        : $"{description} ({metadata})";
-                }
-
                 // Prepare Refit request
                 var createRequest = new CreateRoomRequest
                 {
@@ -211,10 +201,16 @@ namespace SourceAPI.Services.RocketChat
 
                 var room = roomType == "group" ? rocketResponse.Group : rocketResponse.Channel;
 
-                // Set description if provided
-                if (!string.IsNullOrWhiteSpace(description))
+                // ✅ Set topic if provided
+                if (!string.IsNullOrWhiteSpace(request.Topic))
                 {
-                    await SetTopicAsync(room.Id, description, roomType);
+                    await SetTopicAsync(room.Id, request.Topic, roomType);
+                }
+
+                // ✅ Set announcement if provided
+                if (!string.IsNullOrWhiteSpace(request.Announcement))
+                {
+                    await SetAnnouncementAsync(room.Id, request.Announcement, roomType);
                 }
 
                 // TODO: Save to database
@@ -417,18 +413,53 @@ namespace SourceAPI.Services.RocketChat
                     Topic = topic
                 };
 
+                // ✅ Use user's token from context
+                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
+
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _adminApi.SetGroupTopicAsync(request);
+                    response = await userApi.SetGroupTopicAsync(request);
                 else
-                    response = await _adminApi.SetChannelTopicAsync(request);
+                    response = await userApi.SetChannelTopicAsync(request);
 
                 return response?.Success ?? false;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error setting topic for room {roomId}: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Set room announcement
+        /// </summary>
+        public async Task<bool> SetAnnouncementAsync(string roomId, string announcement, string roomType = "group")
+        {
+            try
+            {
+                var request = new SetAnnouncementRequest
+                {
+                    RoomId = roomId,
+                    Announcement = announcement
+                };
+
+                // ✅ Use user's token from context
+                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
+
+                // Use Refit - DelegatingHandler auto adds auth headers
+                ApiResponse response;
+                if (roomType == "group")
+                    response = await userApi.SetGroupAnnouncementAsync(request);
+                else
+                    response = await userApi.SetChannelAnnouncementAsync(request);
+
+                return response?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting announcement for room {roomId}: {ex.Message}");
                 return false;
             }
         }

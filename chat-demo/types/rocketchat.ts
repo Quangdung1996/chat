@@ -47,7 +47,8 @@ export interface CreateGroupRequest {
   isPrivate: boolean;
   departmentId?: number;
   projectId?: number;
-  description?: string;
+  topic?: string;
+  announcement?: string;
   isReadOnly?: boolean;
   members?: string[]; // Array of Rocket.Chat user IDs
   createdBy?: number;
@@ -228,7 +229,8 @@ export interface RoomInfo {
   fname: string;
   type: string;
   readOnly: boolean;
-  description?: string;
+  topic?: string;
+  announcement?: string;
   usersCount: number;
   messageCount: number;
   u?: {

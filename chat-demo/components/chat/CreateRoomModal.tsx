@@ -50,7 +50,8 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     groupCode: '',
     name: '',
     isPrivate: true,
-    description: '',
+    topic: '',
+    announcement: '',
     isReadOnly: false,
     members: [],
   });
@@ -70,7 +71,8 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
         groupCode: '',
         name: '',
         isPrivate: true,
-        description: '',
+        topic: '',
+        announcement: '',
         isReadOnly: false,
         members: [],
       });
@@ -279,19 +281,39 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                 </p>
               </div>
 
-              {/* Description */}
+              {/* Topic */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-semibold">
-                  Mô tả nhóm
+                <Label htmlFor="topic" className="text-sm font-semibold">
+                  Chủ đề nhóm
+                </Label>
+                <Input
+                  id="topic"
+                  value={formData.topic}
+                  onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                  placeholder="Ví dụ: Dự án Website 2024 - Sprint 1"
+                  className="h-10 sm:h-11 text-sm sm:text-base"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Chủ đề hoặc mục đích của nhóm
+                </p>
+              </div>
+
+              {/* Announcement */}
+              <div className="space-y-2">
+                <Label htmlFor="announcement" className="text-sm font-semibold">
+                  Thông báo
                 </Label>
                 <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Nhóm này dùng để thảo luận về..."
+                  id="announcement"
+                  value={formData.announcement}
+                  onChange={(e) => setFormData({ ...formData, announcement: e.target.value })}
+                  placeholder="Thông báo quan trọng cho thành viên..."
                   rows={3}
                   className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Thông báo sẽ hiển thị nổi bật trong nhóm
+                </p>
               </div>
 
               {/* Room Type */}

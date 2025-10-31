@@ -76,6 +76,12 @@ public interface IRocketChatAdminProxy
     [Post("/api/v1/channels.setTopic")]
     Task<ApiResponse> SetChannelTopicAsync([Body] SetTopicRequest request);
 
+    [Post("/api/v1/groups.setAnnouncement")]
+    Task<ApiResponse> SetGroupAnnouncementAsync([Body] SetAnnouncementRequest request);
+
+    [Post("/api/v1/channels.setAnnouncement")]
+    Task<ApiResponse> SetChannelAnnouncementAsync([Body] SetAnnouncementRequest request);
+
     [Post("/api/v1/groups.setReadOnly")]
     Task<ApiResponse> SetGroupReadOnlyAsync([Body] SetReadOnlyRequest request);
 

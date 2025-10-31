@@ -84,6 +84,11 @@ namespace SourceAPI.Services.RocketChat
         Task<bool> SetTopicAsync(string roomId, string topic, string roomType = "group");
 
         /// <summary>
+        /// Set room announcement
+        /// </summary>
+        Task<bool> SetAnnouncementAsync(string roomId, string announcement, string roomType = "group");
+
+        /// <summary>
         /// T-36b: Send message to room using Rocket.Chat token directly
         /// </summary>
         Task<string?> SendMessageAsync(string rocketToken, string rocketUserId, string roomId, string text, string? alias = null);
