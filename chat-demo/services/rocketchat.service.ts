@@ -316,13 +316,20 @@ class RocketChatService {
         const username = msg.u?.username || msg.username || 'Unknown';
         return {
           messageId: msg._id || msg.id,
+          roomId: msg.rid,
           username,
           text: msg.msg || msg.text || '',
           timestamp: msg.ts || msg.timestamp,
           deleted: msg.deleted || false,
           edited: msg.editedAt ? true : false,
+          // ✅ Include user object with name for display
+          user: {
+            id: msg.u?._id || msg.u?.id,
+            username: msg.u?.username || msg.username,
+            name: msg.u?.name || msg.u?.username || username,
+          },
           // ✨ Backend đã trả về isCurrentUser rồi, dùng luôn (fallback to compare nếu không có)
-          isCurrentUser: msg.isCurrentUse,
+          isCurrentUser: msg.isCurrentUser,
         };
       });
 

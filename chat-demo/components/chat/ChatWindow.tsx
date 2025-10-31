@@ -30,6 +30,7 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
 
   // Extract primitive values
   const roomId = room.roomId;
@@ -81,14 +82,22 @@ function ChatWindow({ room }: ChatWindowProps) {
   useEffect(() => {
     if (!user?.id) return;
 
+    console.log('🔌 Attempting WebSocket connection...');
+    
     // Connect to WebSocket
     rocketChatWS.connect()
       .then(() => {
+        console.log('✅ WebSocket connected, authenticating...');
         // Authenticate using backend API to get Rocket.Chat token
         return rocketChatWS.authenticateWithBackend(user.id);
       })
+      .then(() => {
+        console.log('✅ WebSocket authenticated successfully');
+        setWsConnected(true);
+      })
       .catch(err => {
         console.error('❌ Failed to connect/authenticate WebSocket:', err);
+        setWsConnected(false);
       });
 
     // Cleanup on unmount
@@ -99,7 +108,17 @@ function ChatWindow({ room }: ChatWindowProps) {
 
   // ✅ Rocket.Chat WebSocket: Subscribe to room messages
   useEffect(() => {
-    if (!roomId || !rocketChatWS.isConnected()) return;
+    if (!roomId) {
+      console.log('⏭️ No roomId, skipping subscription');
+      return;
+    }
+    
+    if (!wsConnected) {
+      console.log('⚠️ WebSocket not connected yet, waiting... (wsConnected:', wsConnected, ')');
+      return;
+    }
+
+    console.log('🔔 Subscribing to room messages:', roomId);
 
     // Handler cho message mới từ WebSocket
     const handleNewMessage = (message: any) => {
@@ -110,11 +129,12 @@ function ChatWindow({ room }: ChatWindowProps) {
         messageId: message._id,
         roomId: message.rid,
         text: message.msg,
+        timestamp: message.ts,
         createdAt: message.ts,
         user: {
           id: message.u._id,
           username: message.u.username,
-          name: message.u.name,
+          name: message.u.name || message.u.username,
         },
         updatedAt: message._updatedAt,
       };
@@ -123,8 +143,12 @@ function ChatWindow({ room }: ChatWindowProps) {
       setMessages(currentMessages => {
         // Check if message already exists (avoid duplicates)
         const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
-        if (exists) return currentMessages;
+        if (exists) {
+          console.log('⏭️ Message already exists, skipping');
+          return currentMessages;
+        }
         
+        console.log('✅ Adding new message to state');
         // Add new message to the end
         return [...currentMessages, newMessage];
       });
@@ -132,12 +156,14 @@ function ChatWindow({ room }: ChatWindowProps) {
 
     // Subscribe to room messages
     const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, handleNewMessage);
+    console.log('✅ Subscribed with ID:', subscriptionId);
 
     // Cleanup on unmount or room change
     return () => {
+      console.log('🧹 Unsubscribing from room:', roomId);
       rocketChatWS.unsubscribe(subscriptionId);
     };
-  }, [roomId]);
+  }, [roomId, wsConnected]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +213,15 @@ function ChatWindow({ room }: ChatWindowProps) {
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
       <RoomHeader room={room} onRefresh={handleRefresh} />
+      
+      {/* WebSocket Status Indicator */}
+      {!wsConnected && (
+        <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center">
+            ⚠️ Đang kết nối realtime... Tin nhắn mới sẽ không cập nhật tự động.
+          </p>
+        </div>
+      )}
 
       {/* Messages Area - Apple Style */}
       <div className="flex-1 overflow-y-auto px-4">
