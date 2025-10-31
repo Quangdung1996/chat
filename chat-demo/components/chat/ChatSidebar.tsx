@@ -131,17 +131,6 @@ export default function ChatSidebar({
       
       if (!subscription) return;
 
-      // 🔥 IMPORTANT: If this is the currently selected room and has unread messages,
-      // automatically mark it as read since user is viewing it
-      if (selectedRoom?.roomId === subscription.rid && subscription.unread > 0) {
-        console.log('🔔 Auto-marking selected room as read:', subscription.rid);
-        rocketChatWS.markRoomAsRead(subscription.rid).catch(error => {
-          console.error('❌ Failed to auto-mark room as read:', error);
-        });
-        // Don't update unread count in UI, keep it at 0 for selected room
-        return;
-      }
-
       // Update rooms state
       setRooms(currentRooms => {
         const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
@@ -154,7 +143,15 @@ export default function ChatSidebar({
             unreadCount: subscription.unread || 0,
             alert: subscription.alert,
           };
+          
+          console.log('✅ Updated room unread count:', {
+            roomId: subscription.rid,
+            unreadCount: subscription.unread || 0
+          });
+          
           return newRooms;
+        } else {
+          console.warn('⚠️ Room not found in list:', subscription.rid);
         }
         
         return currentRooms;
@@ -171,7 +168,7 @@ export default function ChatSidebar({
       console.log('🔕 Unsubscribing from user subscriptions');
       rocketChatWS.unsubscribe(subId);
     };
-  }, [rocketChatUserId, wsReady, selectedRoom?.roomId]); // ✅ Subscribe when WS ready
+  }, [rocketChatUserId, wsReady]); // ✅ Subscribe when WS ready, don't re-subscribe on room change
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
   useEffect(() => {
