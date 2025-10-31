@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, memo } from 'react';
+import { useState, useRef, useMemo, memo, useEffect } from 'react';
 import useSWR from 'swr';
 import rocketChatService from '@/services/rocketchat.service';
 import MessageList from './MessageList';
@@ -38,36 +38,27 @@ function ChatWindow({ room }: ChatWindowProps) {
     [room?.roomId, room?.type]
   );
 
-  // ✅ Memoize SWR options ở ngoài để tránh infinite loop
-  const swrOptions = useMemo(
-    () => ({
+  // SWR hook - auto polling every 5s, auto revalidate on focus
+  const { data: messages = [], error, isLoading, mutate } = useSWR(
+    swrKey,
+    messagesFetcher,
+    {
       refreshInterval: 5000, // ✨ Poll mỗi 5 giây
       revalidateOnFocus: true, // Auto reload khi quay lại tab
       dedupingInterval: 2000, // Không gọi API 2 lần trong 2s
       keepPreviousData: true, // ✨ GIỮ data cũ khi switching
       revalidateOnMount: true, // ✨ Load ngay khi mount
-      compare: (a: any, b: any) => {
-        // ✨ So sánh messages để tránh re-render không cần thiết
-        if (!a || !b) return false;
-        if (a.length !== b.length) return false;
-        return JSON.stringify(a) === JSON.stringify(b);
-      },
-      onSuccess: () => {
-        // Auto scroll sau khi load messages
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    }),
-    [] // ✅ Không có dependencies - chỉ tạo 1 lần
+    }
   );
 
-  // SWR hook - auto polling every 10s, auto revalidate on focus
-  const { data: messages = [], error, isLoading, mutate } = useSWR(
-    swrKey,
-    messagesFetcher,
-    swrOptions
-  );
+  // ✅ Auto scroll khi messages thay đổi - tách riêng khỏi SWR options
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages.length]); // Chỉ scroll khi số lượng messages thay đổi
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
