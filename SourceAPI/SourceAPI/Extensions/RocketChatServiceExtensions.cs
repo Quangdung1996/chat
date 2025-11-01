@@ -6,6 +6,7 @@ using SourceAPI.Models.RocketChat;
 using SourceAPI.Services;
 using SourceAPI.Services.BackgroundQueue;
 using SourceAPI.Services.RocketChat;
+using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 
 namespace SourceAPI.Extensions
