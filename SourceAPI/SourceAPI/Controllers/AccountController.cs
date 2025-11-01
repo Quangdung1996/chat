@@ -17,6 +17,7 @@ using Newtonsoft.Json.Linq;
 using SourceAPI.DataShared.Common;
 using SourceAPI.Services.BackgroundQueue;
 using SourceAPI.Services.RocketChat;
+using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

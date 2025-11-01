@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services;
 using SourceAPI.Services.RocketChat;
+using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
