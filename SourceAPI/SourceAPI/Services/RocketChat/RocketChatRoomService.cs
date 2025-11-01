@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
@@ -17,41 +16,27 @@ namespace SourceAPI.Services.RocketChat
     /// </summary>
     public class RocketChatRoomService : IRocketChatRoomService
     {
-        private readonly IRocketChatAdminProxy _adminApi;
-        private readonly IRocketChatUserProxyFactory _userProxyFactory;
-        private readonly IRocketChatUserTokenService _userTokenService;
+        private readonly IRocketChatAdminProxy _adminProxy;
         private readonly RocketChatConfig _config;
         private readonly ILogger<RocketChatRoomService> _logger;
-        private readonly IRocketChatUserService _userService;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IRocketChatContextService _rocketChatContext;
+        private readonly IRocketChatUserProxy _userProxy;
+
         public RocketChatRoomService(
-            IRocketChatAdminProxy adminApi,
-            IRocketChatUserProxyFactory userProxyFactory,
-            IRocketChatUserTokenService userTokenService,
+            IRocketChatAdminProxy adminProxy,
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger,
-            IRocketChatUserService service,
-            ICurrentUserService currentUserService,
-            IRocketChatContextService rocketChatContext)
+            IRocketChatContext rocketChatContext,
+            IRocketChatUserProxy userProxy)
         {
-            _adminApi = adminApi;
-            _userProxyFactory = userProxyFactory;
-            _userTokenService = userTokenService;
+            _adminProxy = adminProxy;
             _config = config.Value;
             _logger = logger;
-            _userService = service;
-            _currentUserService = currentUserService;
-            _rocketChatContext = rocketChatContext;
+            _userProxy = userProxy;
         }
 
-        /// <summary>
-        /// T-17: Create private group
-        /// DoD: Tạo group private; lưu RoomId/Name vào DB; tuỳ chọn readOnly hoạt động
-        /// </summary>
-        public async Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request, string rocketToken, string rocketUserId)
+        public async Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request)
         {
-            return await CreateRoomInternalAsync(request, "groups.create", "group", rocketToken, rocketUserId);
+            return await CreateRoomInternalAsync(request, "group");
         }
 
         /// <summary>
@@ -60,7 +45,7 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         public async Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request)
         {
-            return await CreateRoomInternalAsync(request, "channels.create", "channel", null, null);
+            return await CreateRoomInternalAsync(request, "channel");
         }
 
         /// <summary>
@@ -73,32 +58,13 @@ namespace SourceAPI.Services.RocketChat
             {
                 _logger.LogInformation($"User {currentUserId} creating DM with: {targetUsername}");
 
-                // Get user mapping to get username
-                var userMapping = RocketChatRepository.GetUserMappingByUserId(currentUserId);
-
-                if (userMapping == null || string.IsNullOrEmpty(userMapping.RocketUsername))
-                {
-                    throw new Exception($"User {currentUserId} not synced to Rocket.Chat");
-                }
-
-                // Get or create token for current user (login with deterministic password)
-                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(currentUserId, userMapping.RocketUsername);
-
-                if (userToken == null || string.IsNullOrEmpty(userToken.AuthToken))
-                {
-                    throw new Exception($"Cannot get auth token for user {currentUserId}");
-                }
-
-                // Create user-specific proxy using factory
-                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
-
                 // Create DM request
                 var request = new CreateDMRequest
                 {
                     Username = targetUsername
                 };
 
-                var response = await userApi.CreateDirectMessageAsync(request);
+                var response = await _userProxy.CreateDirectMessageAsync(request);
 
                 if (response == null || !response.Success)
                 {
@@ -129,9 +95,7 @@ namespace SourceAPI.Services.RocketChat
         /// </summary>
         private async Task<CreateGroupResponse> CreateRoomInternalAsync(
             CreateGroupRequest request,
-            string apiEndpoint,
-            string roomType,
-            string rocketToken, string rocketUserId)
+            string roomType)
         {
             try
             {
@@ -178,15 +142,12 @@ namespace SourceAPI.Services.RocketChat
                 CreateRoomResponse rocketResponse;
                 if (roomType == "group")
                 {
-                    // ✅ Create user-specific proxy with provided Rocket.Chat token (no database lookup)
-                    var userApi = _userProxyFactory.CreateUserProxy(rocketToken, rocketUserId);
-
                     // Use Refit - DelegatingHandler auto adds auth headers
-                    rocketResponse = await userApi.CreatePrivateGroupAsync(createRequest);
+                    rocketResponse = await _userProxy.CreatePrivateGroupAsync(createRequest);
                 }
                 else
                 {
-                    rocketResponse = await _adminApi.CreatePublicChannelAsync(createRequest);
+                    rocketResponse = await _adminProxy.CreatePublicChannelAsync(createRequest);
                 }
 
                 if (rocketResponse == null || !rocketResponse.Success)
@@ -212,22 +173,6 @@ namespace SourceAPI.Services.RocketChat
                 {
                     await SetAnnouncementAsync(room.Id, request.Announcement, roomType);
                 }
-
-                // TODO: Save to database
-                // var roomMapping = new RoomMapping
-                // {
-                //     GroupCode = request.GroupCode,
-                //     RocketRoomId = rocketResponse.Group.Id,
-                //     RoomName = roomName,
-                //     RoomType = roomType,
-                //     DepartmentId = request.DepartmentId,
-                //     ProjectId = request.ProjectId,
-                //     Description = description,
-                //     IsReadOnly = request.IsReadOnly,
-                //     CreatedAt = DateTime.UtcNow
-                // };
-                // await _dbContext.Set<RoomMapping>().AddAsync(roomMapping);
-                // await _dbContext.SaveChangesAsync();
 
                 _logger.LogInformation($"Successfully created {roomType} {roomName} with ID {room.Id}");
 
@@ -340,9 +285,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _adminApi.RenameGroupAsync(request);
+                    response = await _adminProxy.RenameGroupAsync(request);
                 else
-                    response = await _adminApi.RenameChannelAsync(request);
+                    response = await _adminProxy.RenameChannelAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -387,9 +332,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await _adminApi.SetGroupReadOnlyAsync(request);
+                    response = await _adminProxy.SetGroupReadOnlyAsync(request);
                 else
-                    response = await _adminApi.SetChannelReadOnlyAsync(request);
+                    response = await _adminProxy.SetChannelReadOnlyAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -413,15 +358,12 @@ namespace SourceAPI.Services.RocketChat
                     Topic = topic
                 };
 
-                // ✅ Use user's token from context
-                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
-
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await userApi.SetGroupTopicAsync(request);
+                    response = await _userProxy.SetGroupTopicAsync(request);
                 else
-                    response = await userApi.SetChannelTopicAsync(request);
+                    response = await _userProxy.SetChannelTopicAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -445,15 +387,12 @@ namespace SourceAPI.Services.RocketChat
                     Announcement = announcement
                 };
 
-                // ✅ Use user's token from context
-                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
-
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
-                    response = await userApi.SetGroupAnnouncementAsync(request);
+                    response = await _userProxy.SetGroupAnnouncementAsync(request);
                 else
-                    response = await userApi.SetChannelAnnouncementAsync(request);
+                    response = await _userProxy.SetChannelAnnouncementAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -467,7 +406,7 @@ namespace SourceAPI.Services.RocketChat
         /// <summary>
         /// T-36b: Send message to room
         /// </summary>
-        public async Task<string?> SendMessageAsync(string rocketToken, string rocketUserId, string roomId, string text, string? alias = null)
+        public async Task<string?> SendMessageAsync(string roomId, string text, string? alias = null)
         {
             try
             {
@@ -477,11 +416,8 @@ namespace SourceAPI.Services.RocketChat
                     Text = text
                 };
 
-                // ✅ Create user-specific proxy with provided Rocket.Chat token (no database lookup)
-                var userApi = _userProxyFactory.CreateUserProxy(rocketToken, rocketUserId);
-
                 // Use Refit - DelegatingHandler auto adds auth headers
-                var response = await userApi.PostMessageAsync(request);
+                var response = await _userProxy.PostMessageAsync(request);
 
                 if (!response.Success)
                     return null;
@@ -510,29 +446,28 @@ namespace SourceAPI.Services.RocketChat
                     RoomId = roomId,
                     UserId = userId
                 };
-                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType == "group")
                 {
                     if (action == "invite")
-                        response = await userApi.InviteToGroupAsync(request);
+                        response = await _userProxy.InviteToGroupAsync(request);
                     else if (action == "kick")
-                        response = await userApi.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await _userProxy.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action == "addModerator")
-                        response = await userApi.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await _userProxy.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
                 else
                 {
                     if (action == "invite")
-                        response = await _adminApi.InviteToChannelAsync(request);
+                        response = await _adminProxy.InviteToChannelAsync(request);
                     else if (action == "kick")
-                        response = await _adminApi.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminProxy.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action == "addModerator")
-                        response = await _adminApi.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await _adminProxy.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
@@ -566,17 +501,21 @@ namespace SourceAPI.Services.RocketChat
                 switch (endpoint)
                 {
                     case "groups.archive":
-                        response = await _adminApi.ArchiveGroupAsync(request);
+                        response = await _adminProxy.ArchiveGroupAsync(request);
                         break;
+
                     case "channels.archive":
-                        response = await _adminApi.ArchiveChannelAsync(request);
+                        response = await _adminProxy.ArchiveChannelAsync(request);
                         break;
+
                     case "groups.delete":
-                        response = await _adminApi.DeleteGroupAsync(request);
+                        response = await _adminProxy.DeleteGroupAsync(request);
                         break;
+
                     case "channels.delete":
-                        response = await _adminApi.DeleteChannelAsync(request);
+                        response = await _adminProxy.DeleteChannelAsync(request);
                         break;
+
                     default:
                         _logger.LogWarning("Unknown endpoint: {Endpoint}", endpoint);
                         return false;
@@ -598,41 +537,25 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                var userId = _currentUserService.UserId;
-                // Get user mapping to retrieve username
-                var mapping = await _userService.GetMappingAsync(userId);
-                if (mapping == null)
-                {
-                    _logger.LogWarning($"User {userId} is not synced to Rocket.Chat");
-                    return default;
-                }
-
-                // Get user token and create user-specific proxy
-                var userToken = await _userTokenService.GetOrCreateUserTokenAsync(userId, mapping.RocketUsername);
-                var userApi = _userProxyFactory.CreateUserProxy(userToken.AuthToken, userToken.UserId);
-
-
-                _logger.LogInformation($"Getting messages from room {roomId} (type: {roomType})");
-
                 RoomMessagesResponse response;
 
                 // Call appropriate API based on room type
                 if (roomType == "group" || roomType == "p")
                 {
-                    response = await userApi.GetGroupMessagesAsync(roomId, count, offset);
+                    response = await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
                 }
                 else if (roomType == "channel")
                 {
-                    response = await userApi.GetChannelMessagesAsync(roomId, count, offset);
+                    response = await _userProxy.GetChannelMessagesAsync(roomId, count, offset);
                 }
                 else if (roomType == "dm" || roomType == "d")
                 {
-                    response = await userApi.GetDirectMessagesAsync(roomId, count, offset);
+                    response = await _userProxy.GetDirectMessagesAsync(roomId, count, offset);
                 }
                 else
                 {
                     _logger.LogWarning($"Unknown room type: {roomType}, defaulting to group");
-                    response = await userApi.GetGroupMessagesAsync(roomId, count, offset);
+                    response = await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
                 }
 
                 if (response == null || !response.Success)
@@ -642,14 +565,7 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 _logger.LogInformation($"Retrieved {response.Messages.Count} messages from room {roomId}");
-                return response.Messages.OrderBy(x => x.Ts).Select(x =>
-                {
-                    if (x.U.Username == mapping.RocketUsername)
-                    {
-                        x.IsCurrentUser = true;
-                    }
-                    return x;
-                }).ToList();
+                return response.Messages.OrderBy(x => x.Ts).ToList();
             }
             catch (Exception ex)
             {
@@ -658,34 +574,21 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get all rooms user is subscribed to using Rocket.Chat token from header
-        /// Direct authentication with Rocket.Chat without internal userId mapping
-        /// </summary>
-        public async Task<List<SubscriptionData>> GetUserRoomsByTokenAsync(string authToken, string rocketUserId)
+        public async Task<List<SubscriptionData>> GetUserRoomsByTokenAsync()
         {
             try
             {
-                _logger.LogInformation($"Getting rooms for Rocket.Chat user {rocketUserId} using token");
-
-                // Create user-specific proxy with provided token
-                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
-
-                // Get user's subscriptions (rooms they're in)
-                var response = await userApi.GetUserSubscriptionsAsync();
+                var response = await _userProxy.GetUserSubscriptionsAsync();
 
                 if (response == null || !response.Success)
                 {
-                    _logger.LogWarning($"Failed to get rooms for Rocket.Chat user {rocketUserId}");
                     return new List<SubscriptionData>();
                 }
 
-                _logger.LogInformation($"Retrieved {response.Update.Count} rooms for Rocket.Chat user {rocketUserId}");
                 return response.Update;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting rooms for Rocket.Chat user {rocketUserId}: {ex.Message}");
                 return new List<SubscriptionData>();
             }
         }
@@ -699,9 +602,6 @@ namespace SourceAPI.Services.RocketChat
             {
                 _logger.LogInformation($"User leaving room {roomId} (type: {roomType})");
 
-                // Get current user's token from context
-                var userApi = _userProxyFactory.CreateUserProxy(_rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId);
-
                 var request = new LeaveRoomRequest { RoomId = roomId };
                 ApiResponse response;
 
@@ -710,15 +610,17 @@ namespace SourceAPI.Services.RocketChat
                 {
                     case "group":
                     case "p":
-                        response = await userApi.LeaveGroupAsync(request);
+                        response = await _userProxy.LeaveGroupAsync(request);
                         break;
+
                     case "channel":
                     case "c":
-                        response = await userApi.LeaveChannelAsync(request);
+                        response = await _userProxy.LeaveChannelAsync(request);
                         break;
+
                     default:
                         _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
-                        response = await userApi.LeaveGroupAsync(request);
+                        response = await _userProxy.LeaveGroupAsync(request);
                         break;
                 }
 
@@ -740,14 +642,11 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        public async Task<RoomMembersResponse> GetRoomMembersAsync(string authToken, string rocketUserId, string roomId, string roomType = "group")
+        public async Task<RoomMembersResponse> GetRoomMembersAsync(string roomId, string roomType = "group")
         {
             try
             {
-                _logger.LogInformation($"Getting members for room {roomId} (type: {roomType}) as user {rocketUserId}");
-
-                // Create user-specific proxy with provided token
-                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
+                _logger.LogInformation($"Getting members for room {roomId} (type: {roomType})");
 
                 RoomMembersResponse response;
 
@@ -756,19 +655,22 @@ namespace SourceAPI.Services.RocketChat
                 {
                     case "group":
                     case "p":
-                        response = await userApi.GetGroupMembersAsync(roomId);
+                        response = await _userProxy.GetGroupMembersAsync(roomId);
                         break;
+
                     case "channel":
                     case "c":
-                        response = await userApi.GetChannelMembersAsync(roomId);
+                        response = await _userProxy.GetChannelMembersAsync(roomId);
                         break;
+
                     case "direct":
                     case "d":
-                        response = await userApi.GetDirectMessageMembersAsync(roomId);
+                        response = await _userProxy.GetDirectMessageMembersAsync(roomId);
                         break;
+
                     default:
                         _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
-                        response = await userApi.GetGroupMembersAsync(roomId);
+                        response = await _userProxy.GetGroupMembersAsync(roomId);
                         break;
                 }
 
@@ -788,14 +690,11 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        public async Task<RoomInfoResponse> GetRoomInfoAsync(string authToken, string rocketUserId, string roomId, string roomType = "group")
+        public async Task<RoomInfoResponse> GetRoomInfoAsync(string roomId, string roomType = "group")
         {
             try
             {
-                _logger.LogInformation($"Getting info for room {roomId} (type: {roomType}) as user {rocketUserId}");
-
-                // Create user-specific proxy with provided token
-                var userApi = _userProxyFactory.CreateUserProxy(authToken, rocketUserId);
+                _logger.LogInformation($"Getting info for room {roomId} (type: {roomType})");
 
                 RoomInfoResponse response;
 
@@ -804,15 +703,17 @@ namespace SourceAPI.Services.RocketChat
                 {
                     case "group":
                     case "p":
-                        response = await userApi.GetGroupInfoAsync(roomId);
+                        response = await _userProxy.GetGroupInfoAsync(roomId);
                         break;
+
                     case "channel":
                     case "c":
-                        response = await userApi.GetChannelInfoAsync(roomId);
+                        response = await _userProxy.GetChannelInfoAsync(roomId);
                         break;
+
                     default:
                         _logger.LogWarning($"Unknown room type '{roomType}' for info request, defaulting to group");
-                        response = await userApi.GetGroupInfoAsync(roomId);
+                        response = await _userProxy.GetGroupInfoAsync(roomId);
                         break;
                 }
 
@@ -832,7 +733,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        #endregion
+        #endregion Private Helper Methods
     }
 }
-

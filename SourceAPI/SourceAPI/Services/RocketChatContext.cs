@@ -5,7 +5,7 @@ namespace SourceAPI.Services;
 /// <summary>
 /// Service to access Rocket.Chat authentication context from HTTP headers
 /// </summary>
-public interface IRocketChatContextService
+public interface IRocketChatContext
 {
     string? RocketChatToken { get; }
     string? RocketChatUserId { get; }
@@ -16,11 +16,11 @@ public interface IRocketChatContextService
 /// Implementation that extracts Rocket.Chat token and userId from HttpContext.Items
 /// (populated by RocketChatTokenMiddleware)
 /// </summary>
-public sealed class RocketChatContextService : IRocketChatContextService
+public sealed class RocketChatContext : IRocketChatContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RocketChatContextService(IHttpContextAccessor httpContextAccessor)
+    public RocketChatContext(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
     }

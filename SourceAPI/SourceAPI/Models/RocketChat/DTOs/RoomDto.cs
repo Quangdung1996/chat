@@ -129,6 +129,7 @@ public class RoomActionRequest
 /// </summary>
 public class CreateDMRequest
 {
+    [JsonProperty("username")]
     public string Username { get; set; } = string.Empty;
 }
 

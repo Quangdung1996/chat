@@ -1,8 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Refit;
 using SourceAPI.Infrastructure.Handlers;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
@@ -39,58 +36,16 @@ namespace SourceAPI.Extensions
             // Register DelegatingHandlers
             services.AddTransient<RocketChatErrorHandlingDelegatingHandler>();
             services.AddTransient<LoggingDelegatingHandler>();
-            services.AddTransient<RocketChatAuthDelegatingHandler>();
+            services.AddTransient<RocketChatAdminAuthDelegatingHandler>();
 
-            // Configure Newtonsoft.Json settings for Refit
-            var refitSettings = new RefitSettings
-            {
-                ContentSerializer = new NewtonsoftJsonContentSerializer(
-                    new JsonSerializerSettings
-                    {
-                        ContractResolver = new DefaultContractResolver
-                        {
-                            NamingStrategy = new CamelCaseNamingStrategy()
-                        },
-                        NullValueHandling = NullValueHandling.Ignore
-                    }
-                )
-            };
+            // Public Proxy (no auth)
+            services.AddRocketChatProxy<IRocketChatPublicProxy>(rocketChatConfig.BaseUrl, RocketChatProxyType.Public);
 
-            // Register Public Proxy WITHOUT auth handler (for login, public endpoints)
-            services.AddRefitClient<IRocketChatPublicProxy>(refitSettings)
-                .ConfigureHttpClient(client =>
-                {
-                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
-                    client.Timeout = TimeSpan.FromSeconds(30);
-                })
-                .AddHttpMessageHandler<LoggingDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>(); // NO Auth Handler!
+            // Admin Proxy (with admin auth)
+            services.AddRocketChatProxy<IRocketChatAdminProxy>(rocketChatConfig.BaseUrl, RocketChatProxyType.Admin);
 
-            services.AddRefitClient<IRocketChatAdminProxy>(refitSettings)
-                .ConfigureHttpClient(client =>
-                {
-                    client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
-                    client.Timeout = TimeSpan.FromSeconds(30);
-                })
-                .AddHttpMessageHandler<LoggingDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatAuthDelegatingHandler>()
-                .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
-
-            // Register User Proxy Factory (for creating user-specific proxies)
-            services.AddSingleton<IRocketChatUserProxyFactory, RocketChatUserProxyFactory>();
-            services.AddHttpClient("RocketChatUser", client =>
-            {
-                client.BaseAddress = new Uri(rocketChatConfig.BaseUrl);
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.DefaultRequestHeaders.Add("User-Agent", "SourceAPI-RocketChat-Integration/1.0");
-                client.Timeout = TimeSpan.FromSeconds(30);
-            })
-              .AddHttpMessageHandler<LoggingDelegatingHandler>()
-              .AddHttpMessageHandler<RocketChatErrorHandlingDelegatingHandler>();
+            // User Proxy (with user context auth)
+            services.AddRocketChatProxy<IRocketChatUserProxy>(rocketChatConfig.BaseUrl, RocketChatProxyType.User);
 
             // Register services
             services.AddScoped<IRocketChatAuthService, RocketChatAuthService>();
@@ -113,10 +68,9 @@ namespace SourceAPI.Extensions
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IRocketChatContextService, RocketChatContextService>();
+            services.AddScoped<IRocketChatContext, RocketChatContext>();
 
             return services;
         }
     }
 }
-

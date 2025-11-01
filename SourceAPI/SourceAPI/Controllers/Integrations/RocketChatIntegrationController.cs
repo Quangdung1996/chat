@@ -21,14 +21,14 @@ namespace SourceAPI.Controllers.Integrations
         private readonly IRocketChatUserService _userService;
         private readonly IRocketChatRoomService _roomService;
         private readonly IRocketChatAutoLoginService _autoLoginService;
-        private readonly IRocketChatContextService _rocketChatContext;
+        private readonly IRocketChatContext _rocketChatContext;
         private readonly ILogger<RocketChatIntegrationController> _logger;
 
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
             IRocketChatAutoLoginService autoLoginService,
-            IRocketChatContextService rocketChatContext,
+            IRocketChatContext rocketChatContext,
             ILogger<RocketChatIntegrationController> logger)
         {
             _userService = userService;
@@ -165,7 +165,7 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        #endregion
+        #endregion User Management
 
         #region Direct Messages
 
@@ -213,7 +213,7 @@ namespace SourceAPI.Controllers.Integrations
         /// Get all rooms for a specific user (subscriptions)
         /// Returns all rooms user is participating in (DMs, groups, channels)
         /// GET /api/integrations/rocket/rooms
-        /// 
+        ///
         /// Requires Rocket.Chat authentication headers:
         /// - X-RocketChat-Token: User's Rocket.Chat auth token
         /// - X-RocketChat-UserId: User's Rocket.Chat user ID
@@ -236,7 +236,7 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 _logger.LogInformation($"Getting rooms for Rocket.Chat user {rocketUserId}");
-                var rooms = await _roomService.GetUserRoomsByTokenAsync(rocketToken, rocketUserId);
+                var rooms = await _roomService.GetUserRoomsByTokenAsync();
 
                 return Ok(new
                 {
@@ -253,7 +253,7 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        #endregion
+        #endregion Direct Messages
 
         #region Room Management (T-19b, T-26, T-30)
 
@@ -273,10 +273,9 @@ namespace SourceAPI.Controllers.Integrations
                     return BadRequest(new { message = "GroupCode is required" });
                 }
 
-
                 // Create new group
                 var result = request.IsPrivate
-                    ? await _roomService.CreateGroupAsync(request, _rocketChatContext.RocketChatToken, _rocketChatContext.RocketChatUserId)
+                    ? await _roomService.CreateGroupAsync(request)
                     : await _roomService.CreateChannelAsync(request);
 
                 if (!result.Success)
@@ -446,7 +445,7 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        #endregion
+        #endregion Room Management (T-19b, T-26, T-30)
 
         #region Member Management (T-20, T-21, T-22, T-23, T-24, T-27)
 
@@ -652,7 +651,7 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 _logger.LogInformation($"Getting members for room {roomId} (type: {roomType})");
-                var response = await _roomService.GetRoomMembersAsync(rocketToken, rocketUserId, roomId, roomType);
+                var response = await _roomService.GetRoomMembersAsync(roomId, roomType);
 
                 if (!response.Success)
                 {
@@ -697,7 +696,7 @@ namespace SourceAPI.Controllers.Integrations
                 }
 
                 _logger.LogInformation($"Getting info for room {roomId} (type: {roomType})");
-                var response = await _roomService.GetRoomInfoAsync(rocketToken, rocketUserId, roomId, roomType);
+                var response = await _roomService.GetRoomInfoAsync(roomId, roomType);
 
                 if (!response.Success)
                 {
@@ -706,7 +705,6 @@ namespace SourceAPI.Controllers.Integrations
 
                 // Extract room info from appropriate field based on response
                 var roomInfo = response.Group;
-
 
                 return Ok(new
                 {
@@ -772,7 +770,7 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        #endregion
+        #endregion Member Management (T-20, T-21, T-22, T-23, T-24, T-27)
 
         #region Messaging (T-36b)
 
@@ -801,8 +799,6 @@ namespace SourceAPI.Controllers.Integrations
 
                 // ✅ Send message using Rocket.Chat token directly (no database lookup)
                 var messageId = await _roomService.SendMessageAsync(
-                    _rocketChatContext.RocketChatToken!,
-                    _rocketChatContext.RocketChatUserId!,
                     request.RoomId,
                     request.Text,
                     request.Alias);
@@ -853,7 +849,7 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        #endregion
+        #endregion Messaging (T-36b)
     }
 
     #region Request Models
@@ -914,5 +910,5 @@ namespace SourceAPI.Controllers.Integrations
         public string? RedirectPath { get; set; }
     }
 
-    #endregion
+    #endregion Request Models
 }

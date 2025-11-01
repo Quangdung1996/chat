@@ -1,86 +1,74 @@
-using Microsoft.Extensions.Logging;
-using SourceAPI.Services.RocketChat;
+﻿using Microsoft.Extensions.Logging;
+using SourceAPI.Services;
 using System;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Infrastructure.Handlers
-{
-    /// <summary>
-    /// DelegatingHandler to automatically add RocketChat authentication headers
-    /// Handles token refresh and retry logic
-    /// </summary>
-    public class RocketChatAuthDelegatingHandler : DelegatingHandler
-    {
-        private readonly IRocketChatAuthService _authService;
-        private readonly ILogger<RocketChatAuthDelegatingHandler> _logger;
+namespace SourceAPI.Infrastructure.Handlers;
 
-        public RocketChatAuthDelegatingHandler(
-            IRocketChatAuthService authService,
-            ILogger<RocketChatAuthDelegatingHandler> logger)
+public abstract class RocketChatAuthDelegatingHandlerBase : DelegatingHandler
+{
+    protected readonly ILogger Logger;
+
+    protected RocketChatAuthDelegatingHandlerBase(ILogger logger)
+    {
+        Logger = logger;
+    }
+
+    /// <summary>
+    /// Derived classes implement this to provide auth token and userId
+    /// </summary>
+    protected abstract Task<(string authToken, string userId)> GetAuthCredentialsAsync();
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        // Skip authentication for login endpoints
+        if (request.RequestUri?.AbsolutePath.Contains("/api/v1/login") == true)
         {
-            _authService = authService;
-            _logger = logger;
+            return await base.SendAsync(request, cancellationToken);
         }
 
-        protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
+        try
         {
-            // Skip authentication for login endpoints
-            if (request.RequestUri?.AbsolutePath.Contains("/api/v1/login") == true)
-            {
-                return await base.SendAsync(request, cancellationToken);
-            }
+            // Get credentials from derived class
+            var (authToken, userId) = await GetAuthCredentialsAsync();
 
-            try
-            {
-                // Get admin token (cached)
-                var token = await _authService.GetAdminTokenAsync();
+            // Add authentication headers
+            request.Headers.Add("X-Auth-Token", authToken);
+            request.Headers.Add("X-User-Id", userId);
 
-                // Add authentication headers
-                request.Headers.Add("X-Auth-Token", token.AuthToken);
-                request.Headers.Add("X-User-Id", token.UserId);
+            Logger.LogDebug("Added RocketChat auth headers for request: {Method} {Uri}",
+                request.Method, request.RequestUri);
 
-                _logger.LogDebug("Added RocketChat auth headers for request: {Method} {Uri}",
-                    request.Method, request.RequestUri);
-
-                var response = await base.SendAsync(request, cancellationToken);
-
-                // If unauthorized, try to refresh token and retry once
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    _logger.LogWarning("Received 401 Unauthorized, attempting token refresh...");
-
-                    // Force refresh token
-                    token = await _authService.RefreshAdminTokenAsync();
-
-                    // Update headers with new token
-                    request.Headers.Remove("X-Auth-Token");
-                    request.Headers.Remove("X-User-Id");
-                    request.Headers.Add("X-Auth-Token", token.AuthToken);
-                    request.Headers.Add("X-User-Id", token.UserId);
-
-                    // Retry request
-                    response = await base.SendAsync(request, cancellationToken);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        _logger.LogInformation("Token refresh successful, request succeeded");
-                    }
-                }
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in RocketChatAuthDelegatingHandler for {Method} {Uri}",
-                    request.Method, request.RequestUri);
-                throw;
-            }
+            var response = await base.SendAsync(request, cancellationToken);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in RocketChat auth handler for {Method} {Uri}",
+                request.Method, request.RequestUri);
+            throw;
         }
     }
 }
 
+public class RocketChatAuthDelegatingHandler : RocketChatAuthDelegatingHandlerBase
+{
+    private readonly IRocketChatContext _context;
+
+    public RocketChatAuthDelegatingHandler(
+        IRocketChatContext context,
+        ILogger<RocketChatAuthDelegatingHandler> logger)
+        : base(logger)
+    {
+        _context = context;
+    }
+
+    protected override Task<(string authToken, string userId)> GetAuthCredentialsAsync()
+    {
+        return Task.FromResult((_context.RocketChatToken, _context.RocketChatUserId));
+    }
+}
