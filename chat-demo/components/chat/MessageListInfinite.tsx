@@ -25,6 +25,7 @@ function MessageListInfinite({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
   const previousScrollHeight = useRef(0);
+  const hasUserScrolled = useRef(false); // Track if user has manually scrolled
 
   const {
     data,
@@ -61,6 +62,21 @@ function MessageListInfinite({
     }
   }, [allMessages.length]);
 
+  // Track user scroll to enable infinite scroll only after user interaction
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+
+    const handleScroll = () => {
+      hasUserScrolled.current = true;
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // Intersection Observer for infinite scroll (load older messages when scrolling up)
   useEffect(() => {
     if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) {
@@ -69,23 +85,18 @@ function MessageListInfinite({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Chỉ load khi user scroll lên top (scrollTop gần 0)
-        // Tránh auto-load khi button xuất hiện lần đầu
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          const scrollTop = scrollRef.current?.scrollTop || 0;
-          // Chỉ trigger khi user đã scroll lên gần top (trong 100px từ đỉnh)
-          if (scrollTop < 100) {
-            // Store current scroll position before loading more
-            if (scrollRef.current) {
-              previousScrollHeight.current = scrollRef.current.scrollHeight;
-            }
-            fetchNextPage();
+        // Chỉ load khi user đã thực sự scroll (tránh auto-load khi page vừa load)
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && hasUserScrolled.current) {
+          // Store current scroll position before loading more
+          if (scrollRef.current) {
+            previousScrollHeight.current = scrollRef.current.scrollHeight;
           }
+          fetchNextPage();
         }
       },
       { 
-        threshold: 0.5, // Giảm xuống 50% để sensitive hơn khi scroll
-        rootMargin: '100px' // Trigger trước 100px
+        threshold: 0.5,
+        rootMargin: '100px' // Trigger trước 100px khi scroll gần đến
       }
     );
 
@@ -110,6 +121,7 @@ function MessageListInfinite({
   useEffect(() => {
     isInitialLoad.current = true;
     previousScrollHeight.current = 0;
+    hasUserScrolled.current = false; // Reset scroll tracking
   }, [roomId]);
 
   if (isLoading) {
