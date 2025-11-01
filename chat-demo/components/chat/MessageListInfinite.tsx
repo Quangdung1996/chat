@@ -69,15 +69,24 @@ function MessageListInfinite({
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Chỉ load khi user scroll lên top (scrollTop gần 0)
+        // Tránh auto-load khi button xuất hiện lần đầu
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          // Store current scroll position before loading more
-          if (scrollRef.current) {
-            previousScrollHeight.current = scrollRef.current.scrollHeight;
+          const scrollTop = scrollRef.current?.scrollTop || 0;
+          // Chỉ trigger khi user đã scroll lên gần top (trong 100px từ đỉnh)
+          if (scrollTop < 100) {
+            // Store current scroll position before loading more
+            if (scrollRef.current) {
+              previousScrollHeight.current = scrollRef.current.scrollHeight;
+            }
+            fetchNextPage();
           }
-          fetchNextPage();
         }
       },
-      { threshold: 1.0 }
+      { 
+        threshold: 0.5, // Giảm xuống 50% để sensitive hơn khi scroll
+        rootMargin: '100px' // Trigger trước 100px
+      }
     );
 
     observer.observe(loadMoreRef.current);
