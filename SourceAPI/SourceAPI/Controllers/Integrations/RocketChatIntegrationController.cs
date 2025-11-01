@@ -22,11 +22,13 @@ namespace SourceAPI.Controllers.Integrations
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
-            ILogger<RocketChatIntegrationController> logger)
+            ILogger<RocketChatIntegrationController> logger,
+            IRocketChatUserTokenService rocketChatUserTokenService)
         {
             _userService = userService;
             _roomService = roomService;
             _logger = logger;
+            _rocketChatUserTokenService = rocketChatUserTokenService;
         }
 
         #region User Management
@@ -90,11 +92,11 @@ namespace SourceAPI.Controllers.Integrations
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(401)]
-        public async Task<IActionResult> GetLoginToken([FromBody] GetLoginTokenRequest request)
+        public async Task<IActionResult> GetLoginToken()
         {
             try
             {
-                var token = await _rocketChatUserTokenService.GetOrCreateUserTokenAsync(request.UserId);
+                var token = await _rocketChatUserTokenService.GetOrCreateUserTokenAsync();
 
                 return Ok(new
                 {
@@ -106,13 +108,6 @@ namespace SourceAPI.Controllers.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting login token for user {request.UserId}");
-
-                if (ex.Message.Contains("not synced"))
-                {
-                    return NotFound(new { success = false, message = ex.Message });
-                }
-
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
@@ -763,11 +758,6 @@ namespace SourceAPI.Controllers.Integrations
     {
         public string Topic { get; set; } = string.Empty;
         public string? RoomType { get; set; } = "group";
-    }
-
-    public class GetLoginTokenRequest
-    {
-        public int UserId { get; set; }
     }
 
     public class GetLoginUrlRequest

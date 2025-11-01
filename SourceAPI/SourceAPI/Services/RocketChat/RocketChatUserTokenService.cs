@@ -11,7 +11,7 @@ namespace SourceAPI.Services.RocketChat;
 
 public interface IRocketChatUserTokenService
 {
-    Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId);
+    Task<AuthTokenDto> GetOrCreateUserTokenAsync();
 }
 
 public class RocketChatUserTokenService : IRocketChatUserTokenService
@@ -22,23 +22,26 @@ public class RocketChatUserTokenService : IRocketChatUserTokenService
     private const string CACHE_KEY_PREFIX = "RocketChatUserToken_";
     private static readonly TimeSpan CACHE_DURATION = TimeSpan.FromHours(10); // Token valid 24h, cache 23h
     private readonly IRocketChatUserService _userService;
-
+    private readonly ICurrentUserService _currentUserService;
     public RocketChatUserTokenService(
         IRocketChatPublicProxy publicApi,
         IMemoryCache cache,
         ILogger<RocketChatUserTokenService> logger,
-        IRocketChatUserService userService)
+        IRocketChatUserService userService,
+        ICurrentUserService currentUserService)
     {
         _publicApi = publicApi;
         _cache = cache;
         _logger = logger;
         _userService = userService;
+        _currentUserService = currentUserService;
     }
 
-    public async Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId)
+    public async Task<AuthTokenDto> GetOrCreateUserTokenAsync()
     {
         try
         {
+            int userId = _currentUserService.UserId;
             var mapping = _userService.GetUserMapping(userId);
             if (mapping == null)
             {
@@ -98,7 +101,7 @@ public class RocketChatUserTokenService : IRocketChatUserTokenService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error getting token for user {userId}: {ex.Message}");
+            _logger.LogError(ex, $"Error getting token : {ex.Message}");
             throw;
         }
     }

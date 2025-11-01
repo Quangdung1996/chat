@@ -27,10 +27,13 @@ namespace SourceAPI.Extensions
                 throw new InvalidOperationException("RocketChat configuration is missing in appsettings.json");
             }
 
+            services.AddScoped<IRocketChatContext, RocketChatContext>();
+
             // Register DelegatingHandlers
             services.AddTransient<RocketChatErrorHandlingDelegatingHandler>();
             services.AddTransient<LoggingDelegatingHandler>();
             services.AddTransient<RocketChatAdminAuthDelegatingHandler>();
+            services.AddTransient<RocketChatAuthDelegatingHandler>();
 
             // Public Proxy (no auth)
             services.AddRocketChatProxy<IRocketChatPublicProxy>(rocketChatConfig.BaseUrl, RocketChatProxyType.Public);
@@ -55,13 +58,13 @@ namespace SourceAPI.Extensions
             services.AddHostedService<QueuedHostedService>();
 
             // Register background service for auto-sync
-            services.AddHostedService<RocketChatSyncBackgroundService>();
+            //services.AddHostedService<RocketChatSyncBackgroundService>();
 
             // Register memory cache if not already registered
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IRocketChatContext, RocketChatContext>();
+
 
             return services;
         }

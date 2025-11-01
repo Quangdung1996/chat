@@ -23,7 +23,6 @@ namespace SourceAPI.Services.RocketChat
             IRocketChatAdminProxy adminProxy,
             IOptions<RocketChatConfig> config,
             ILogger<RocketChatRoomService> logger,
-            IRocketChatContext rocketChatContext,
             IRocketChatUserProxy userProxy)
         {
             _adminProxy = adminProxy;
