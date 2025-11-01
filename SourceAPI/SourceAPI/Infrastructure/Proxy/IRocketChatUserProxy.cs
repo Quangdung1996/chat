@@ -51,7 +51,7 @@ public interface IRocketChatUserProxy
 
     // Get messages from room
     [Get("/api/v1/groups.messages")]
-    Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
+    Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0, [Query] string sort = "%7B%22ts%22%3A-1%7D");
 
     [Get("/api/v1/channels.messages")]
     Task<RoomMessagesResponse> GetChannelMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
