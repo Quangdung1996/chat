@@ -260,6 +260,14 @@ export default function ChatSidebar({
             
             return newRooms;
           } else if (action === 'inserted') {
+            // 🔧 FIX: Check for duplicates before adding (race condition protection)
+            // This prevents duplicate rooms when multiple WS events arrive simultaneously
+            const exists = currentRooms.some(r => r.roomId === room._id);
+            if (exists) {
+              console.log('⚠️ [WS] Room already exists, skipping duplicate insert:', room._id);
+              return currentRooms;
+            }
+            
             // ✅ Add new room - create full object with required fields
             const newRoom: UserSubscription = {
               id: room._id,
@@ -277,6 +285,12 @@ export default function ChatSidebar({
               },
               lastMessageTime: new Date(), // ✅ New rooms get current timestamp
             };
+            
+            console.log('✅ [WS] Adding new room:', {
+              roomId: newRoom.roomId,
+              name: newRoom.fullName,
+              type: newRoom.type
+            });
             
             return [newRoom, ...currentRooms];
           }
