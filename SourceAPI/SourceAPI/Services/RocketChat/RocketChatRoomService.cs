@@ -116,6 +116,7 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 // Prepare Refit request
+                // Note: Members should contain usernames, not userIds (RocketChat API requirement)
                 var createRequest = new CreateRoomRequest
                 {
                     Name = roomName,

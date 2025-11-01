@@ -98,7 +98,7 @@ export interface CreateGroupRequest {
   topic?: string;
   announcement?: string;
   isReadOnly?: boolean;
-  members?: string[]; // Array of Rocket.Chat user IDs
+  members?: string[]; // Array of Rocket.Chat usernames (not user IDs)
   createdBy?: number;
 }
 

@@ -139,10 +139,23 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     setError(null);
 
     try {
+      // Convert userIds to usernames (RocketChat API requires usernames for groups.create)
+      const memberUsernames = selectedMembers
+        .map(userId => {
+          const user = users.find(u => u._id === userId);
+          return user?.username;
+        })
+        .filter((username): username is string => username !== undefined);
+
+      console.log('🔄 Converting members:', {
+        selectedMemberIds: selectedMembers,
+        memberUsernames,
+      });
+
       // Create room with selected members
       const requestData = {
         ...formData,
-        members: selectedMembers,
+        members: memberUsernames,
       };
 
       const response = await rocketChatService.createGroup(requestData);
