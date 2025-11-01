@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
@@ -52,6 +52,9 @@ export default function ChatSidebar({
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [creatingDM, setCreatingDM] = useState<string | null>(null);
+  
+  // 🔧 FIX: Track pending room additions to prevent race condition duplicates
+  const pendingRoomAdditions = useRef<Set<string>>(new Set());
 
   // ✅ Load rooms on mount
   useEffect(() => {
@@ -260,13 +263,22 @@ export default function ChatSidebar({
             
             return newRooms;
           } else if (action === 'inserted') {
-            // 🔧 FIX: Check for duplicates before adding (race condition protection)
-            // This prevents duplicate rooms when multiple WS events arrive simultaneously
-            const exists = currentRooms.some(r => r.roomId === room._id);
-            if (exists) {
-              console.log('⚠️ [WS] Room already exists, skipping duplicate insert:', room._id);
+            // 🔧 FIX: Double-check for duplicates (race condition protection)
+            // 1. Check if this room is already being added by another concurrent event
+            if (pendingRoomAdditions.current.has(room._id)) {
+              console.log('⚠️ [WS] Room is already being added (pending), skipping:', room._id);
               return currentRooms;
             }
+            
+            // 2. Check if room already exists in current state
+            const exists = currentRooms.some(r => r.roomId === room._id);
+            if (exists) {
+              console.log('⚠️ [WS] Room already exists in state, skipping:', room._id);
+              return currentRooms;
+            }
+            
+            // 🔒 Mark this room as being added (prevents concurrent duplicates)
+            pendingRoomAdditions.current.add(room._id);
             
             // ✅ Add new room - create full object with required fields
             const newRoom: UserSubscription = {
@@ -291,6 +303,11 @@ export default function ChatSidebar({
               name: newRoom.fullName,
               type: newRoom.type
             });
+            
+            // 🔓 Clear pending status after a short delay (cleanup)
+            setTimeout(() => {
+              pendingRoomAdditions.current.delete(room._id);
+            }, 1000);
             
             return [newRoom, ...currentRooms];
           }
