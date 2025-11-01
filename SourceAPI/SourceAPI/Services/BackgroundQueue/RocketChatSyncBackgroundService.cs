@@ -14,8 +14,6 @@ namespace SourceAPI.Services.BackgroundQueue
     {
         private readonly ILogger<RocketChatSyncBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private Timer? _timer;
-        private int _syncIntervalMinutes = 60; // Default: mỗi 1 giờ
 
         public RocketChatSyncBackgroundService(
             ILogger<RocketChatSyncBackgroundService> logger,
@@ -27,52 +25,29 @@ namespace SourceAPI.Services.BackgroundQueue
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("RocketChat Sync Background Service is starting...");
+            _logger.LogInformation("RocketChat Initial Sync Service is starting...");
 
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
-
-            // Load config từ appsettings (nếu có)
-            using (var scope = _serviceProvider.CreateScope())
+            if (stoppingToken.IsCancellationRequested)
             {
-                try
-                {
-                    var config = scope.ServiceProvider.GetService<Microsoft.Extensions.Configuration.IConfiguration>();
-                    if (config != null)
-                    {
-                        var intervalConfig = config.GetValue<int?>("RocketChat:SyncIntervalMinutes");
-                        if (intervalConfig.HasValue && intervalConfig.Value > 0)
-                        {
-                            _syncIntervalMinutes = intervalConfig.Value;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not load sync interval from config, using default: {Interval} minutes", _syncIntervalMinutes);
-                }
+                return;
             }
 
-            _logger.LogInformation("Sync interval set to {Interval} minutes", _syncIntervalMinutes);
-
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    await SyncUsersAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in RocketChat sync background job");
-                }
-
-                // Đợi interval trước khi chạy lần tiếp theo
-                await Task.Delay(TimeSpan.FromMinutes(_syncIntervalMinutes), stoppingToken);
+                await SyncUsersAsync();
+                _logger.LogInformation("RocketChat Initial Sync completed. Service will now stop.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in RocketChat initial sync");
             }
         }
 
         private async Task SyncUsersAsync()
         {
-            _logger.LogInformation("Starting RocketChat user sync job...");
+            _logger.LogInformation("Starting RocketChat initial user sync...");
 
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -80,6 +55,13 @@ namespace SourceAPI.Services.BackgroundQueue
 
                 try
                 {
+                    var existingMappings = await GetExistingMappingsCountAsync();
+                    if (existingMappings > 0)
+                    {
+                        _logger.LogInformation("RocketChat user mappings already exist ({Count} users). Skipping initial sync.", existingMappings);
+                        return;
+                    }
+
                     var usersToSync = await GetUsersToSyncAsync(scope);
 
                     if (usersToSync == null || usersToSync.Length == 0)
@@ -103,7 +85,6 @@ namespace SourceAPI.Services.BackgroundQueue
                                 continue;
                             }
 
-                            // Check if already synced
                             var existingMapping = await userService.GetMappingAsync(user.UserId);
                             if (existingMapping != null)
                             {
@@ -141,14 +122,29 @@ namespace SourceAPI.Services.BackgroundQueue
                     }
 
                     _logger.LogInformation(
-                        "RocketChat sync job completed. Total: {Total}, Success: {Success}, Errors: {Errors}, Skipped: {Skipped}",
+                        "RocketChat initial sync completed. Total: {Total}, Success: {Success}, Errors: {Errors}, Skipped: {Skipped}",
                         usersToSync.Length, successCount, errorCount, skippedCount
                     );
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Fatal error in sync job");
+                    _logger.LogError(ex, "Fatal error in initial sync");
                 }
+            }
+        }
+
+        private async Task<int> GetExistingMappingsCountAsync()
+        {
+            try
+            {
+                var results = SourceAPI.Core.Repository.RocketChatRepository.GetAllActiveUsers();
+                await Task.CompletedTask;
+                return results?.Length ?? 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking existing mappings");
+                return 0;
             }
         }
 
@@ -156,7 +152,6 @@ namespace SourceAPI.Services.BackgroundQueue
         {
             try
             {
-                // Gọi stored procedure để lấy users chưa sync
                 var results = SourceAPI.Core.Repository.RocketChatRepository.GetUsersForRocketChatSync();
 
                 if (results == null || results.Length == 0)
@@ -164,7 +159,6 @@ namespace SourceAPI.Services.BackgroundQueue
                     return Array.Empty<UserToSyncDto>();
                 }
 
-                // Map from UserToSyncResult to UserToSyncDto
                 var users = new UserToSyncDto[results.Length];
                 for (int i = 0; i < results.Length; i++)
                 {
@@ -189,8 +183,7 @@ namespace SourceAPI.Services.BackgroundQueue
 
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("RocketChat Sync Background Service is stopping...");
-            _timer?.Dispose();
+            _logger.LogInformation("RocketChat Initial Sync Service is stopping...");
             await base.StopAsync(stoppingToken);
         }
     }
