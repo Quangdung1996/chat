@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using SourceAPI.Services.RocketChat;
 using SourceAPI.Services.RocketChat.Interfaces;
 using System.Threading.Tasks;
 
