@@ -49,6 +49,7 @@ export function useMessages({
         currentUsername
       );
 
+      // Có thêm messages nếu nhận đủ số lượng yêu cầu
       const hasMore = response.messages.length === MESSAGES_PER_PAGE;
       const nextOffset = hasMore ? (pageParam as number) + MESSAGES_PER_PAGE : undefined;
 

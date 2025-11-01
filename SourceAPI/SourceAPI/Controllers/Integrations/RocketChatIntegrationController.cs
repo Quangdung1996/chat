@@ -691,16 +691,17 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                var messages = await _roomService.GetRoomMessagesAsync(rocketRoomId, roomType, count, offset);
+                var response = await _roomService.GetRoomMessagesAsync(rocketRoomId, roomType, count, offset);
 
                 return Ok(new
                 {
-                    success = true,
+                    success = response.Success,
                     rocketRoomId,
                     roomType,
-                    count = messages.Count,
-                    offset,
-                    messages
+                    count = response.Count,
+                    offset = response.Offset,
+                    total = response.Total,
+                    messages = response.Messages
                 });
             }
             catch (Exception ex)

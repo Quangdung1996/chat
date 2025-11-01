@@ -42,7 +42,9 @@ function MessageListInfinite({
   });
 
   // Flatten all messages from pages
-  const allMessages = data?.pages.flatMap((page) => page.messages) || [];
+  // API returns newest first, but UI needs oldest first (old messages at top)
+  // So we reverse the entire array after flattening
+  const allMessages = data?.pages.flatMap((page) => page.messages).reverse() || [];
 
   // Notify parent of messages change
   useEffect(() => {
@@ -61,7 +63,9 @@ function MessageListInfinite({
 
   // Intersection Observer for infinite scroll (load older messages when scrolling up)
   useEffect(() => {
-    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {

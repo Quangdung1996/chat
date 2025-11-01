@@ -476,7 +476,7 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        public async Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
+        public async Task<RoomMessagesResponse> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
         {
             try
             {
@@ -504,16 +504,33 @@ namespace SourceAPI.Services.RocketChat
                 if (response == null || !response.Success)
                 {
                     _logger.LogWarning($"Failed to get messages from room {roomId}");
-                    return new List<RoomMessage>();
+                    return new RoomMessagesResponse 
+                    { 
+                        Success = false, 
+                        Messages = new List<RoomMessage>(),
+                        Count = 0,
+                        Offset = offset,
+                        Total = 0
+                    };
                 }
 
-                _logger.LogInformation($"Retrieved {response.Messages.Count} messages from room {roomId}");
-                return response.Messages.OrderBy(x => x.Ts).ToList();
+                _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} messages from room {roomId} (offset: {offset})");
+                // Sort by timestamp descending (newest first) for infinite scroll
+                // First page gets newest messages, subsequent pages get older messages
+                response.Messages = response.Messages.OrderByDescending(x => x.Ts).ToList();
+                return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting messages from room {roomId}: {ex.Message}");
-                return new List<RoomMessage>();
+                return new RoomMessagesResponse 
+                { 
+                    Success = false, 
+                    Messages = new List<RoomMessage>(),
+                    Count = 0,
+                    Offset = offset,
+                    Total = 0
+                };
             }
         }
 
