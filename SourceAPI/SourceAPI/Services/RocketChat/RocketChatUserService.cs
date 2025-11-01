@@ -4,6 +4,7 @@ using SourceAPI.Core.Repository;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat.DTOs;
+using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

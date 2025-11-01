@@ -3,7 +3,7 @@ using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Services.RocketChat
+namespace SourceAPI.Services.RocketChat.Interfaces
 {
     public interface IRocketChatUserService
     {

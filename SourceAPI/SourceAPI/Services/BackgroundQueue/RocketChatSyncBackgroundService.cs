@@ -2,11 +2,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SourceAPI.Services.RocketChat;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Services.RocketChat
+namespace SourceAPI.Services.BackgroundQueue
 {
     public class RocketChatSyncBackgroundService : BackgroundService
     {

@@ -2,7 +2,7 @@ using SourceAPI.Models.RocketChat.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SourceAPI.Services.RocketChat
+namespace SourceAPI.Services.RocketChat.Interfaces
 {
     public interface IRocketChatRoomService
     {

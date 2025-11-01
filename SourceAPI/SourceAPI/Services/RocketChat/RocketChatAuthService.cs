@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
 using SourceAPI.Models.RocketChat.DTOs;
+using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Net.Http;
 using System.Threading;
