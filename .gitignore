@@ -139,3 +139,4 @@ dist
 /SourceAPI/SourceAPI.DataShared/obj
 /SourceAPI/SourceAPI.Shared/obj
 /SourceAPI/.vs
+data/db
