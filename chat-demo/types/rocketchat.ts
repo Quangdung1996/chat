@@ -4,6 +4,54 @@
  * Updated to match backend responses
  */
 
+// ===== ROOM TYPE CONSTANTS =====
+/**
+ * RocketChat Room Types
+ * - 'd': Direct Message (1-1 chat)
+ * - 'p': Private Group (multi-user private room)
+ * - 'c': Public Channel (multi-user public room)
+ */
+export const ROOM_TYPES = {
+  DIRECT: 'd',
+  PRIVATE_GROUP: 'p',
+  PUBLIC_CHANNEL: 'c',
+} as const;
+
+export type RoomType = typeof ROOM_TYPES[keyof typeof ROOM_TYPES];
+
+/**
+ * Room Type API Names (for backend API calls)
+ * Used in API endpoints: 'direct' | 'group' | 'channel'
+ */
+export type RoomTypeApiName = 'direct' | 'group' | 'channel';
+
+/**
+ * Room Type Display Names
+ */
+export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
+  [ROOM_TYPES.DIRECT]: 'Tin nhắn trực tiếp',
+  [ROOM_TYPES.PRIVATE_GROUP]: 'Nhóm riêng tư',
+  [ROOM_TYPES.PUBLIC_CHANNEL]: 'Kênh công khai',
+};
+
+/**
+ * Room Type Icons (emoji)
+ */
+export const ROOM_TYPE_ICONS: Record<RoomType, string> = {
+  [ROOM_TYPES.DIRECT]: '💬',
+  [ROOM_TYPES.PRIVATE_GROUP]: '🔒',
+  [ROOM_TYPES.PUBLIC_CHANNEL]: '📢',
+};
+
+/**
+ * Room Type API Names (for backend API calls)
+ */
+export const ROOM_TYPE_API_NAMES: Record<RoomType, string> = {
+  [ROOM_TYPES.DIRECT]: 'direct',
+  [ROOM_TYPES.PRIVATE_GROUP]: 'group',
+  [ROOM_TYPES.PUBLIC_CHANNEL]: 'channel',
+};
+
 // ===== USER TYPES =====
 export interface RocketChatUser {
   userId: number;
@@ -91,7 +139,7 @@ export interface UserSubscription {
   name: string;
   fullName: string;
   roomName?: string; // Room's display name
-  type: string; // "d" = DM, "p" = private group, "c" = public channel
+  type: RoomType; // Room type: 'd' | 'p' | 'c'
   user: {
     id: string;
     username: string;

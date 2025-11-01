@@ -8,6 +8,11 @@ import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
 import { Search, Plus, X, ChevronDown, MessageSquare, Loader2, XCircle } from 'lucide-react';
 import type { UserSubscription } from '@/types/rocketchat';
+import { 
+  isDirectMessage, 
+  getRoomTypeLabel, 
+  getRoomTypeGradient 
+} from '@/utils/roomTypeUtils';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -550,11 +555,7 @@ export default function ChatSidebar({
                       };
 
                       // Avatar color based on type - Apple style
-                      const getAvatarColor = () => {
-                        if (room.type === 'd') return 'bg-gradient-to-br from-[#007aff] to-[#5856d6]';
-                        if (room.type === 'p') return 'bg-gradient-to-br from-[#5856d6] to-[#af52de]';
-                        return 'bg-gradient-to-br from-[#34c759] to-[#30d158]';
-                      };
+                      const avatarColor = getRoomTypeGradient(room.type);
 
                       return (
                         <button
@@ -573,10 +574,10 @@ export default function ChatSidebar({
                         >
                           <div className="flex items-center gap-3">
                             {/* Avatar - Refined */}
-                            <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColor()} flex items-center justify-center text-white font-semibold text-[15px] shadow-md`}>
+                            <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${avatarColor} flex items-center justify-center text-white font-semibold text-[15px] shadow-md`}>
                               {getInitials(displayName)}
                               {/* Online status (for DMs) */}
-                              {room.type === 'd' && (
+                              {isDirectMessage(room.type) && (
                                 <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#34c759] border-[2.5px] border-white dark:border-[#1c1c1e] rounded-full" />
                               )}
                             </div>
@@ -598,7 +599,7 @@ export default function ChatSidebar({
                                     ? 'text-gray-900 dark:text-white font-medium' 
                                     : 'text-gray-500 dark:text-gray-400'
                                 }`}>
-                                  {room.type === 'd' ? 'Tin nhắn trực tiếp' : room.type === 'p' ? 'Nhóm riêng tư' : 'Kênh công khai'}
+                                  {getRoomTypeLabel(room.type)}
                                 </p>
                                 {hasUnread && (
                                   <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">

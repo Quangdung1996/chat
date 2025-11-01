@@ -8,6 +8,11 @@ import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
 import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 import { useAuthStore } from '@/store/authStore';
+import { 
+  isDirectMessage, 
+  getRoomTypeIcon, 
+  getRoomTypeApiName 
+} from '@/utils/roomTypeUtils';
 
 interface RoomHeaderProps {
   room: UserSubscription;
@@ -27,6 +32,10 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
   const [removingMember, setRemovingMember] = useState(false);
+  
+  // Leave room modal state
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leavingRoom, setLeavingRoom] = useState(false);
 
   // Get current user ID from Zustand store
   const currentUserId = useAuthStore((state) => state.rocketChatUserId);
@@ -36,14 +45,14 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   const loadRoomInfo = async () => {
     try {
       // ✅ Chỉ fetch room info cho group/channel, không cần cho direct message
-      if (room.type === 'd') {
+      if (isDirectMessage(room.type)) {
         setIsReadOnly(false);
         onReadOnlyChange?.(false);
         console.log(`✅ Direct message room ${room.roomId} - skip room info`);
         return;
       }
 
-      const roomType = room.type === 'p' ? 'group' : 'channel';
+      const roomType = getRoomTypeApiName(room.type);
       const response = await rocketChatService.getRoomInfo(room.roomId, roomType);
       
       if (response.success && response.room) {
@@ -72,7 +81,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
     setLoadingMembers(true);
     try {
       // Determine room type for API call
-      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const roomType = getRoomTypeApiName(room.type);
 
       const response = await rocketChatService.getRoomMembers(room.roomId, roomType);
 
@@ -102,7 +111,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
     setRemovingMember(true);
 
     try {
-      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const roomType = getRoomTypeApiName(room.type);
       const response = await rocketChatService.removeMember(room.roomId, memberToRemove.id, roomType);
 
       if (response.success) {
@@ -125,23 +134,23 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
   };
 
   const handleLeaveGroup = async () => {
-    if (!confirm('Bạn có chắc muốn rời khỏi group này?')) {
-      return;
-    }
-
+    setLeavingRoom(true);
     try {
-      const roomType = room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct';
+      const roomType = getRoomTypeApiName(room.type);
       const response = await rocketChatService.leaveRoom(room.roomId, roomType);
 
       if (response.success) {
-        onRefresh();
+        setShowLeaveModal(false);
         setShowMembers(false);
+        onRefresh();
       } else {
-        alert('Không thể rời group. Vui lòng thử lại.');
+        alert('Không thể rời khỏi phòng. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Failed to leave group:', error);
-      alert('Có lỗi xảy ra khi rời group.');
+      console.error('Failed to leave room:', error);
+      alert('Có lỗi xảy ra khi rời khỏi phòng.');
+    } finally {
+      setLeavingRoom(false);
     }
   };
 
@@ -178,7 +187,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
           {/* Room Info */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#007aff] to-[#5856d6] flex items-center justify-center text-white text-sm flex-shrink-0 shadow-md">
-              {room.type === 'd' ? '💬' : room.type === 'p' ? '🔒' : '📢'}
+              {getRoomTypeIcon(room.type)}
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
@@ -191,7 +200,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
               )}
               <div className="flex items-center gap-2.5 mt-0.5">
                 {/* ✅ Chỉ show members count cho group/channel, không cần cho direct message */}
-                {room.type !== 'd' && (
+                {!isDirectMessage(room.type) && (
                   <button
                     onClick={() => {
                       setShowMembers(!showMembers);
@@ -223,7 +232,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
           {/* Actions - Minimalist */}
           <div className="flex items-center gap-0.5">
             {/* ✅ Chỉ show invite button cho group/channel, không cần cho direct message */}
-            {room.type !== 'd' && (
+            {!isDirectMessage(room.type) && (
               <button
                 onClick={() => {
                   setShowMembers(!showMembers);
@@ -253,7 +262,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
 
       {/* Members Dropdown - MS Teams style - MOVED OUTSIDE to avoid stacking context */}
       {/* ✅ Chỉ show members dropdown cho group/channel, không cần cho direct message */}
-      {showMembers && room.type !== 'd' && (
+      {showMembers && !isDirectMessage(room.type) && (
         <>
           {/* Backdrop */}
           <div
@@ -353,7 +362,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
                 <span>Add people</span>
               </button>
               <button
-                onClick={handleLeaveGroup}
+                onClick={() => setShowLeaveModal(true)}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -370,7 +379,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
         onClose={() => setShowInviteModal(false)}
         roomId={room.roomId}
         roomName={room.name}
-        roomType={room.type === 'p' ? 'group' : room.type === 'c' ? 'channel' : 'direct'}
+        roomType={getRoomTypeApiName(room.type)}
         currentMembers={members}
         onSuccess={() => {
           loadMembers();
@@ -385,6 +394,17 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
         onConfirm={handleConfirmRemove}
         onClose={handleCancelRemove}
         loading={removingMember}
+      />
+
+      {/* Confirm Leave Room Modal */}
+      <ConfirmRemoveMemberModal
+        isOpen={showLeaveModal}
+        memberName={room.name}
+        onConfirm={handleLeaveGroup}
+        onClose={() => setShowLeaveModal(false)}
+        loading={leavingRoom}
+        mode="leave"
+        roomType={room.type}
       />
     </>
   );

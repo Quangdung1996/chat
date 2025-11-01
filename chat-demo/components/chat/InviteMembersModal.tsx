@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Users, UserPlus, X, Check, AlertCircle, UserMinus } from 'lucide-react';
-import type { RoomMember } from '@/types/rocketchat';
+import type { RoomMember, RoomTypeApiName } from '@/types/rocketchat';
 import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
 
 interface InviteMembersModalProps {
@@ -23,7 +23,7 @@ interface InviteMembersModalProps {
   onClose: () => void;
   roomId: string;
   roomName?: string;
-  roomType?: string; // 'group' | 'channel' | 'direct'
+  roomType?: RoomTypeApiName;
   currentMembers?: RoomMember[]; // Pass existing members
   onSuccess: () => void;
 }

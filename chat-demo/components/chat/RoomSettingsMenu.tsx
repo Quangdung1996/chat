@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
 import type { UserSubscription } from '@/types/rocketchat';
+import { isDirectMessage, getRoomTypeApiName } from '@/utils/roomTypeUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +40,7 @@ interface RoomSettingsMenuProps {
 
 export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuProps) {
   // Don't show settings for DMs
-  if (room.type === 'd') {
+  if (isDirectMessage(room.type)) {
     return null;
   }
 
@@ -47,7 +48,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const roomType = room.type === 'p' ? 'group' : 'channel';
+  const roomType = getRoomTypeApiName(room.type);
 
   const handleRename = async (newName: string) => {
     setLoading(true);
