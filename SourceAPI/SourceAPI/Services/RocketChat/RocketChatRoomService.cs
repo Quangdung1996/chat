@@ -7,7 +7,6 @@ using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
@@ -476,7 +475,7 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        public async Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
+        public async Task<RoomMessagesResponse> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
         {
             try
             {
@@ -504,16 +503,16 @@ namespace SourceAPI.Services.RocketChat
                 if (response == null || !response.Success)
                 {
                     _logger.LogWarning($"Failed to get messages from room {roomId}");
-                    return new List<RoomMessage>();
+                    return new RoomMessagesResponse();
                 }
 
                 _logger.LogInformation($"Retrieved {response.Messages.Count} messages from room {roomId}");
-                return response.Messages.OrderBy(x => x.Ts).ToList();
+                return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting messages from room {roomId}: {ex.Message}");
-                return new List<RoomMessage>();
+                return new RoomMessagesResponse();
             }
         }
 

@@ -699,8 +699,9 @@ namespace SourceAPI.Controllers.Integrations
                     rocketRoomId,
                     roomType,
                     count = messages.Count,
+                    total = messages.Total,
                     offset,
-                    messages
+                    messages.Messages
                 });
             }
             catch (Exception ex)
