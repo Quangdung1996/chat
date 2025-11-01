@@ -72,9 +72,9 @@ export default function SettingsPage() {
       <Card title="📡 API Endpoints" className="mb-6">
         <div className="space-y-3">
           <div className="border-l-4 border-blue-500 pl-4 py-2">
-            <h4 className="font-semibold text-gray-900 dark:text-white">User Sync</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white">Get Login Token</h4>
             <code className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-              POST {API_CONFIG.endpoints.rocketChat.syncUser}
+              POST {API_CONFIG.endpoints.rocketChat.getLoginToken}
             </code>
           </div>
 
