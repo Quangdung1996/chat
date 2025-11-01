@@ -1,6 +1,6 @@
-namespace SourceAPI.Extensions
+namespace SourceAPI.Helpers.RocketChat
 {
-    public static class RocketChatRoomTypeExtensions
+    public static class RocketChatRoomType
     {
         public static bool IsGroup(this string roomType)
         {

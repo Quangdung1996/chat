@@ -1,6 +1,6 @@
-namespace SourceAPI.Extensions
+namespace SourceAPI.Helpers.RocketChat
 {
-    public static class RocketChatMemberActionExtensions
+    public static class RocketChatMemberAction
     {
         public static bool IsInvite(this string action)
         {

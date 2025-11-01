@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SourceAPI.Extensions;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
