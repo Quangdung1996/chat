@@ -19,6 +19,9 @@ interface MessagesPage {
   messages: ChatMessage[];
   nextOffset: number | undefined;
   hasMore: boolean;
+  total: number;
+  count: number;
+  offset: number;
 }
 
 interface UseMessagesOptions {
@@ -49,14 +52,19 @@ export function useMessages({
         currentUsername
       );
 
-      // Có thêm messages nếu nhận đủ số lượng yêu cầu
-      const hasMore = response.messages.length === MESSAGES_PER_PAGE;
-      const nextOffset = hasMore ? (pageParam as number) + MESSAGES_PER_PAGE : undefined;
+      // Sử dụng total từ API để xác định hasMore chính xác
+      const currentOffset = pageParam as number;
+      const totalFetched = currentOffset + response.messages.length;
+      const hasMore = totalFetched < response.total;
+      const nextOffset = hasMore ? currentOffset + MESSAGES_PER_PAGE : undefined;
 
       return {
         messages: response.messages,
         nextOffset,
         hasMore,
+        total: response.total,
+        count: response.count,
+        offset: response.offset,
       };
     },
     initialPageParam: 0,

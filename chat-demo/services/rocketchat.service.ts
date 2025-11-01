@@ -344,15 +344,16 @@ class RocketChatService {
     count: number = 50,
     offset: number = 0,
     currentUsername?: string
-  ): Promise<{ success: boolean; messages: any[] }> {
+  ): Promise<{ success: boolean; messages: any[]; count: number; offset: number; total: number }> {
     const endpoint = this.endpoints.getMessages.replace('{rocketRoomId}', rocketRoomId);
     const response = await apiClient.get<{ 
       success: boolean; 
       messages: any[];
       rocketRoomId?: string;
       roomType?: string;
-      count?: number;
-      offset?: number;
+      count: number;
+      offset: number;
+      total: number;
     }>(endpoint, {
       params: {
         roomType,  // Backend param: roomType (giá trị: 'd', 'p', 'c')
@@ -397,12 +398,18 @@ class RocketChatService {
       return {
         success: response.success,
         messages: transformedMessages,
+        count: response.count,
+        offset: response.offset,
+        total: response.total,
       };
     }
 
     return {
       success: response.success || false,
       messages: [],
+      count: 0,
+      offset: 0,
+      total: 0,
     };
   }
 
