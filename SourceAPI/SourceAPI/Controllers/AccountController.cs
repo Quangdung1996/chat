@@ -350,7 +350,7 @@ namespace SourceAPI.Controllers
                 {
                     try
                     {
-                        var syncResult = await _rocketChatUserService.SyncUserAsync(
+                        var syncResult = await _rocketChatUserService.SyncUser(
                             int.Parse(userId),
                             username,
                             fullName ?? username,

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services;
-using SourceAPI.Services.RocketChat;
 using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -44,7 +43,7 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                var mapping = await _userService.GetMappingAsync(userId);
+                var mapping = _userService.GetUserMapping(userId);
 
                 if (mapping == null)
                 {

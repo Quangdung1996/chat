@@ -34,7 +34,7 @@ namespace SourceAPI.Services.RocketChat
             try
             {
                 // Get user mapping
-                var mapping = await _userService.GetMappingAsync(userId);
+                var mapping = await _userService.GetUserMapping(userId);
                 if (mapping == null)
                 {
                     throw new Exception($"User {userId} is not synced to Rocket.Chat");

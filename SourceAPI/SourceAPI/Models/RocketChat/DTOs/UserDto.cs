@@ -100,7 +100,7 @@ public class UsersListResponse
 
 public class UserData
 {
-    [JsonProperty("id")]
+    [JsonProperty("_id")]
     public string Id { get; set; } = string.Empty;
 
     [JsonProperty("username")]
