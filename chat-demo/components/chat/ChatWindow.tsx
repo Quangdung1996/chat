@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef, memo, useEffect } from 'react';
-import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import { useAuthStore } from '@/store/authStore';
-import MessageList from './MessageList';
+import { useSendMessage, useAddMessageToCache } from '@/hooks/use-messages';
+import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
-import { Smile, Paperclip, Send } from 'lucide-react';
-import type { UserSubscription, SendMessageRequest, ChatMessage } from '@/types/rocketchat';
+import { Smile, Send } from 'lucide-react';
+import type { UserSubscription, ChatMessage } from '@/types/rocketchat';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -19,17 +19,15 @@ interface ChatWindowProps {
 
 function ChatWindow({ room }: ChatWindowProps) {
   const [messageText, setMessageText] = useState('');
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // ✅ Use stable selector functions
   const user = useAuthStore(selectUser);
   const token = useAuthStore(selectToken);
 
-  // ✅ State management without useSWR
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // ✅ TanStack Query hooks
+  const sendMessageMutation = useSendMessage();
+  const addMessageToCache = useAddMessageToCache();
+  
   const [wsConnected, setWsConnected] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -38,47 +36,10 @@ function ChatWindow({ room }: ChatWindowProps) {
   const roomId = room.roomId;
   const roomType = room.type || 'p';
 
-  // ✅ Load messages when room changes
-  useEffect(() => {
-    const loadMessages = async () => {
-      setIsLoading(true);
-      try {
-        const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
-        if (response.success && response.messages) {
-          setMessages(response.messages);
-          setError(null);
-        } else {
-          throw new Error('Failed to load messages');
-        }
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    if (roomId) {
-      loadMessages();
-    }
-  }, [roomId, roomType]);
-
-  // ✅ Reset message text và scroll khi chuyển room
+  // ✅ Reset message text khi chuyển room
   useEffect(() => {
     setMessageText(''); // Clear input khi chuyển room
-    // Scroll to bottom after a short delay
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
   }, [roomId]); // Chạy khi roomId thay đổi
-
-  // ✅ Auto scroll khi messages thay đổi - tách riêng khỏi SWR options
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
-  }, [messages.length]); // Chỉ scroll khi số lượng messages thay đổi
 
   // ✅ Rocket.Chat WebSocket: Check if connected (đã connect khi login)
   useEffect(() => {
@@ -129,31 +90,10 @@ function ChatWindow({ room }: ChatWindowProps) {
         updatedAt: message._updatedAt ? parseTimestamp(message._updatedAt) : undefined,
       };
 
-      // Update messages state
-      setMessages(currentMessages => {
-        // Check if this is replacing an optimistic message (temp-*)
-        const optimisticIndex = currentMessages.findIndex(
-          msg => msg.messageId.startsWith('temp-') && 
-                 msg.text === newMessage.text &&
-                 msg.user?.username === newMessage.user?.username
-        );
-        
-        if (optimisticIndex !== -1) {
-          const updated = [...currentMessages];
-          updated[optimisticIndex] = newMessage;
-          return updated;
-        }
-        
-        // Check if message already exists (avoid duplicates)
-        const exists = currentMessages.some(msg => msg.messageId === newMessage.messageId);
-        if (exists) return currentMessages;
-        
-        // Add new message to the end
-        return [...currentMessages, newMessage];
-      });
+      // ✅ Add message to TanStack Query cache
+      addMessageToCache(roomId, newMessage);
 
       // ✅ Auto mark as read when receiving new messages in current room
-      // This ensures unread count stays at 0 while user is viewing the room
       rocketChatWS.markRoomAsRead(roomId).catch(error => {
         console.warn('Failed to auto-mark room as read:', error);
       });
@@ -166,49 +106,26 @@ function ChatWindow({ room }: ChatWindowProps) {
     return () => {
       rocketChatWS.unsubscribe(subscriptionId);
     };
-  }, [roomId, wsConnected]);
+  }, [roomId, wsConnected, addMessageToCache]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || sending) return;
+    if (!messageText.trim() || sendMessageMutation.isPending) return;
 
     const textToSend = messageText.trim();
-    setSending(true);
+    
+    // Clear input immediately for better UX
+    setMessageText('');
     
     try {
-      const request: SendMessageRequest = {
+      // ✅ Send with optimistic update (handled by useSendMessage hook)
+      await sendMessageMutation.mutateAsync({
         roomId: room.roomId,
         text: textToSend,
-      };
-      
-      // Clear input immediately for better UX
-      setMessageText('');
-      
-      // ✅ Optimistically add message to UI with current timestamp
-      const optimisticMessage: ChatMessage = {
-        messageId: `temp-${Date.now()}`, // Temporary ID
-        roomId: room.roomId,
-        text: textToSend,
-        timestamp: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        user: {
-          id: user?.id || '',
-          username: user?.username || '',
-          name: user?.fullName || user?.username || '',
-        },
-        isCurrentUser: true,
-      };
-      
-      setMessages(currentMessages => [...currentMessages, optimisticMessage]);
-      
-      // Send to backend
-      await rocketChatService.sendMessage(request);
-      // WebSocket will update with real message data
+      });
     } catch (error) {
-      alert('❌ Lỗi: ' + (error as Error).message);
-      // Optionally: remove optimistic message on error
-    } finally {
-      setSending(false);
+      console.error('Failed to send message:', error);
+      // Message is already rolled back by the mutation's onError
     }
   };
 
@@ -219,25 +136,12 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   };
 
-  const handleRefresh = async () => {
-    if (!roomId) return;
-    setIsLoading(true);
-    try {
-      const response = await rocketChatService.getMessages(roomId, roomType, 50, 0);
-      if (response.success && response.messages) {
-        setMessages(response.messages);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
       <RoomHeader 
         room={room} 
-        onRefresh={handleRefresh} 
         onReadOnlyChange={(readOnly, owner) => {
           setIsReadOnly(readOnly);
           setIsOwner(owner ?? false);
@@ -253,40 +157,13 @@ function ChatWindow({ room }: ChatWindowProps) {
         </div>
       )}
 
-      {/* Messages Area - Apple Style */}
-      <div className="flex-1 overflow-y-auto px-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin inline-block w-7 h-7 border-[3px] border-current border-t-transparent rounded-full text-[#007aff]" />
-              <p className="mt-3 text-[15px] text-gray-600 dark:text-gray-400 font-normal">Đang tải...</p>
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                <span className="text-4xl">💬</span>
-              </div>
-              <p className="text-[17px] font-semibold text-gray-900 dark:text-white mb-1">
-                Không có tin nhắn
-              </p>
-              <p className="text-[15px] text-gray-500 dark:text-gray-400">
-                Gửi tin nhắn để bắt đầu trò chuyện
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="py-6">
-            <MessageList 
-              messages={messages} 
-              currentUserId={user?.id}
-              currentUsername={room.user?.username}
-            />
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+      {/* Messages Area - With Infinite Scroll */}
+      <MessageListInfinite
+        roomId={roomId}
+        roomType={roomType as 'p' | 'd' | 'c'}
+        currentUserId={user?.id}
+        currentUsername={room.user?.username}
+      />
 
       {/* Message Input - MS Teams Style */}
       <div className="flex-shrink-0 bg-white dark:bg-[#292929] border-t border-gray-200 dark:border-gray-700 px-4 py-4">
@@ -337,11 +214,11 @@ function ChatWindow({ room }: ChatWindowProps) {
               {/* Send Button - MS Teams Purple */}
               <button
                 type="submit"
-                disabled={!messageText.trim() || sending}
+                disabled={!messageText.trim() || sendMessageMutation.isPending}
                 className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded transition-all duration-200 disabled:opacity-50"
                 title="Gửi"
               >
-                {sending ? (
+                {sendMessageMutation.isPending ? (
                   <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
                   <Send className="w-4 h-4" />

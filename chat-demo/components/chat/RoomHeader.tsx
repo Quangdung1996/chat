@@ -16,7 +16,7 @@ import {
 
 interface RoomHeaderProps {
   room: UserSubscription;
-  onRefresh: () => void;
+  onRefresh?: () => void;
   onReadOnlyChange?: (isReadOnly: boolean, isOwner?: boolean) => void;
 }
 
@@ -119,7 +119,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
         setMemberToRemove(null);
         // Reload members list
         await loadMembers();
-        onRefresh();
+        onRefresh?.();
       }
     } catch (error) {
       console.error('Failed to kick member:', error);
@@ -142,7 +142,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
       if (response.success) {
         setShowLeaveModal(false);
         setShowMembers(false);
-        onRefresh();
+        onRefresh?.();
       } else {
         alert('Không thể rời khỏi phòng. Vui lòng thử lại.');
       }
@@ -247,13 +247,15 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
               </button>
             )}
 
-            <button
-              onClick={onRefresh}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
-              title="Làm mới"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#007aff] dark:hover:text-[#0a84ff] hover:bg-gray-100/60 dark:hover:bg-gray-700/40 rounded-lg transition-all duration-200"
+                title="Làm mới"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+            )}
 
             <RoomSettingsMenu room={room} onUpdate={onRefresh} />
           </div>
@@ -383,7 +385,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
         currentMembers={members}
         onSuccess={() => {
           loadMembers();
-          onRefresh();
+          onRefresh?.();
         }}
       />
 

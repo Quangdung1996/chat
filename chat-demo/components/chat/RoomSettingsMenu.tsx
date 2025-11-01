@@ -35,7 +35,7 @@ import { Label } from '@/components/ui/label';
 
 interface RoomSettingsMenuProps {
   room: UserSubscription;
-  onUpdate: () => void;
+  onUpdate?: () => void;
 }
 
 export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuProps) {
@@ -54,7 +54,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     setLoading(true);
     try {
       await rocketChatService.renameRoom(room.roomId, newName, roomType);
-      onUpdate();
+      onUpdate?.();
       setShowRenameModal(false);
     } catch (error) {
       alert('Failed to rename room: ' + (error as Error).message);
@@ -67,7 +67,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     setLoading(true);
     try {
       await rocketChatService.archiveRoom(room.roomId, roomType);
-      onUpdate();
+      onUpdate?.();
     } catch (error) {
       alert('Failed to archive room: ' + (error as Error).message);
     } finally {
@@ -79,7 +79,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     setLoading(true);
     try {
       await rocketChatService.deleteRoom(room.roomId, roomType);
-      onUpdate();
+      onUpdate?.();
       setShowDeleteConfirm(false);
     } catch (error) {
       alert('Failed to delete room: ' + (error as Error).message);
@@ -92,7 +92,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
     setLoading(true);
     try {
       await rocketChatService.setAnnouncementMode(room.roomId, !room.isReadOnly, roomType);
-      onUpdate();
+      onUpdate?.();
     } catch (error) {
       alert('Failed to update room: ' + (error as Error).message);
     } finally {
