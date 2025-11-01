@@ -52,29 +52,12 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        const originalRequest = error.config;
-
-        // Nếu 401 và chưa retry
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-
-          try {
-            // Thử refresh token
-            const { refreshToken } = useAuthStore.getState();
-            if (refreshToken) {
-              // TODO: Implement refresh token logic
-              // const response = await authService.refreshToken(refreshToken);
-              // useAuthStore.getState().setAuth(response.access_token, refreshToken, user);
-              // originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
-              // return this.axiosInstance(originalRequest);
-            }
-          } catch (refreshError) {
-            // Refresh thất bại -> logout
-            useAuthStore.getState().clearAuth();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
-            return Promise.reject(refreshError);
+        // Nếu 401 (Unauthorized) -> logout và redirect về login
+        if (error.response?.status === 401) {
+          console.warn('401 Unauthorized - Redirecting to login');
+          useAuthStore.getState().clearAuth();
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
           }
         }
 
