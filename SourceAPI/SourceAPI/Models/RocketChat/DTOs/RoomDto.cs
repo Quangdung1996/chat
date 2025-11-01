@@ -6,9 +6,6 @@ namespace SourceAPI.Models.RocketChat.DTOs;
 
 #region Room Requests
 
-/// <summary>
-/// Request to create a group/channel
-/// </summary>
 public class CreateGroupRequest
 {
     public string Name { get; set; } = string.Empty;
@@ -22,9 +19,6 @@ public class CreateGroupRequest
     public List<string> Members { get; set; } = new();
 }
 
-/// <summary>
-/// Request to create a room (general purpose)
-/// </summary>
 public class CreateRoomRequest
 {
     [JsonProperty("name")]
@@ -35,9 +29,6 @@ public class CreateRoomRequest
     public bool ReadOnly { get; set; }
 }
 
-/// <summary>
-/// Request to invite member to room
-/// </summary>
 public class InviteMemberRequest
 {
     [JsonProperty("roomId")]
@@ -46,9 +37,6 @@ public class InviteMemberRequest
     public string UserId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to remove member from room
-/// </summary>
 public class RemoveMemberRequest
 {
     [JsonProperty("roomId")]
@@ -57,9 +45,6 @@ public class RemoveMemberRequest
     public string UserId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to add/remove moderator
-/// </summary>
 public class ModeratorRequest
 {
     [JsonProperty("roomId")]
@@ -74,18 +59,12 @@ public class LeaveRoomRequest
     public string RoomId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to rename a room
-/// </summary>
 public class RenameRoomRequest
 {
     public string RoomId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to set room topic
-/// </summary>
 public class SetTopicRequest
 {
     [JsonProperty("roomId")]
@@ -95,9 +74,6 @@ public class SetTopicRequest
     public string Topic { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to set room announcement
-/// </summary>
 public class SetAnnouncementRequest
 {
     [JsonProperty("roomId")]
@@ -107,26 +83,17 @@ public class SetAnnouncementRequest
     public string Announcement { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to set room read-only status
-/// </summary>
 public class SetReadOnlyRequest
 {
     public string RoomId { get; set; } = string.Empty;
     public bool ReadOnly { get; set; }
 }
 
-/// <summary>
-/// Generic room action request
-/// </summary>
 public class RoomActionRequest
 {
     public string RoomId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Request to create a direct message
-/// </summary>
 public class CreateDMRequest
 {
     [JsonProperty("username")]
@@ -137,9 +104,6 @@ public class CreateDMRequest
 
 #region Room Responses
 
-/// <summary>
-/// Response from create group
-/// </summary>
 public class CreateGroupResponse
 {
     [JsonProperty("roomId")]
@@ -158,9 +122,6 @@ public class CreateGroupResponse
     public string Message { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Rocket.Chat API response for group creation
-/// </summary>
 public class RocketChatGroupResponse
 {
     public bool Success { get; set; }
@@ -168,18 +129,12 @@ public class RocketChatGroupResponse
     public string Error { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Response from create room
-/// </summary>
 public class CreateRoomResponse : ApiResponse
 {
     public RoomData Group { get; set; } = new();
     public RoomData Channel { get; set; } = new();
 }
 
-/// <summary>
-/// Response from room info request
-/// </summary>
 public class RoomInfoResponse : ApiResponse
 {
     [JsonProperty("room")]
@@ -190,17 +145,11 @@ public class RoomInfoResponse : ApiResponse
     public RoomData Channel { get; set; } = new();
 }
 
-/// <summary>
-/// Response from create DM request
-/// </summary>
 public class CreateDMResponse : ApiResponse
 {
     public DMRoomData Room { get; set; } = new();
 }
 
-/// <summary>
-/// Response from user info request
-/// </summary>
 public class UserInfoResponse : ApiResponse
 {
     public UserData User { get; set; } = new();
@@ -214,10 +163,6 @@ public class GroupData
     public bool ReadOnly { get; set; }
 }
 
-/// <summary>
-/// Response from GET /api/v1/subscriptions.get
-/// Returns all rooms user is subscribed to
-/// </summary>
 public class UserSubscriptionsResponse : ApiResponse
 {
     [JsonProperty("update")]
@@ -227,10 +172,6 @@ public class UserSubscriptionsResponse : ApiResponse
     public List<SubscriptionData> Remove { get; set; } = new();
 }
 
-/// <summary>
-/// Response from GET /api/v1/rooms.get
-/// Returns all rooms user is participating in
-/// </summary>
 public class UserRoomsResponse : ApiResponse
 {
     [JsonProperty("update")]
@@ -244,9 +185,6 @@ public class UserRoomsResponse : ApiResponse
 
 #region Room Data Models
 
-/// <summary>
-/// User's subscription to a room
-/// </summary>
 public class SubscriptionData
 {
     [JsonProperty("_id")]
@@ -286,9 +224,6 @@ public class SubscriptionData
     public MessageData? LastMessage { get; set; }
 }
 
-/// <summary>
-/// Room data
-/// </summary>
 public class RoomData
 {
     [JsonProperty("_id")]
@@ -326,9 +261,6 @@ public class RoomData
     public string? Announcement { get; set; }
 }
 
-/// <summary>
-/// Detailed room information
-/// </summary>
 public class RoomInfo
 {
     [JsonProperty("_id")]
@@ -370,9 +302,6 @@ public class RoomInfo
     public RocketChatUserInfo ChatUserInfo { get; set; }
 }
 
-/// <summary>
-/// DM room data
-/// </summary>
 public class DMRoomData
 {
     [JsonProperty("_id")]
@@ -397,9 +326,6 @@ public class UserInfo
     public string Name { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Response from groups.members, channels.members, or im.members
-/// </summary>
 public class RoomMembersResponse : ApiResponse
 {
     [JsonProperty("members")]
@@ -415,9 +341,6 @@ public class RoomMembersResponse : ApiResponse
     public int Total { get; set; }
 }
 
-/// <summary>
-/// Member information in a room
-/// </summary>
 public class RoomMemberData
 {
     [JsonProperty("_id")]

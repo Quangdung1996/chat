@@ -2,9 +2,6 @@ using System;
 
 namespace SourceAPI.Models.RocketChat.DTOs;
 
-/// <summary>
-/// Rocket.Chat authentication token
-/// </summary>
 public class AuthTokenDto
 {
     public string AuthToken { get; set; } = string.Empty;
@@ -13,18 +10,12 @@ public class AuthTokenDto
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
 }
 
-/// <summary>
-/// Login request to Rocket.Chat
-/// </summary>
 public class LoginRequest
 {
     public string User { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Login response from Rocket.Chat
-/// </summary>
 public class RocketChatLoginResponse
 {
     public string Status { get; set; } = string.Empty;

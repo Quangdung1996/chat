@@ -1,8 +1,5 @@
 namespace SourceAPI.Models.RocketChat
 {
-    /// <summary>
-    /// Configuration for Rocket.Chat integration
-    /// </summary>
     public class RocketChatConfig
     {
         public string BaseUrl { get; set; } = "http://localhost:3000";

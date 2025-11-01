@@ -4,10 +4,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// T-17, T-18, T-19b: RocketChat Room Service Interface
-    /// Handles creation and management of groups and channels
-    /// </summary>
     public interface IRocketChatRoomService
     {
         Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request);

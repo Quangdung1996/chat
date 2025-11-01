@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SourceAPI.Extensions;
 using SourceAPI.Helpers.RocketChat;
 using SourceAPI.Infrastructure.Proxy;
 using SourceAPI.Models.RocketChat;
@@ -11,9 +12,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// T-17, T-18: RocketChat Room Service Implementation
-    /// </summary>
     public class RocketChatRoomService : IRocketChatRoomService
     {
         private readonly IRocketChatAdminProxy _adminProxy;
@@ -39,19 +37,11 @@ namespace SourceAPI.Services.RocketChat
             return await CreateRoomInternalAsync(request, "group");
         }
 
-        /// <summary>
-        /// T-18: Create public channel
-        /// DoD: Tạo channel public; lưu mapping; có thể join được
-        /// </summary>
         public async Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request)
         {
             return await CreateRoomInternalAsync(request, "channel");
         }
 
-        /// <summary>
-        /// Create direct message room (1-on-1 chat) as a specific user
-        /// Returns existing DM if already exists (idempotent)
-        /// </summary>
         public async Task<string> CreateDirectMessageAsync(int currentUserId, string targetUsername)
         {
             try
@@ -89,10 +79,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Internal method to create room (group or channel)
-        /// T-15: Apply naming convention and metadata
-        /// </summary>
         private async Task<CreateGroupResponse> CreateRoomInternalAsync(
             CreateGroupRequest request,
             string roomType)
@@ -140,7 +126,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 CreateRoomResponse rocketResponse;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                 {
                     // Use Refit - DelegatingHandler auto adds auth headers
                     rocketResponse = await _userProxy.CreatePrivateGroupAsync(createRequest);
@@ -160,7 +146,7 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                var room = roomType == "group" ? rocketResponse.Group : rocketResponse.Channel;
+                var room = roomType.IsGroup() ? rocketResponse.Group : rocketResponse.Channel;
 
                 // ✅ Set topic if provided
                 if (!string.IsNullOrWhiteSpace(request.Topic))
@@ -197,50 +183,31 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-20: Add member to room
-        /// </summary>
         public async Task<bool> AddMemberAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "invite", roomType);
         }
 
-        /// <summary>
-        /// T-21: Remove member from room
-        /// </summary>
         public async Task<bool> RemoveMemberAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "kick", roomType);
         }
 
-        /// <summary>
-        /// T-22: Add moderator
-        /// </summary>
         public async Task<bool> AddModeratorAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "addModerator", roomType);
         }
 
-        /// <summary>
-        /// T-22: Remove moderator
-        /// </summary>
         public async Task<bool> RemoveModeratorAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "removeModerator", roomType);
         }
 
-        /// <summary>
-        /// T-22: Add owner
-        /// </summary>
         public async Task<bool> AddOwnerAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "addOwner", roomType);
         }
 
-        /// <summary>
-        /// T-23: Add members in bulk with rate limiting
-        /// DoD: Thêm theo danh sách; delay chống rate limit; báo cáo success/fail từng user
-        /// </summary>
         public async Task<Dictionary<string, bool>> AddMembersBulkAsync(
             string roomId,
             List<string> rocketUserIds,
@@ -268,9 +235,6 @@ namespace SourceAPI.Services.RocketChat
             return results;
         }
 
-        /// <summary>
-        /// T-26: Rename room
-        /// </summary>
         public async Task<bool> RenameRoomAsync(string roomId, string newName, string roomType = "group")
         {
             try
@@ -284,7 +248,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                     response = await _adminProxy.RenameGroupAsync(request);
                 else
                     response = await _adminProxy.RenameChannelAsync(request);
@@ -298,27 +262,18 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-26: Archive room
-        /// </summary>
         public async Task<bool> ArchiveRoomAsync(string roomId, string roomType = "group")
         {
-            var endpoint = roomType == "group" ? "groups.archive" : "channels.archive";
+            var endpoint = roomType.IsGroup() ? "groups.archive" : "channels.archive";
             return await InvokeRoomActionAsync(roomId, endpoint);
         }
 
-        /// <summary>
-        /// T-26: Delete room
-        /// </summary>
         public async Task<bool> DeleteRoomAsync(string roomId, string roomType = "group")
         {
-            var endpoint = roomType == "group" ? "groups.delete" : "channels.delete";
+            var endpoint = roomType.IsGroup() ? "groups.delete" : "channels.delete";
             return await InvokeRoomActionAsync(roomId, endpoint);
         }
 
-        /// <summary>
-        /// T-25: Set announcement mode
-        /// </summary>
         public async Task<bool> SetAnnouncementModeAsync(string roomId, bool announcementOnly, string roomType = "group")
         {
             try
@@ -331,7 +286,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                     response = await _adminProxy.SetGroupReadOnlyAsync(request);
                 else
                     response = await _adminProxy.SetChannelReadOnlyAsync(request);
@@ -345,9 +300,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-25: Set room topic/description
-        /// </summary>
         public async Task<bool> SetTopicAsync(string roomId, string topic, string roomType = "group")
         {
             try
@@ -360,7 +312,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                     response = await _userProxy.SetGroupTopicAsync(request);
                 else
                     response = await _userProxy.SetChannelTopicAsync(request);
@@ -374,9 +326,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Set room announcement
-        /// </summary>
         public async Task<bool> SetAnnouncementAsync(string roomId, string announcement, string roomType = "group")
         {
             try
@@ -389,7 +338,7 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                     response = await _userProxy.SetGroupAnnouncementAsync(request);
                 else
                     response = await _userProxy.SetChannelAnnouncementAsync(request);
@@ -403,9 +352,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-36b: Send message to room
-        /// </summary>
         public async Task<string?> SendMessageAsync(string roomId, string text, string? alias = null)
         {
             try
@@ -449,24 +395,24 @@ namespace SourceAPI.Services.RocketChat
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
-                if (roomType == "group")
+                if (roomType.IsGroup())
                 {
-                    if (action == "invite")
+                    if (action.IsInvite())
                         response = await _userProxy.InviteToGroupAsync(request);
-                    else if (action == "kick")
+                    else if (action.IsKick())
                         response = await _userProxy.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
-                    else if (action == "addModerator")
+                    else if (action.IsAddModerator())
                         response = await _userProxy.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
                 else
                 {
-                    if (action == "invite")
+                    if (action.IsInvite())
                         response = await _adminProxy.InviteToChannelAsync(request);
-                    else if (action == "kick")
+                    else if (action.IsKick())
                         response = await _adminProxy.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
-                    else if (action == "addModerator")
+                    else if (action.IsAddModerator())
                         response = await _adminProxy.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
@@ -530,9 +476,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get messages from room (real-time from Rocket.Chat API)
-        /// </summary>
         public async Task<List<RoomMessage>> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0)
         {
             try
@@ -540,15 +483,15 @@ namespace SourceAPI.Services.RocketChat
                 RoomMessagesResponse response;
 
                 // Call appropriate API based on room type
-                if (roomType == "group" || roomType == "p")
+                if (roomType.IsGroup())
                 {
                     response = await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
                 }
-                else if (roomType == "channel")
+                else if (roomType.IsChannel())
                 {
                     response = await _userProxy.GetChannelMessagesAsync(roomId, count, offset);
                 }
-                else if (roomType == "dm" || roomType == "d")
+                else if (roomType.IsDirect())
                 {
                     response = await _userProxy.GetDirectMessagesAsync(roomId, count, offset);
                 }
@@ -593,9 +536,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get members of a specific room using user's token
-        /// </summary>
         public async Task<bool> LeaveRoomAsync(string roomId, string roomType = "group")
         {
             try
@@ -606,22 +546,18 @@ namespace SourceAPI.Services.RocketChat
                 ApiResponse response;
 
                 // Call appropriate endpoint based on room type
-                switch (roomType.ToLower())
+                if (roomType.IsGroup())
                 {
-                    case "group":
-                    case "p":
-                        response = await _userProxy.LeaveGroupAsync(request);
-                        break;
-
-                    case "channel":
-                    case "c":
-                        response = await _userProxy.LeaveChannelAsync(request);
-                        break;
-
-                    default:
-                        _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
-                        response = await _userProxy.LeaveGroupAsync(request);
-                        break;
+                    response = await _userProxy.LeaveGroupAsync(request);
+                }
+                else if (roomType.IsChannel())
+                {
+                    response = await _userProxy.LeaveChannelAsync(request);
+                }
+                else
+                {
+                    _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
+                    response = await _userProxy.LeaveGroupAsync(request);
                 }
 
                 if (response.Success)
@@ -651,27 +587,22 @@ namespace SourceAPI.Services.RocketChat
                 RoomMembersResponse response;
 
                 // Call appropriate endpoint based on room type
-                switch (roomType.ToLower())
+                if (roomType.IsGroup())
                 {
-                    case "group":
-                    case "p":
-                        response = await _userProxy.GetGroupMembersAsync(roomId);
-                        break;
-
-                    case "channel":
-                    case "c":
-                        response = await _userProxy.GetChannelMembersAsync(roomId);
-                        break;
-
-                    case "direct":
-                    case "d":
-                        response = await _userProxy.GetDirectMessageMembersAsync(roomId);
-                        break;
-
-                    default:
-                        _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
-                        response = await _userProxy.GetGroupMembersAsync(roomId);
-                        break;
+                    response = await _userProxy.GetGroupMembersAsync(roomId);
+                }
+                else if (roomType.IsChannel())
+                {
+                    response = await _userProxy.GetChannelMembersAsync(roomId);
+                }
+                else if (roomType.IsDirect())
+                {
+                    response = await _userProxy.GetDirectMessageMembersAsync(roomId);
+                }
+                else
+                {
+                    _logger.LogWarning($"Unknown room type '{roomType}', defaulting to group");
+                    response = await _userProxy.GetGroupMembersAsync(roomId);
                 }
 
                 if (response == null || !response.Success)
@@ -699,22 +630,18 @@ namespace SourceAPI.Services.RocketChat
                 RoomInfoResponse response;
 
                 // Call appropriate endpoint based on room type
-                switch (roomType.ToLower())
+                if (roomType.IsGroup())
                 {
-                    case "group":
-                    case "p":
-                        response = await _userProxy.GetGroupInfoAsync(roomId);
-                        break;
-
-                    case "channel":
-                    case "c":
-                        response = await _userProxy.GetChannelInfoAsync(roomId);
-                        break;
-
-                    default:
-                        _logger.LogWarning($"Unknown room type '{roomType}' for info request, defaulting to group");
-                        response = await _userProxy.GetGroupInfoAsync(roomId);
-                        break;
+                    response = await _userProxy.GetGroupInfoAsync(roomId);
+                }
+                else if (roomType.IsChannel())
+                {
+                    response = await _userProxy.GetChannelInfoAsync(roomId);
+                }
+                else
+                {
+                    _logger.LogWarning($"Unknown room type '{roomType}' for info request, defaulting to group");
+                    response = await _userProxy.GetGroupInfoAsync(roomId);
                 }
 
                 if (response == null || !response.Success)

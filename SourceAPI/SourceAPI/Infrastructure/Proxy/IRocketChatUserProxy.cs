@@ -4,11 +4,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Infrastructure.Proxy;
 
-/// <summary>
-/// Refit interface for RocketChat REST API - User Operations
-/// Uses specific user token (injected via headers when creating instance)
-/// Each user should have their own instance with their token
-/// </summary>
 public interface IRocketChatUserProxy
 {
     // =====================================================

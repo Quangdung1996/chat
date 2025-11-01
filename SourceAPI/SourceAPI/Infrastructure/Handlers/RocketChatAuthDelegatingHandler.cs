@@ -16,9 +16,6 @@ public abstract class RocketChatAuthDelegatingHandlerBase : DelegatingHandler
         Logger = logger;
     }
 
-    /// <summary>
-    /// Derived classes implement this to provide auth token and userId
-    /// </summary>
     protected abstract Task<(string authToken, string userId)> GetAuthCredentialsAsync();
 
     protected override async Task<HttpResponseMessage> SendAsync(

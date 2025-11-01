@@ -5,10 +5,6 @@ using System.Text;
 
 namespace SourceAPI.Helpers.RocketChat
 {
-    /// <summary>
-    /// T-09: Generate strong passwords for Rocket.Chat users
-    /// DoD: Password đủ mạnh; random secure
-    /// </summary>
     public static class PasswordGenerator
     {
         private const string UppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -16,10 +12,6 @@ namespace SourceAPI.Helpers.RocketChat
         private const string DigitChars = "0123456789";
         private const string SpecialChars = "!@#$%^&*()-_=+[]{}|;:,.<>?";
 
-        /// <summary>
-        /// Generate a strong random password
-        /// Minimum 12 characters with uppercase, lowercase, digits, and special characters
-        /// </summary>
         public static string GenerateStrongPassword(int length = 16)
         {
             if (length < 12)
@@ -46,10 +38,6 @@ namespace SourceAPI.Helpers.RocketChat
             return Shuffle(password.ToString());
         }
 
-        /// <summary>
-        /// Generate a memorable but still secure password
-        /// Format: Word-Word-Number-Special (e.g., Blue-Sky-2024-!)
-        /// </summary>
         public static string GenerateMemorablePassword()
         {
             var words = new[]
@@ -67,9 +55,6 @@ namespace SourceAPI.Helpers.RocketChat
             return $"{word1}-{word2}-{number}-{special}";
         }
 
-        /// <summary>
-        /// Validate password strength
-        /// </summary>
         public static bool IsStrongPassword(string password)
         {
             if (string.IsNullOrWhiteSpace(password) || password.Length < 12)
@@ -83,18 +68,12 @@ namespace SourceAPI.Helpers.RocketChat
             return hasUpper && hasLower && hasDigit && hasSpecial;
         }
 
-        /// <summary>
-        /// Get a random character from a string using cryptographically secure RNG
-        /// </summary>
         private static char GetRandomChar(string chars)
         {
             var index = RandomNumberGenerator.GetInt32(chars.Length);
             return chars[index];
         }
 
-        /// <summary>
-        /// Shuffle a string using Fisher-Yates algorithm
-        /// </summary>
         private static string Shuffle(string input)
         {
             var array = input.ToCharArray();

@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace SourceAPI.Services;
 
-/// <summary>
-/// Service to access Rocket.Chat authentication context from HTTP headers
-/// </summary>
 public interface IRocketChatContext
 {
     string? RocketChatToken { get; }
@@ -12,10 +9,6 @@ public interface IRocketChatContext
     bool HasRocketChatAuth { get; }
 }
 
-/// <summary>
-/// Implementation that extracts Rocket.Chat token and userId from HttpContext.Items
-/// (populated by RocketChatTokenMiddleware)
-/// </summary>
 public sealed class RocketChatContext : IRocketChatContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;

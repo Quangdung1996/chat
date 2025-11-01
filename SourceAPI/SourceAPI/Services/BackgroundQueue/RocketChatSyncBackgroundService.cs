@@ -8,10 +8,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// T-10: Background Job - Auto sync users to Rocket.Chat
-    /// DoD: Chạy định kỳ; sync users chưa có mapping; báo cáo kết quả; configurable interval
-    /// </summary>
     public class RocketChatSyncBackgroundService : BackgroundService
     {
         private readonly ILogger<RocketChatSyncBackgroundService> _logger;
@@ -154,10 +150,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get list of users that need to be synced
-        /// Using stored procedure: sp_GetUsersForRocketChatSync
-        /// </summary>
         private async Task<UserToSyncDto[]> GetUsersToSyncAsync(IServiceScope scope)
         {
             try
@@ -201,9 +193,6 @@ namespace SourceAPI.Services.RocketChat
         }
     }
 
-    /// <summary>
-    /// DTO for users to sync
-    /// </summary>
     public class UserToSyncDto
     {
         public int UserId { get; set; }

@@ -6,9 +6,6 @@ namespace SourceAPI.Models.RocketChat.DTOs;
 
 #region User Requests
 
-/// <summary>
-/// DTO for creating user in Rocket.Chat
-/// </summary>
 public class CreateUserRequest
 {
     [JsonProperty("email")]
@@ -36,9 +33,6 @@ public class CreateUserRequest
     public bool Active { get; set; } = true;
 }
 
-/// <summary>
-/// Request to set user active status
-/// </summary>
 public class SetUserActiveStatusRequest
 {
     public string UserId { get; set; } = string.Empty;
@@ -49,9 +43,6 @@ public class SetUserActiveStatusRequest
 
 #region User Responses
 
-/// <summary>
-/// Response from Rocket.Chat user creation
-/// </summary>
 public class CreateUserResponse
 {
     [JsonProperty("success")]
@@ -63,16 +54,10 @@ public class CreateUserResponse
     [JsonProperty("error")]
     public string Error { get; set; } = string.Empty;
 
-    /// <summary>
-    /// True if user already existed in Rocket.Chat, False if newly created
-    /// </summary>
     [JsonProperty("isExistingUser")]
     public bool IsExistingUser { get; set; }
 }
 
-/// <summary>
-/// Response for sync user endpoint
-/// </summary>
 public class SyncUserResponse
 {
     [JsonProperty("userId")]
@@ -91,9 +76,6 @@ public class SyncUserResponse
     public string Message { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Response from Rocket.Chat users.list API
-/// </summary>
 public class UsersListResponse
 {
     [JsonProperty("users")]
@@ -137,9 +119,6 @@ public class UserData
     public DateTime CreatedAt { get; set; }
 }
 
-/// <summary>
-/// Rocket.Chat user from users.list
-/// </summary>
 public class RocketChatUser
 {
     [JsonProperty("_id")]

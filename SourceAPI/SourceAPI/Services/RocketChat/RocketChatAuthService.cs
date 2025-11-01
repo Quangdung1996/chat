@@ -11,10 +11,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// T-01, T-02, T-03: RocketChat Authentication Service Implementation
-    /// Handles login/logout, token caching with auto-refresh, and 401/timeout handling
-    /// </summary>
     public class RocketChatAuthService : IRocketChatAuthService
     {
         private readonly IRocketChatPublicProxy _publicApi;
@@ -38,10 +34,6 @@ namespace SourceAPI.Services.RocketChat
             _logger = logger;
         }
 
-        /// <summary>
-        /// Login to Rocket.Chat
-        /// DoD: Gọi được login; xử lý 401/timeout; trả về token + userId
-        /// </summary>
         public async Task<AuthTokenDto> LoginAsync(string username, string password)
         {
             try
@@ -88,10 +80,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Logout from Rocket.Chat
-        /// DoD: Gọi được logout; trả về success/fail
-        /// </summary>
         public async Task<bool> LogoutAsync(string authToken, string userId)
         {
             try
@@ -110,19 +98,11 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get current valid token (login if needed)
-        /// DoD: Lấy token; tự động login nếu chưa có
-        /// </summary>
         public async Task<AuthTokenDto> GetTokenAsync()
         {
             return await GetAdminTokenAsync();
         }
 
-        /// <summary>
-        /// Validate if token is still valid
-        /// DoD: Validate token; xử lý 401
-        /// </summary>
         public async Task<bool> ValidateTokenAsync(string authToken, string userId)
         {
             try
@@ -141,10 +121,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-02: Get admin token with caching and auto-refresh
-        /// DoD: Token cache với TTL; tự refresh khi hết hạn; thread-safe
-        /// </summary>
         public async Task<AuthTokenDto> GetAdminTokenAsync()
         {
             return await GetCachedTokenAsync(
@@ -154,9 +130,6 @@ namespace SourceAPI.Services.RocketChat
             );
         }
 
-        /// <summary>
-        /// Get bot token with caching and auto-refresh
-        /// </summary>
         public async Task<AuthTokenDto> GetBotTokenAsync()
         {
             return await GetCachedTokenAsync(
@@ -166,10 +139,6 @@ namespace SourceAPI.Services.RocketChat
             );
         }
 
-        /// <summary>
-        /// Force refresh admin token (bypass cache)
-        /// Used by DelegatingHandler when receiving 401 Unauthorized
-        /// </summary>
         public async Task<AuthTokenDto> RefreshAdminTokenAsync()
         {
             await _tokenRefreshLock.WaitAsync();
@@ -196,10 +165,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// T-02: Thread-safe token caching with auto-refresh
-        /// DoD: Thread-safe; cấu hình TTL qua appsettings
-        /// </summary>
         private async Task<AuthTokenDto> GetCachedTokenAsync(string cacheKey, string username, string password)
         {
             // Try to get from cache first
@@ -244,9 +209,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Clear all cached tokens
-        /// </summary>
         public void ClearCache()
         {
             _cache.Remove(ADMIN_TOKEN_KEY);

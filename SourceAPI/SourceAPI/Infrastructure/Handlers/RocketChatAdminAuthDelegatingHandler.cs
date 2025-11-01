@@ -4,10 +4,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Infrastructure.Handlers;
 
-/// <summary>
-/// DelegatingHandler to automatically add RocketChat authentication headers
-/// Handles token refresh and retry logic
-/// </summary>
 public class RocketChatAdminAuthDelegatingHandler : RocketChatAuthDelegatingHandlerBase
 {
     private readonly IRocketChatAuthService _authService;

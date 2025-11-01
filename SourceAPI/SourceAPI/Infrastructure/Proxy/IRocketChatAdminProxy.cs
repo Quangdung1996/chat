@@ -4,11 +4,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Infrastructure.Proxy;
 
-/// <summary>
-/// Refit interface for RocketChat REST API - Admin Operations
-/// Uses admin token for all operations (injected via DelegatingHandler)
-/// For login operations, use IRocketChatPublicProxy instead
-/// </summary>
 public interface IRocketChatAdminProxy
 {
     // =====================================================

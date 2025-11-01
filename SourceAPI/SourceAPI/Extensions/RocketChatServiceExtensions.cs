@@ -10,15 +10,8 @@ using System;
 
 namespace SourceAPI.Extensions
 {
-    /// <summary>
-    /// T-03: Dependency Injection configuration for Rocket.Chat services
-    /// DoD: HttpClient cấu hình BaseUrl/header mặc định; DI đăng ký services; đọc config từ appsettings
-    /// </summary>
     public static class RocketChatServiceExtensions
     {
-        /// <summary>
-        /// Register Rocket.Chat services
-        /// </summary>
         public static IServiceCollection AddRocketChatServices(
             this IServiceCollection services,
             IConfiguration configuration)

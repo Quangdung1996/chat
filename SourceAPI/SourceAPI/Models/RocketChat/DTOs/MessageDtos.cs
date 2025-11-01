@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace SourceAPI.Models.RocketChat.DTOs;
 
-/// <summary>
-/// Request to post a message
-/// </summary>
 public class PostMessageRequest
 {
     [JsonProperty("roomId")]
@@ -15,35 +12,23 @@ public class PostMessageRequest
     public string Text { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Response from posting a message
-/// </summary>
 public class PostMessageResponse : ApiResponse
 {
     [JsonProperty("message")]
     public MessageData Message { get; set; } = new();
 }
 
-/// <summary>
-/// Request to delete a message
-/// </summary>
 public class DeleteMessageRequest
 {
     public string RoomId { get; set; } = string.Empty;
     public string MsgId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Generic message response
-/// </summary>
 public class MessageResponse : ApiResponse
 {
     public MessageData Message { get; set; } = new();
 }
 
-/// <summary>
-/// Message data from Rocket.Chat
-/// </summary>
 public class MessageData
 {
     [JsonProperty("_id")]
@@ -65,9 +50,6 @@ public class MessageData
     public System.DateTime? UpdatedAt { get; set; }
 }
 
-/// <summary>
-/// Response for room messages
-/// </summary>
 public class RoomMessagesResponse : ApiResponse
 {
     [JsonProperty("messages")]
@@ -83,9 +65,6 @@ public class RoomMessagesResponse : ApiResponse
     public int Total { get; set; }
 }
 
-/// <summary>
-/// Message from a room
-/// </summary>
 public class RoomMessage
 {
     [JsonProperty("_id")]
@@ -110,9 +89,6 @@ public class RoomMessage
     public bool IsCurrentUser { get; set; } = false;
 }
 
-/// <summary>
-/// User info in a room message
-/// </summary>
 public class RoomMessageUser
 {
     [JsonProperty("_id")]

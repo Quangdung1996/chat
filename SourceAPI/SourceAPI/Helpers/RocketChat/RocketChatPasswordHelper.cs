@@ -5,22 +5,12 @@ using System.Text;
 
 namespace SourceAPI.Helpers.RocketChat
 {
-    /// <summary>
-    /// Helper for generating passwords for Rocket.Chat users
-    /// Passwords are deterministically hashed from userId + salt for reproducibility
-    /// </summary>
     public static class RocketChatPasswordHelper
     {
         // Salt secret - should be stored in appsettings.json or environment variable
         // Hardcoded for demo purposes only
         private const string SALT_SECRET = "RocketChat@2025!SecretSalt#XYZ";
 
-        /// <summary>
-        /// Generate deterministic password from userId + salt
-        /// Same userId will always produce the same password
-        /// </summary>
-        /// <param name="userId">Internal user ID</param>
-        /// <returns>Hashed password (24 chars, alphanumeric + special chars)</returns>
         public static string GeneratePasswordFromUserId(int userId)
         {
             // Combine userId + salt
@@ -42,13 +32,6 @@ namespace SourceAPI.Helpers.RocketChat
             }
         }
 
-        /// <summary>
-        /// Generate deterministic password from username + salt
-        /// Same username will always produce the same password
-        /// Use when userId is not available
-        /// </summary>
-        /// <param name="username">Username</param>
-        /// <returns>Hashed password (24 chars, alphanumeric + special chars)</returns>
         public static string GeneratePasswordFromUsername(string username)
         {
             // Combine username + salt
@@ -69,9 +52,6 @@ namespace SourceAPI.Helpers.RocketChat
             }
         }
 
-        /// <summary>
-        /// Generate password from userId + custom salt
-        /// </summary>
         public static string GeneratePasswordFromUserId(int userId, string customSalt)
         {
             string rawInput = $"{userId}|{customSalt}";
@@ -86,18 +66,12 @@ namespace SourceAPI.Helpers.RocketChat
             }
         }
 
-        /// <summary>
-        /// Verify password by recalculating from userId
-        /// </summary>
         public static bool VerifyPassword(int userId, string password)
         {
             string expectedPassword = GeneratePasswordFromUserId(userId);
             return expectedPassword == password;
         }
 
-        /// <summary>
-        /// Generate random strong password (for admin or special cases)
-        /// </summary>
         public static string GenerateRandomStrongPassword(int length = 24)
         {
             const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
@@ -121,9 +95,6 @@ namespace SourceAPI.Helpers.RocketChat
             return password;
         }
 
-        /// <summary>
-        /// Ensure password meets complexity requirements
-        /// </summary>
         private static string EnsurePasswordComplexity(string password)
         {
             char[] chars = password.ToCharArray();

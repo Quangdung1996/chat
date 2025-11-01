@@ -9,16 +9,8 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// Service for managing user tokens
-    /// Login users with deterministic passwords and cache tokens
-    /// </summary>
     public interface IRocketChatUserTokenService
     {
-        /// <summary>
-        /// Get or create token for user by userId
-        /// Login with deterministic password from userId
-        /// </summary>
         Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId, string username);
     }
 
@@ -40,10 +32,6 @@ namespace SourceAPI.Services.RocketChat
             _logger = logger;
         }
 
-        /// <summary>
-        /// Get or create token for user by userId
-        /// Uses deterministic password from userId
-        /// </summary>
         public async Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId, string username)
         {
             try

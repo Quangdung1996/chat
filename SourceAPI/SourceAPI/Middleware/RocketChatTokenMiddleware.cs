@@ -5,10 +5,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Middleware
 {
-    /// <summary>
-    /// Middleware to extract and validate Rocket.Chat token from headers
-    /// Adds RocketChatToken and RocketChatUserId to HttpContext.Items
-    /// </summary>
     public class RocketChatTokenMiddleware
     {
         private readonly RequestDelegate _next;
@@ -42,9 +38,6 @@ namespace SourceAPI.Middleware
         }
     }
 
-    /// <summary>
-    /// Extension method for middleware registration
-    /// </summary>
     public static class RocketChatTokenMiddlewareExtensions
     {
         public static IApplicationBuilder UseRocketChatToken(this IApplicationBuilder builder)

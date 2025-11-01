@@ -6,14 +6,8 @@ using System.Text.RegularExpressions;
 
 namespace SourceAPI.Helpers.RocketChat
 {
-    /// <summary>
-    /// T-09, T-15: Helper for generating slugs and room names
-    /// </summary>
     public static class SlugHelper
     {
-        /// <summary>
-        /// Convert Vietnamese text to slug (non-diacritics, lowercase, hyphen separated)
-        /// </summary>
         public static string ToSlug(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -37,9 +31,6 @@ namespace SourceAPI.Helpers.RocketChat
             return text;
         }
 
-        /// <summary>
-        /// Remove Vietnamese diacritics
-        /// </summary>
         private static string RemoveDiacritics(string text)
         {
             var normalizedString = text.Normalize(NormalizationForm.FormD);
@@ -61,10 +52,6 @@ namespace SourceAPI.Helpers.RocketChat
                 .Replace("Đ", "D");
         }
 
-        /// <summary>
-        /// Generate unique username from full name
-        /// T-09: Username unique (slug + số); retry khi trùng
-        /// </summary>
         public static string GenerateUsername(string fullName, int? suffix = null)
         {
             var slug = ToSlug(fullName);
@@ -83,10 +70,6 @@ namespace SourceAPI.Helpers.RocketChat
             return slug;
         }
 
-        /// <summary>
-        /// Generate room name based on convention: {PhongBan}-{DuAn}-{HauTo}
-        /// T-15: Quy ước tên phòng
-        /// </summary>
         public static string GenerateRoomName(string department, string project, string? suffix = null)
         {
             var deptSlug = ToSlug(department);
@@ -122,9 +105,6 @@ namespace SourceAPI.Helpers.RocketChat
             return roomName;
         }
 
-        /// <summary>
-        /// Validate room name
-        /// </summary>
         public static bool IsValidRoomName(string roomName)
         {
             if (string.IsNullOrWhiteSpace(roomName))

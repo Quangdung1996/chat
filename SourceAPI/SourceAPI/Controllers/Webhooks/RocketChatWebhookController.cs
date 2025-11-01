@@ -5,11 +5,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Controllers.Webhooks
 {
-    /// <summary>
-    /// T-31 → T-38: Rocket.Chat Webhook Handler
-    /// Receives events from Rocket.Chat outgoing webhooks
-    /// DoD: Nhận payload; trả 200 trong <200ms; enqueue job xử lý nền
-    /// </summary>
     [ApiController]
     [Route("api/webhooks/rocketchat")]
     public class RocketChatWebhookController : ControllerBase
@@ -21,10 +16,6 @@ namespace SourceAPI.Controllers.Webhooks
             _logger = logger;
         }
 
-        /// <summary>
-        /// T-31, T-32: Receive webhook from Rocket.Chat
-        /// DoD: Nhận payload; trả 200 trong <200ms; đẩy job vào queue để xử lý sau
-        /// </summary>
         [HttpPost]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
@@ -62,10 +53,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-34, T-35, T-37, T-38: Process webhook events
-        /// DoD: Dispatcher định tuyến theo event; handle message/join/leave/room events
-        /// </summary>
         private async Task ProcessWebhookInlineAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -108,10 +95,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-35: Handle message event - Log to ChatMessageLog
-        /// DoD: Lưu messageId/roomId/userId/text/time; index theo room/time; map user chuẩn
-        /// </summary>
         private async Task HandleMessageEventAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -141,10 +124,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-37: Handle user joined event
-        /// DoD: Cập nhật DB khi user vào room; idempotent; audit
-        /// </summary>
         private async Task HandleUserJoinedEventAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -168,10 +147,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-37: Handle user left event
-        /// DoD: Cập nhật DB khi user ra room; idempotent; audit
-        /// </summary>
         private async Task HandleUserLeftEventAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -189,10 +164,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-38: Handle room created event
-        /// DoD: Đồng bộ khi phòng tạo từ Rocket UI
-        /// </summary>
         private async Task HandleRoomCreatedEventAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -210,10 +181,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-38: Handle room deleted event
-        /// DoD: Đồng bộ khi phòng xoá; trạng thái DB khớp Rocket
-        /// </summary>
         private async Task HandleRoomDeletedEventAsync(RocketChatWebhookPayload payload, string correlationId)
         {
             try
@@ -231,9 +198,6 @@ namespace SourceAPI.Controllers.Webhooks
             }
         }
 
-        /// <summary>
-        /// T-36: Delete message with moderation policy
-        /// </summary>
         private async Task DeleteMessageAsync(string messageId, string reason, string correlationId)
         {
             try
@@ -252,9 +216,6 @@ namespace SourceAPI.Controllers.Webhooks
 
     #region Webhook Payload Models
 
-    /// <summary>
-    /// Rocket.Chat webhook payload
-    /// </summary>
     public class RocketChatWebhookPayload
     {
         public string? Event { get; set; }

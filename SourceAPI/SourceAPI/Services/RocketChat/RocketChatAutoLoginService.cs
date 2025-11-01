@@ -9,10 +9,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// Auto-login service for Rocket.Chat
-    /// Allows users to access Rocket.Chat without knowing the random password
-    /// </summary>
     public class RocketChatAutoLoginService : IRocketChatAutoLoginService
     {
         private readonly IRocketChatUserService _userService;
@@ -32,9 +28,6 @@ namespace SourceAPI.Services.RocketChat
             _logger = logger;
         }
 
-        /// <summary>
-        /// Get login token for user to access Rocket.Chat
-        /// </summary>
         public async Task<AuthTokenDto> GetLoginTokenAsync(int userId)
         {
             try
@@ -81,9 +74,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get full URL to auto-login to Rocket.Chat
-        /// </summary>
         public async Task<string> GetAutoLoginUrlAsync(int userId, string redirectPath = "/home")
         {
             try

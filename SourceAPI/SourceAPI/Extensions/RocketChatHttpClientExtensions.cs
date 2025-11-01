@@ -9,9 +9,6 @@ namespace SourceAPI.Extensions;
 
 public static class RocketChatHttpClientExtensions
 {
-    /// <summary>
-    /// Adds a RocketChat Refit client with standard configuration
-    /// </summary>
     public static IHttpClientBuilder AddRocketChatProxy<TInterface>(
         this IServiceCollection services,
         string baseUrl,
@@ -64,17 +61,11 @@ public static class RocketChatHttpClientExtensions
     }
 }
 
-/// <summary>
-/// Types of RocketChat proxy clients
-/// </summary>
 public enum RocketChatProxyType
 {
-    /// <summary>Public endpoints (no authentication)</summary>
     Public,
 
-    /// <summary>Admin endpoints (uses admin token)</summary>
     Admin,
 
-    /// <summary>User endpoints (uses current user context)</summary>
     User
 }

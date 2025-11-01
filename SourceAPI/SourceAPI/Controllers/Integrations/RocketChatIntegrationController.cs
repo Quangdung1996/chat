@@ -10,10 +10,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Controllers.Integrations
 {
-    /// <summary>
-    /// Rocket.Chat Integration API Controller
-    /// Protected by API Key authentication (X-API-Key header)
-    /// </summary>
     [ApiController]
     [Route("api/integrations/rocket")]
     public class RocketChatIntegrationController : ControllerBase
@@ -40,10 +36,6 @@ namespace SourceAPI.Controllers.Integrations
 
         #region User Management
 
-        /// <summary>
-        /// T-41: Get user info by internal user ID
-        /// DoD: Bảo vệ bằng API key; cache 5'; trả fullName/department/email
-        /// </summary>
         [HttpGet("user/{userId}/info")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -76,9 +68,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get all users from Rocket.Chat (for directory/contacts)
-        /// </summary>
         [HttpGet("users")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> GetAllUsers([FromQuery] int count = 100, [FromQuery] int offset = 0)
@@ -102,10 +91,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get Rocket.Chat auto-login token for current user
-        /// Allows seamless login to Rocket.Chat without password
-        /// </summary>
         [HttpPost("get-login-token")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -137,9 +122,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get Rocket.Chat auto-login URL for current user
-        /// </summary>
         [HttpPost("get-login-url")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -169,11 +151,6 @@ namespace SourceAPI.Controllers.Integrations
 
         #region Direct Messages
 
-        /// <summary>
-        /// Create direct message room between current user and target user
-        /// Returns existing DM if already exists (idempotent)
-        /// POST /api/integrations/rocket/dm/create?currentUserId=1&targetUsername=john.doe
-        /// </summary>
         [HttpPost("dm/create")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -209,15 +186,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get all rooms for a specific user (subscriptions)
-        /// Returns all rooms user is participating in (DMs, groups, channels)
-        /// GET /api/integrations/rocket/rooms
-        ///
-        /// Requires Rocket.Chat authentication headers:
-        /// - X-RocketChat-Token: User's Rocket.Chat auth token
-        /// - X-RocketChat-UserId: User's Rocket.Chat user ID
-        /// </summary>
         [HttpGet("rooms")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -257,10 +225,6 @@ namespace SourceAPI.Controllers.Integrations
 
         #region Room Management (T-19b, T-26, T-30)
 
-        /// <summary>
-        /// T-19b: Create group/channel in Rocket.Chat
-        /// DoD: Endpoint bảo vệ; validate input; trả {roomId, groupCode}; idempotent theo groupCode
-        /// </summary>
         [HttpPost("create-group")]
         [ProducesResponseType(typeof(CreateGroupResponse), 200)]
         [ProducesResponseType(400)]
@@ -293,10 +257,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-30: List/search groups with filters
-        /// DoD: GET endpoint với pagination; filter theo dept/project/owner
-        /// </summary>
         [HttpGet("groups")]
         [ProducesResponseType(200)]
         public IActionResult ListGroups(
@@ -331,9 +291,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-26: Rename room
-        /// </summary>
         [HttpPut("room/{roomId}/rename")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -357,9 +314,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-26: Archive room
-        /// </summary>
         [HttpPost("room/{roomId}/archive")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> ArchiveRoom(string roomId, [FromQuery] string roomType = "group")
@@ -376,9 +330,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-26: Delete room (with confirmation)
-        /// </summary>
         [HttpDelete("room/{roomId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -401,9 +352,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-25: Set announcement mode (read-only for non-moderators)
-        /// </summary>
         [HttpPost("room/{roomId}/announcement-mode")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> SetAnnouncementMode(
@@ -426,9 +374,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-25: Set room topic
-        /// </summary>
         [HttpPut("room/{roomId}/topic")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> SetTopic(string roomId, [FromBody] SetTopicRequest request)
@@ -449,10 +394,6 @@ namespace SourceAPI.Controllers.Integrations
 
         #region Member Management (T-20, T-21, T-22, T-23, T-24, T-27)
 
-        /// <summary>
-        /// T-20: Add single member to room
-        /// DoD: Invite thành công; kiểm tra đã là member thì bỏ qua; ghi RoomMemberMapping
-        /// </summary>
         [HttpPost("room/{roomId}/add-member")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -483,10 +424,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-23: Add multiple members with rate limiting
-        /// DoD: Thêm theo danh sách; delay chống rate limit; báo cáo success/fail từng user
-        /// </summary>
         [HttpPost("room/{roomId}/add-members")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -524,10 +461,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-21: Remove member from room
-        /// DoD: Kick thành công; kiểm tra quyền; cập nhật DB; audit log
-        /// </summary>
         [HttpDelete("room/{roomId}/member/{rocketUserId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -558,10 +491,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-22: Add moderator role
-        /// DoD: Add moderator; cập nhật DB
-        /// </summary>
         [HttpPost("room/{roomId}/moderator/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> AddModerator(
@@ -584,9 +513,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-22: Remove moderator role
-        /// </summary>
         [HttpDelete("room/{roomId}/moderator/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> RemoveModerator(
@@ -606,9 +532,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// T-22: Add owner role (validate ≥1 owner còn lại)
-        /// </summary>
         [HttpPost("room/{roomId}/owner/{rocketUserId}")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> AddOwner(
@@ -628,11 +551,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get room members from Rocket.Chat
-        /// User must be a member of the room to access this
-        /// GET /api/integrations/rocket/rooms/{roomId}/members
-        /// </summary>
         [HttpGet("rooms/{roomId}/members")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
@@ -674,10 +592,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get room information including readOnly status
-        /// GET /api/integrations/rocket/room/{roomId}/info?roomType=group
-        /// </summary>
         [HttpGet("room/{roomId}/info")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
@@ -732,10 +646,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Leave a room (group or channel)
-        /// POST /api/integrations/rocket/room/{roomId}/leave?roomType=group
-        /// </summary>
         [HttpPost("room/{roomId}/leave")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
@@ -774,11 +684,6 @@ namespace SourceAPI.Controllers.Integrations
 
         #region Messaging (T-36b)
 
-        /// <summary>
-        /// T-36b: Send message to room
-        /// DoD: Gửi chủ động vào room bởi bot; hỗ trợ roomId/groupCode; trả về messageId
-        /// Updated: Uses Rocket.Chat token from X-RocketChat-Token header
-        /// </summary>
         [HttpPost("send")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -817,9 +722,6 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
-        /// <summary>
-        /// Get room messages (real-time from Rocket.Chat)
-        /// </summary>
         [HttpGet("room/{rocketRoomId}/messages")]
         [ProducesResponseType(200)]
         public async Task<IActionResult> GetRoomMessages(

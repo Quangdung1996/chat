@@ -10,11 +10,6 @@ using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat
 {
-    /// <summary>
-    /// T-08: RocketChat User Service Implementation
-    /// DoD: Gọi users.create; trả RocketUserId/Username; persist mapping; bắt lỗi có ngữ nghĩa
-    /// Uses Database First pattern with Repository
-    /// </summary>
     public class RocketChatUserService : IRocketChatUserService
     {
         private readonly IRocketChatAdminProxy _adminApi;
@@ -28,10 +23,6 @@ namespace SourceAPI.Services.RocketChat
             _logger = logger;
         }
 
-        /// <summary>
-        /// T-08: Create user in Rocket.Chat (public API - checks for duplicates)
-        /// DoD: Gọi users.create; trả RocketUserId/Username
-        /// </summary>
         public async Task<CreateUserResponse> CreateUserAsync(
             string username,
             string fullName,
@@ -82,10 +73,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Internal method to create user without duplicate check
-        /// Used by SyncUserAsync after it has already checked for duplicates
-        /// </summary>
         private async Task<CreateUserResponse> CreateUserInternalAsync(
             string username,
             string fullName,
@@ -260,9 +247,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Check if user exists by username
-        /// </summary>
         public async Task<bool> UserExistsAsync(string username)
         {
             try
@@ -280,9 +264,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get mapping by internal user ID
-        /// </summary>
         public async Task<RocketUserMapping?> GetMappingAsync(int userId)
         {
             try
@@ -313,9 +294,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get mapping by Rocket.Chat user ID
-        /// </summary>
         public async Task<RocketUserMapping?> GetMappingByRocketUserIdAsync(string rocketUserId)
         {
             try
@@ -346,9 +324,6 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        /// <summary>
-        /// Get users directly from Rocket.Chat (for directory/contacts)
-        /// </summary>
         public async Task<List<RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0)
         {
             try
