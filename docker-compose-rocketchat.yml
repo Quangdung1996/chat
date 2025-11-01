@@ -19,7 +19,7 @@ services:
       - 3000:3000
 
   mongo:
-    image: mongo:5.0
+    image: mongo:7.0
     container_name: mongo
     restart: unless-stopped
     volumes:
@@ -31,7 +31,7 @@ services:
 
   # MongoDB replica set initialization
   mongo-init-replica:
-    image: mongo:5.0
+    image: mongo:7.0
     container_name: mongo-init-replica
     command: >
       bash -c "
