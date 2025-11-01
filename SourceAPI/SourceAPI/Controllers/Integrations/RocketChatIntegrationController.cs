@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
-using SourceAPI.Services;
+using SourceAPI.Services.RocketChat;
 using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -16,21 +16,16 @@ namespace SourceAPI.Controllers.Integrations
     {
         private readonly IRocketChatUserService _userService;
         private readonly IRocketChatRoomService _roomService;
-        private readonly IRocketChatAutoLoginService _autoLoginService;
-        private readonly IRocketChatContext _rocketChatContext;
+        private readonly IRocketChatUserTokenService _rocketChatUserTokenService;
         private readonly ILogger<RocketChatIntegrationController> _logger;
 
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
-            IRocketChatAutoLoginService autoLoginService,
-            IRocketChatContext rocketChatContext,
             ILogger<RocketChatIntegrationController> logger)
         {
             _userService = userService;
             _roomService = roomService;
-            _autoLoginService = autoLoginService;
-            _rocketChatContext = rocketChatContext;
             _logger = logger;
         }
 
@@ -99,7 +94,7 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                var token = await _autoLoginService.GetLoginTokenAsync(request.UserId);
+                var token = await _rocketChatUserTokenService.GetOrCreateUserTokenAsync(request.UserId);
 
                 return Ok(new
                 {
@@ -118,31 +113,6 @@ namespace SourceAPI.Controllers.Integrations
                     return NotFound(new { success = false, message = ex.Message });
                 }
 
-                return StatusCode(500, new { success = false, message = "Internal server error" });
-            }
-        }
-
-        [HttpPost("get-login-url")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> GetLoginUrl([FromBody] GetLoginUrlRequest request)
-        {
-            try
-            {
-                var url = await _autoLoginService.GetAutoLoginUrlAsync(
-                    request.UserId,
-                    request.RedirectPath ?? "/home"
-                );
-
-                return Ok(new
-                {
-                    success = true,
-                    loginUrl = url
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error getting login URL for user {request.UserId}");
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
@@ -694,12 +664,6 @@ namespace SourceAPI.Controllers.Integrations
                 if (string.IsNullOrWhiteSpace(request.RoomId) || string.IsNullOrWhiteSpace(request.Text))
                 {
                     return BadRequest(new { message = "RoomId and Text are required" });
-                }
-
-                // ✅ Get Rocket.Chat credentials from context service (populated by middleware)
-                if (!_rocketChatContext.HasRocketChatAuth)
-                {
-                    return BadRequest(new { message = "X-RocketChat-Token and X-RocketChat-UserId headers are required" });
                 }
 
                 // ✅ Send message using Rocket.Chat token directly (no database lookup)

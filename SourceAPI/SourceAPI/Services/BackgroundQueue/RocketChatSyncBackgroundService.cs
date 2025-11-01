@@ -52,13 +52,6 @@ public class RocketChatSyncBackgroundService : BackgroundService
 
         try
         {
-            var existingMappings = await GetExistingMappingsCountAsync();
-            if (existingMappings > 0)
-            {
-                _logger.LogInformation("RocketChat user mappings already exist ({Count} users). Skipping initial sync.", existingMappings);
-                return;
-            }
-
             var usersToSync = GetUsersToSyncAsync(scope);
 
             int successCount = 0;

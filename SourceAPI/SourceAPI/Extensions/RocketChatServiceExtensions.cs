@@ -45,7 +45,6 @@ namespace SourceAPI.Extensions
             services.AddScoped<IRocketChatAuthService, RocketChatAuthService>();
             services.AddScoped<IRocketChatUserService, RocketChatUserService>();
             services.AddScoped<IRocketChatRoomService, RocketChatRoomService>();
-            services.AddScoped<IRocketChatAutoLoginService, RocketChatAutoLoginService>();
             services.AddScoped<IRocketChatUserTokenService, RocketChatUserTokenService>();
 
             // Register background task queue for async user registration
@@ -56,7 +55,7 @@ namespace SourceAPI.Extensions
             services.AddHostedService<QueuedHostedService>();
 
             // Register background service for auto-sync
-            // services.AddHostedService<RocketChatSyncBackgroundService>();
+            services.AddHostedService<RocketChatSyncBackgroundService>();
 
             // Register memory cache if not already registered
             services.AddMemoryCache();
