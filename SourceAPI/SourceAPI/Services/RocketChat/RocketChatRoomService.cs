@@ -7,6 +7,7 @@ using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -374,6 +375,34 @@ namespace SourceAPI.Services.RocketChat
             {
                 _logger.LogError(ex, $"Error sending message to room {roomId}: {ex.Message}");
                 return null;
+            }
+        }
+
+        public async Task<UploadFileResponse> UploadFileAsync(
+            string roomId, 
+            Stream fileStream, 
+            string fileName, 
+            string? description = null, 
+            string? message = null)
+        {
+            try
+            {
+                // Create StreamPart for Refit multipart upload
+                var streamPart = new StreamPart(fileStream, fileName);
+
+                // Use Refit - DelegatingHandler auto adds auth headers
+                var response = await _userProxy.UploadFileAsync(
+                    roomId, 
+                    streamPart, 
+                    description, 
+                    message);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error uploading file to room {roomId}: {ex.Message}");
+                return new UploadFileResponse { Success = false };
             }
         }
 

@@ -1,5 +1,6 @@
 using SourceAPI.Models.RocketChat.DTOs;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Services.RocketChat.Interfaces
@@ -34,7 +35,7 @@ namespace SourceAPI.Services.RocketChat.Interfaces
 
         Task<bool> SetAnnouncementAsync(string roomId, string announcement, string roomType = "group");
 
-        Task<string> SendMessageAsync(string roomId, string text, string? alias = null);
+        Task<string?> SendMessageAsync(string roomId, string text, string? alias = null);
 
         Task<RoomMessagesResponse> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0);
 
@@ -47,6 +48,8 @@ namespace SourceAPI.Services.RocketChat.Interfaces
         Task<RoomInfoResponse> GetRoomInfoAsync(string roomId, string roomType = "group");
 
         Task<bool> LeaveRoomAsync(string roomId, string roomType = "group");
+
+        Task<UploadFileResponse> UploadFileAsync(string roomId, Stream fileStream, string fileName, string? description = null, string? message = null);
     }
 }
 

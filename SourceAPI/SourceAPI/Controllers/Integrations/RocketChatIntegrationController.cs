@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
@@ -708,6 +709,69 @@ namespace SourceAPI.Controllers.Integrations
             {
                 _logger.LogError(ex, $"Error getting messages for room {rocketRoomId}");
                 return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPost("room/{roomId}/upload")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> UploadFile(
+            string roomId,
+            [FromForm] IFormFile file,
+            [FromForm] string? description = null,
+            [FromForm] string? message = null)
+        {
+            try
+            {
+                // Validate file
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { message = "File is required" });
+                }
+
+                // Check Rocket.Chat authentication
+                var rocketToken = HttpContext.Items["RocketChatToken"]?.ToString();
+                var rocketUserId = HttpContext.Items["RocketChatUserId"]?.ToString();
+
+                if (string.IsNullOrEmpty(rocketToken) || string.IsNullOrEmpty(rocketUserId))
+                {
+                    return Unauthorized(new { message = "Rocket.Chat authentication required. Provide X-RocketChat-Token and X-RocketChat-UserId headers." });
+                }
+
+                // Upload file using stream
+                using (var stream = file.OpenReadStream())
+                {
+                    var response = await _roomService.UploadFileAsync(
+                        roomId,
+                        stream,
+                        file.FileName,
+                        description,
+                        message);
+
+                    if (!response.Success)
+                    {
+                        return BadRequest(new { message = "Failed to upload file" });
+                    }
+
+                    return Ok(new
+                    {
+                        success = true,
+                        messageId = response.Message?.Id,
+                        file = new
+                        {
+                            name = response.Message?.File?.Name,
+                            type = response.Message?.File?.Type,
+                            size = response.Message?.File?.Size,
+                            url = response.Message?.File?.Url
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error uploading file to room {roomId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
 

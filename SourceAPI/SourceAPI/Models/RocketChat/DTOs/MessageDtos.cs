@@ -101,3 +101,58 @@ public class RoomMessageUser
     public string Name { get; set; } = string.Empty;
 }
 
+// File Upload Response
+public class UploadFileResponse : ApiResponse
+{
+    [JsonProperty("message")]
+    public UploadedFileData? Message { get; set; }
+}
+
+public class UploadedFileData
+{
+    [JsonProperty("_id")]
+    public string Id { get; set; } = string.Empty;
+    
+    [JsonProperty("rid")]
+    public string Rid { get; set; } = string.Empty;
+    
+    [JsonProperty("msg")]
+    public string? Msg { get; set; }
+    
+    [JsonProperty("file")]
+    public FileAttachment? File { get; set; }
+    
+    [JsonProperty("attachments")]
+    public List<FileAttachment>? Attachments { get; set; }
+    
+    [JsonProperty("ts")]
+    public System.DateTime? Ts { get; set; }
+    
+    [JsonProperty("u")]
+    public RoomMessageUser? U { get; set; }
+}
+
+public class FileAttachment
+{
+    [JsonProperty("_id")]
+    public string Id { get; set; } = string.Empty;
+    
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [JsonProperty("type")]
+    public string Type { get; set; } = string.Empty;
+    
+    [JsonProperty("size")]
+    public long Size { get; set; }
+    
+    [JsonProperty("url")]
+    public string? Url { get; set; }
+    
+    [JsonProperty("title")]
+    public string? Title { get; set; }
+    
+    [JsonProperty("description")]
+    public string? Description { get; set; }
+}
+

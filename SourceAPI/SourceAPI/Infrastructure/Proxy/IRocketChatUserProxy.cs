@@ -113,5 +113,17 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/channels.setAnnouncement")]
     Task<ApiResponse> SetChannelAnnouncementAsync([Body] SetAnnouncementRequest request);
+
+    // =====================================================
+    // File Upload
+    // =====================================================
+
+    [Multipart]
+    [Post("/api/v1/rooms.upload/{roomId}")]
+    Task<UploadFileResponse> UploadFileAsync(
+        string roomId,
+        [AliasAs("file")] StreamPart file,
+        [AliasAs("description")] string? description = null,
+        [AliasAs("msg")] string? msg = null);
 }
 
