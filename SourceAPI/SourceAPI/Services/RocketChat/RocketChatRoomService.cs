@@ -533,9 +533,9 @@ namespace SourceAPI.Services.RocketChat
                 if (response == null || !response.Success)
                 {
                     _logger.LogWarning($"Failed to get messages from room {roomId}");
-                    return new RoomMessagesResponse 
-                    { 
-                        Success = false, 
+                    return new RoomMessagesResponse
+                    {
+                        Success = false,
                         Messages = new List<RoomMessage>(),
                         Count = 0,
                         Offset = offset,
@@ -546,15 +546,15 @@ namespace SourceAPI.Services.RocketChat
                 _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} messages from room {roomId} (offset: {offset})");
                 // Sort by timestamp descending (newest first) for infinite scroll
                 // First page gets newest messages, subsequent pages get older messages
-                response.Messages = response.Messages.OrderByDescending(x => x.Ts).ToList();
+                response.Messages = response.Messages.OrderBy(m => m.Ts).ToList();
                 return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting messages from room {roomId}: {ex.Message}");
-                return new RoomMessagesResponse 
-                { 
-                    Success = false, 
+                return new RoomMessagesResponse
+                {
+                    Success = false,
                     Messages = new List<RoomMessage>(),
                     Count = 0,
                     Offset = offset,
