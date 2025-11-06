@@ -419,6 +419,11 @@ class RocketChatService {
             url: msg.file.url,
           } : undefined,
           attachments: msg.attachments,
+          // ✨ Thread info
+          tmid: msg.tmid,
+          tcount: msg.tcount,
+          tlm: msg.tlm,
+          replies: msg.replies,
         };
       });
 
@@ -471,6 +476,105 @@ class RocketChatService {
         'Content-Type': 'multipart/form-data',
       },
     });
+  }
+
+  // ===== THREADS =====
+
+  /**
+   * Lấy thread messages (replies in a thread)
+   * GET /api/integrations/rocket/thread/{tmid}/messages
+   */
+  async getThreadMessages(request: import('@/types/rocketchat').GetThreadMessagesRequest): Promise<import('@/types/rocketchat').GetThreadMessagesResponse> {
+    const { tmid, roomId, count = 50, offset = 0 } = request;
+    
+    try {
+      // Use the same getMessages endpoint but with thread filtering
+      // Rocket.Chat API: GET /api/v1/chat.getThreadMessages?tmid={tmid}
+      const endpoint = `/api/integrations/rocket/thread/${tmid}/messages`;
+      const response = await apiClient.get<{ 
+        success: boolean; 
+        messages: any[];
+        count: number;
+        offset: number;
+        total: number;
+      }>(endpoint, {
+        params: {
+          roomId,
+          count,
+          offset,
+        },
+      });
+
+      // Helper to parse Rocket.Chat timestamp format
+      const parseTimestamp = (ts: any): string => {
+        if (!ts) return new Date().toISOString();
+        if (typeof ts === 'string') return ts;
+        if (ts.$date) return new Date(ts.$date).toISOString();
+        if (typeof ts === 'number') return new Date(ts).toISOString();
+        return new Date().toISOString();
+      };
+
+      // Transform messages
+      if (response.success && response.messages) {
+        const transformedMessages = response.messages.map((msg: any) => {
+          const username = msg.u?.username || msg.username || 'Unknown';
+          return {
+            messageId: msg._id || msg.id,
+            roomId: msg.rid,
+            username,
+            text: msg.msg || msg.text || '',
+            timestamp: parseTimestamp(msg.ts || msg.timestamp),
+            deleted: msg.deleted || false,
+            edited: msg.editedAt ? true : false,
+            type: msg.t || null,
+            user: {
+              id: msg.u?._id || msg.u?.id,
+              username: msg.u?.username || msg.username,
+              name: msg.u?.name || msg.u?.username || username,
+            },
+            isCurrentUser: msg.isCurrentUser,
+            file: msg.file ? {
+              _id: msg.file._id,
+              name: msg.file.name,
+              type: msg.file.type,
+              size: msg.file.size,
+              url: msg.file.url,
+            } : undefined,
+            attachments: msg.attachments,
+            // Thread info
+            tmid: msg.tmid,
+            tcount: msg.tcount,
+            tlm: msg.tlm,
+            replies: msg.replies,
+          };
+        });
+
+        return {
+          success: response.success,
+          messages: transformedMessages,
+          count: response.count,
+          offset: response.offset,
+          total: response.total,
+        };
+      }
+
+      return {
+        success: false,
+        messages: [],
+        count: 0,
+        offset: 0,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('Error fetching thread messages:', error);
+      return {
+        success: false,
+        messages: [],
+        count: 0,
+        offset: 0,
+        total: 0,
+      };
+    }
   }
 
   // ===== HEALTH CHECK =====

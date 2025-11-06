@@ -573,6 +573,46 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
+        public async Task<RoomMessagesResponse> GetThreadMessagesAsync(string tmid, int count = 50, int offset = 0)
+        {
+            try
+            {
+                _logger.LogInformation($"Getting thread messages for tmid {tmid} (count: {count}, offset: {offset})");
+
+                var response = await _userProxy.GetThreadMessagesAsync(tmid, count, offset);
+
+                if (response == null || !response.Success)
+                {
+                    _logger.LogWarning($"Failed to get thread messages for tmid {tmid}");
+                    return new RoomMessagesResponse
+                    {
+                        Success = false,
+                        Messages = new List<RoomMessage>(),
+                        Count = 0,
+                        Offset = offset,
+                        Total = 0
+                    };
+                }
+
+                _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} thread messages for tmid {tmid}");
+                // Sort by timestamp ascending (oldest first) for threads
+                response.Messages = response.Messages.OrderBy(m => m.Ts).ToList();
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting thread messages for tmid {tmid}: {ex.Message}");
+                return new RoomMessagesResponse
+                {
+                    Success = false,
+                    Messages = new List<RoomMessage>(),
+                    Count = 0,
+                    Offset = offset,
+                    Total = 0
+                };
+            }
+        }
+
         public async Task<List<SubscriptionData>> GetUserRoomsByTokenAsync()
         {
             try

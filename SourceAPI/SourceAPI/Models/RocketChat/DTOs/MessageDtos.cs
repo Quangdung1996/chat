@@ -10,6 +10,9 @@ public class PostMessageRequest
 
     [JsonProperty("text")]
     public string Text { get; set; } = string.Empty;
+    
+    [JsonProperty("tmid")]
+    public string? Tmid { get; set; } // Thread message ID - for replying in threads
 }
 
 public class PostMessageResponse : ApiResponse
@@ -87,6 +90,26 @@ public class RoomMessage
     
     [JsonProperty("isCurrentUser")]
     public bool IsCurrentUser { get; set; } = false;
+    
+    // File attachment fields
+    [JsonProperty("file")]
+    public UploadedFile? File { get; set; }
+    
+    [JsonProperty("attachments")]
+    public List<FileAttachmentDetail>? Attachments { get; set; }
+    
+    // Thread support
+    [JsonProperty("tmid")]
+    public string? Tmid { get; set; } // Thread message ID (if this is a reply in a thread)
+    
+    [JsonProperty("tcount")]
+    public int? Tcount { get; set; } // Thread reply count (if this is a thread parent)
+    
+    [JsonProperty("tlm")]
+    public System.DateTime? Tlm { get; set; } // Thread last message timestamp
+    
+    [JsonProperty("replies")]
+    public List<string>? Replies { get; set; } // Array of user IDs who replied in thread
 }
 
 public class RoomMessageUser
@@ -119,19 +142,91 @@ public class UploadedFileData
     [JsonProperty("msg")]
     public string? Msg { get; set; }
     
-    [JsonProperty("file")]
-    public FileAttachment? File { get; set; }
-    
-    [JsonProperty("attachments")]
-    public List<FileAttachment>? Attachments { get; set; }
-    
     [JsonProperty("ts")]
     public System.DateTime? Ts { get; set; }
     
+    [JsonProperty("file")]
+    public UploadedFile? File { get; set; }
+    
+    [JsonProperty("files")]
+    public List<UploadedFile>? Files { get; set; }
+    
+    [JsonProperty("attachments")]
+    public List<FileAttachmentDetail>? Attachments { get; set; }
+    
     [JsonProperty("u")]
     public RoomMessageUser? U { get; set; }
+    
+    [JsonProperty("_updatedAt")]
+    public System.DateTime? UpdatedAt { get; set; }
+    
+    [JsonProperty("urls")]
+    public List<string>? Urls { get; set; }
 }
 
+// File info in upload response
+public class UploadedFile
+{
+    [JsonProperty("_id")]
+    public string Id { get; set; } = string.Empty;
+    
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [JsonProperty("type")]
+    public string Type { get; set; } = string.Empty;
+    
+    [JsonProperty("size")]
+    public long Size { get; set; }
+    
+    [JsonProperty("format")]
+    public string? Format { get; set; }
+    
+    [JsonProperty("url")]
+    public string? Url { get; set; }
+}
+
+// Attachment detail in upload response
+public class FileAttachmentDetail
+{
+    [JsonProperty("title")]
+    public string? Title { get; set; }
+    
+    [JsonProperty("title_link")]
+    public string? TitleLink { get; set; }
+    
+    [JsonProperty("title_link_download")]
+    public bool TitleLinkDownload { get; set; }
+    
+    [JsonProperty("image_dimensions")]
+    public ImageDimensions? ImageDimensions { get; set; }
+    
+    [JsonProperty("image_preview")]
+    public string? ImagePreview { get; set; }
+    
+    [JsonProperty("image_url")]
+    public string? ImageUrl { get; set; }
+    
+    [JsonProperty("image_type")]
+    public string? ImageType { get; set; }
+    
+    [JsonProperty("image_size")]
+    public long? ImageSize { get; set; }
+    
+    [JsonProperty("type")]
+    public string? Type { get; set; }
+}
+
+public class ImageDimensions
+{
+    [JsonProperty("width")]
+    public int Width { get; set; }
+    
+    [JsonProperty("height")]
+    public int Height { get; set; }
+}
+
+// Legacy FileAttachment for backward compatibility
 public class FileAttachment
 {
     [JsonProperty("_id")]

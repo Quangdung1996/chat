@@ -12,6 +12,7 @@ interface MessageListInfiniteProps {
   currentUserId?: number;
   currentUsername?: string;
   onMessagesChange?: (messages: ChatMessage[]) => void;
+  onThreadClick?: (message: ChatMessage) => void;
 }
 
 function MessageListInfinite({ 
@@ -19,7 +20,8 @@ function MessageListInfinite({
   roomType = 'p', 
   currentUserId, 
   currentUsername,
-  onMessagesChange 
+  onMessagesChange,
+  onThreadClick
 }: MessageListInfiniteProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -189,6 +191,7 @@ function MessageListInfinite({
         messages={[...allMessages].reverse()}
         currentUserId={currentUserId}
         currentUsername={currentUsername}
+        onThreadClick={onThreadClick}
       />
     </div>
   );

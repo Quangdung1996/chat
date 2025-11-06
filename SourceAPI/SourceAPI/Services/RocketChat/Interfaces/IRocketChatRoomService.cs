@@ -39,6 +39,8 @@ namespace SourceAPI.Services.RocketChat.Interfaces
 
         Task<RoomMessagesResponse> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0);
 
+        Task<RoomMessagesResponse> GetThreadMessagesAsync(string tmid, int count = 50, int offset = 0);
+
         Task<List<SubscriptionData>> GetUserRoomsByTokenAsync();
 
 

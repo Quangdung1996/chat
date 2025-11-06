@@ -59,6 +59,13 @@ public interface IRocketChatUserProxy
     [Get("/api/v1/im.messages")]
     Task<RoomMessagesResponse> GetDirectMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
 
+    // =====================================================
+    // Threads
+    // =====================================================
+    
+    [Get("/api/v1/chat.getThreadMessages")]
+    Task<RoomMessagesResponse> GetThreadMessagesAsync([Query] string tmid, [Query] int count = 50, [Query] int offset = 0);
+
     [Post("/api/v1/groups.create")]
     Task<CreateRoomResponse> CreatePrivateGroupAsync([Body] CreateRoomRequest request);
 

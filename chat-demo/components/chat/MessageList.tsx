@@ -5,14 +5,16 @@ import { Trash2 } from 'lucide-react';
 import type { ChatMessage } from '@/types/rocketchat';
 import SystemMessage from './SystemMessage';
 import FileAttachment from './FileAttachment';
+import { ThreadButton } from './ThreadButton';
 
 interface MessageListProps {
   messages: ChatMessage[];
   currentUserId?: number;
   currentUsername?: string;
+  onThreadClick?: (message: ChatMessage) => void;
 }
 
-function MessageList({ messages, currentUserId, currentUsername }: MessageListProps) {
+function MessageList({ messages, currentUserId, currentUsername, onThreadClick }: MessageListProps) {
 
   const formatTime = (timestamp?: string) => {
     if (!timestamp) return '';
@@ -146,7 +148,11 @@ function MessageList({ messages, currentUserId, currentUsername }: MessageListPr
                     {/* File Attachment */}
                     {message.file && (
                       <div className="mb-2">
-                        <FileAttachment file={message.file} isCurrentUser={isCurrentUser} />
+                        <FileAttachment 
+                          file={message.file} 
+                          attachment={message.attachments?.[0]}
+                          isCurrentUser={isCurrentUser} 
+                        />
                       </div>
                     )}
 
@@ -164,6 +170,16 @@ function MessageList({ messages, currentUserId, currentUsername }: MessageListPr
                         }`}>
                           {message.text}
                         </p>
+                      </div>
+                    )}
+                    
+                    {/* Thread Button - Show below message */}
+                    {onThreadClick && !message.tmid && (
+                      <div className="mt-1">
+                        <ThreadButton 
+                          message={message} 
+                          onClick={() => onThreadClick(message)} 
+                        />
                       </div>
                     )}
                     

@@ -206,11 +206,41 @@ export interface SendMessageRequest {
   roomId: string;
   text: string;
   alias?: string;
+  tmid?: string; // Thread message ID (to reply in a thread)
 }
 
 export interface SendMessageResponse {
   success: boolean;
   messageId: string;
+}
+
+// ===== THREAD TYPES =====
+export interface ThreadMessage extends ChatMessage {
+  tmid: string; // Thread parent message ID (required for thread messages)
+}
+
+export interface ThreadInfo {
+  threadId: string; // Message ID of thread parent
+  roomId: string;
+  message: ChatMessage; // The parent message that started the thread
+  replyCount: number;
+  lastReplyTime?: string;
+  participants: string[]; // User IDs who participated
+}
+
+export interface GetThreadMessagesRequest {
+  tmid: string; // Thread message ID
+  roomId: string;
+  count?: number;
+  offset?: number;
+}
+
+export interface GetThreadMessagesResponse {
+  success: boolean;
+  messages: ChatMessage[];
+  count: number;
+  offset: number;
+  total: number;
 }
 
 export interface ChatMessage {
@@ -244,10 +274,21 @@ export interface ChatMessage {
     type?: string;
     description?: string;
     title_link?: string;
+    title_link_download?: boolean;
     image_url?: string;
     image_type?: string;
     image_size?: number;
+    image_preview?: string; // Base64 encoded preview
+    image_dimensions?: {
+      width: number;
+      height: number;
+    };
   }>;
+  // Thread support
+  tmid?: string; // Thread message ID (if this is a reply in a thread)
+  tcount?: number; // Thread reply count (if this is a thread parent)
+  tlm?: string; // Thread last message timestamp
+  replies?: string[]; // Array of user IDs who replied in thread
 }
 
 // Backend message format (from DB)

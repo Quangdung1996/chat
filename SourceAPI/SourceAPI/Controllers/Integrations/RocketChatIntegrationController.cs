@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SourceAPI.Models.RocketChat.DTOs;
 using SourceAPI.Services.RocketChat;
@@ -20,17 +21,20 @@ namespace SourceAPI.Controllers.Integrations
         private readonly IRocketChatRoomService _roomService;
         private readonly IRocketChatUserTokenService _rocketChatUserTokenService;
         private readonly ILogger<RocketChatIntegrationController> _logger;
+        private readonly IConfiguration _configuration;
 
         public RocketChatIntegrationController(
             IRocketChatUserService userService,
             IRocketChatRoomService roomService,
             ILogger<RocketChatIntegrationController> logger,
-            IRocketChatUserTokenService rocketChatUserTokenService)
+            IRocketChatUserTokenService rocketChatUserTokenService,
+            IConfiguration configuration)
         {
             _userService = userService;
             _roomService = roomService;
             _logger = logger;
             _rocketChatUserTokenService = rocketChatUserTokenService;
+            _configuration = configuration;
         }
 
         #region User Management
@@ -748,6 +752,42 @@ namespace SourceAPI.Controllers.Integrations
             }
         }
 
+        [HttpGet("thread/{tmid}/messages")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetThreadMessages(
+            string tmid,
+            [FromQuery] string? roomId = null,
+            [FromQuery] int count = 50,
+            [FromQuery] int offset = 0)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tmid))
+                {
+                    return BadRequest(new { message = "Thread message ID (tmid) is required" });
+                }
+
+                var response = await _roomService.GetThreadMessagesAsync(tmid, count, offset);
+
+                return Ok(new
+                {
+                    success = response.Success,
+                    tmid,
+                    roomId,
+                    count = response.Count,
+                    offset = response.Offset,
+                    total = response.Total,
+                    messages = response.Messages
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting thread messages for tmid {tmid}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
         [HttpPost("room/{roomId}/upload")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -791,16 +831,41 @@ namespace SourceAPI.Controllers.Integrations
                         return BadRequest(new { message = "Failed to upload file" });
                     }
 
+                    // Get attachment info (TitleLink for URL, ImagePreview for base64 preview)
+                    var attachment = response.Message?.Attachments?.FirstOrDefault();
+                    
+                    // 🔍 LOG: Show image_preview content for debugging
+                    if (!string.IsNullOrEmpty(attachment?.ImagePreview))
+                    {
+                        var previewLength = attachment.ImagePreview.Length;
+                        var previewStart = attachment.ImagePreview.Substring(0, Math.Min(100, previewLength));
+                        _logger.LogInformation("📸 IMAGE_PREVIEW found! Length: {Length}, Start: {Start}...", 
+                            previewLength, previewStart);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ No IMAGE_PREVIEW in attachment");
+                    }
+                    
+                    // Get Rocket.Chat base URL from configuration
+                    var rocketChatBaseUrl = _configuration["RocketChat:BaseUrl"] ?? "http://localhost:3000";
+                    var relativeUrl = attachment?.TitleLink;
+                    var fullUrl = relativeUrl?.StartsWith("http") == true 
+                        ? relativeUrl 
+                        : $"{rocketChatBaseUrl.TrimEnd('/')}{relativeUrl}";
+                    
                     return Ok(new
                     {
                         success = true,
                         messageId = response.Message?.Id,
                         file = new
                         {
+                            _id = response.Message?.File?.Id,
                             name = response.Message?.File?.Name,
                             type = response.Message?.File?.Type,
                             size = response.Message?.File?.Size,
-                            url = response.Message?.File?.Url
+                            url = fullUrl, // Full URL to download/view the file
+                            format = attachment?.ImagePreview // Base64 preview for images
                         }
                     });
                 }

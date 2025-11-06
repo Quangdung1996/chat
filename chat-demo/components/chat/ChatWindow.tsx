@@ -6,8 +6,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useSendMessage, useAddMessageToCache } from '@/hooks/use-messages';
 import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
-import FileUploadButton from './FileUploadButton';
-import { Smile, Send } from 'lucide-react';
+import MessageEditor from './MessageEditor';
+import { ThreadPanel } from './ThreadPanel';
+import { Send } from 'lucide-react';
 import type { UserSubscription, ChatMessage } from '@/types/rocketchat';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
@@ -32,6 +33,9 @@ function ChatWindow({ room }: ChatWindowProps) {
   const [wsConnected, setWsConnected] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  
+  // 🧵 Thread state
+  const [activeThread, setActiveThread] = useState<ChatMessage | null>(null);
 
   // Extract primitive values
   const roomId = room.roomId;
@@ -139,14 +143,6 @@ function ChatWindow({ room }: ChatWindowProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage(e);
-    }
-  };
-
-
   return (
     <div className="flex-1 flex flex-col bg-[#f5f5f7] dark:bg-[#1c1c1e] h-full">
       {/* Room Header */}
@@ -173,6 +169,7 @@ function ChatWindow({ room }: ChatWindowProps) {
         roomType={roomType as 'p' | 'd' | 'c'}
         currentUserId={user?.id}
         currentUsername={room.user?.username}
+        onThreadClick={setActiveThread}
       />
 
       {/* Message Input - MS Teams Style */}
@@ -186,35 +183,19 @@ function ChatWindow({ room }: ChatWindowProps) {
         ) : (
           <form onSubmit={handleSendMessage}>
             <div className="flex items-end gap-2">
-              {/* File Upload Button */}
-              <FileUploadButton 
-                roomId={roomId} 
+              {/* Rich Text Editor with integrated file upload */}
+              <MessageEditor
+                value={messageText}
+                onChange={setMessageText}
+                onSubmit={() => {
+                  if (messageText.trim() && !sendMessageMutation.isPending) {
+                    handleSendMessage(new Event('submit') as any);
+                  }
+                }}
+                placeholder="Nhập tin nhắn..."
                 disabled={sendMessageMutation.isPending}
+                roomId={roomId}
               />
-
-              {/* Text Input Container */}
-              <div className="flex-1 relative">
-                <textarea
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Nhập tin nhắn..."
-                  rows={1}
-                  className="w-full px-3 py-2 bg-white dark:bg-[#3a3a3c] border border-gray-300 dark:border-gray-600 rounded text-[14px] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#5b5fc7]/30 dark:focus:ring-[#5b5fc7]/30 focus:border-[#5b5fc7] dark:focus:border-[#5b5fc7] transition-all duration-200"
-                  style={{ minHeight: '36px', maxHeight: '120px', lineHeight: '1.4' }}
-                />
-                
-                {/* Emoji Button - Inside Input */}
-                {!messageText && (
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
-                    title="Emoji"
-                  >
-                    <Smile className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
 
               {/* Send Button - MS Teams Purple */}
               <button
@@ -233,6 +214,15 @@ function ChatWindow({ room }: ChatWindowProps) {
           </form>
         )}
       </div>
+
+      {/* Thread Panel - Slide in from right */}
+      {activeThread && (
+        <ThreadPanel
+          roomId={roomId}
+          parentMessage={activeThread}
+          onClose={() => setActiveThread(null)}
+        />
+      )}
     </div>
   );
 }

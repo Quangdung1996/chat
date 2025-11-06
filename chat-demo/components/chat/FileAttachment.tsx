@@ -9,11 +9,22 @@ interface FileAttachmentProps {
     type?: string;
     size?: number;
     url?: string;
+    format?: string; // Base64 preview for images
+  };
+  attachment?: {
+    image_preview?: string; // Base64 thumbnail
+    image_url?: string; // Full image URL
+    image_type?: string;
+    title_link?: string; // Download link
+    image_dimensions?: {
+      width: number;
+      height: number;
+    };
   };
   isCurrentUser?: boolean;
 }
 
-export default function FileAttachment({ file, isCurrentUser }: FileAttachmentProps) {
+export default function FileAttachment({ file, attachment, isCurrentUser }: FileAttachmentProps) {
   const formatFileSize = (bytes?: number): string => {
     if (!bytes) return '0 B';
     const k = 1024;
@@ -44,12 +55,27 @@ export default function FileAttachment({ file, isCurrentUser }: FileAttachmentPr
     return <File className="w-5 h-5" />;
   };
 
-  const isImage = file.type?.startsWith('image/');
+  // Check if it's an image from multiple sources
+  const isImage = attachment?.image_type?.startsWith('image/') || file.type?.startsWith('image/');
   
-  // Construct full URL (assuming Rocket.Chat URL)
-  const fileUrl = file.url?.startsWith('http') 
-    ? file.url 
-    : `http://localhost:3000${file.url}`; // Adjust base URL as needed
+  // Priority: attachment.image_preview > file.format > attachment.image_url > file.url
+  const rocketChatBaseUrl = process.env.NEXT_PUBLIC_ROCKETCHAT_URL || 'http://localhost:3000';
+  
+  const imagePreview = attachment?.image_preview 
+    ? `data:image/jpeg;base64,${attachment.image_preview}`
+    : file.format 
+    ? `data:image/png;base64,${file.format}` 
+    : attachment?.image_url?.startsWith('http')
+    ? attachment.image_url
+    : attachment?.image_url
+    ? `${rocketChatBaseUrl}${attachment.image_url}`
+    : file.url;
+  
+  const downloadUrl = attachment?.title_link?.startsWith('http')
+    ? attachment.title_link
+    : attachment?.title_link
+    ? `${rocketChatBaseUrl}${attachment.title_link}`
+    : file.url;
 
   return (
     <div className={`max-w-sm ${
@@ -62,13 +88,13 @@ export default function FileAttachment({ file, isCurrentUser }: FileAttachmentPr
         : 'border-gray-200 dark:border-gray-700'
     }`}>
       {/* Image Preview */}
-      {isImage && file.url && (
+      {isImage && imagePreview && (
         <div className="relative">
           <img 
-            src={fileUrl} 
+            src={imagePreview} 
             alt={file.name || 'Image'} 
             className="w-full h-auto max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => window.open(fileUrl, '_blank')}
+            onClick={() => downloadUrl && window.open(downloadUrl, '_blank')}
           />
         </div>
       )}
@@ -101,9 +127,9 @@ export default function FileAttachment({ file, isCurrentUser }: FileAttachmentPr
         </div>
         
         {/* Download Button */}
-        {file.url && (
+        {downloadUrl && (
           <a
-            href={fileUrl}
+            href={downloadUrl}
             download={file.name}
             target="_blank"
             rel="noopener noreferrer"
