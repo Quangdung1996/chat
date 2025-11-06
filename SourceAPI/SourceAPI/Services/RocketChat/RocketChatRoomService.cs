@@ -383,13 +383,16 @@ namespace SourceAPI.Services.RocketChat
             string roomId, 
             Stream fileStream, 
             string fileName, 
+            string contentType,
             string? description = null, 
             string? message = null)
         {
             try
             {
-                // Create StreamPart for Refit multipart upload
-                var streamPart = new StreamPart(fileStream, fileName);
+                _logger.LogInformation($"📤 Uploading file: {fileName} ({contentType}) to room {roomId}");
+                
+                // ✨ Create StreamPart with content type for Refit multipart upload
+                var streamPart = new StreamPart(fileStream, fileName, contentType);
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 var response = await _userProxy.UploadFileAsync(
@@ -398,11 +401,17 @@ namespace SourceAPI.Services.RocketChat
                     description, 
                     message);
 
+                _logger.LogInformation($"✅ File uploaded successfully: {response?.Message?.Id}");
                 return response;
+            }
+            catch (ApiException apiEx)
+            {
+                _logger.LogError(apiEx, $"❌ API Error uploading file to room {roomId}: {apiEx.StatusCode} - {apiEx.Content}");
+                return new UploadFileResponse { Success = false };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error uploading file to room {roomId}: {ex.Message}");
+                _logger.LogError(ex, $"❌ Error uploading file to room {roomId}: {ex.Message}");
                 return new UploadFileResponse { Success = false };
             }
         }

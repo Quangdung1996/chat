@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSendMessage, useAddMessageToCache } from '@/hooks/use-messages';
 import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
+import FileUploadButton from './FileUploadButton';
 import { Smile, Send } from 'lucide-react';
 import type { UserSubscription, ChatMessage } from '@/types/rocketchat';
 
@@ -88,6 +89,15 @@ function ChatWindow({ room }: ChatWindowProps) {
           name: message.u.name || message.u.username,
         },
         updatedAt: message._updatedAt ? parseTimestamp(message._updatedAt) : undefined,
+        // ✨ File attachment info
+        file: message.file ? {
+          _id: message.file._id,
+          name: message.file.name,
+          type: message.file.type,
+          size: message.file.size,
+          url: message.file.url,
+        } : undefined,
+        attachments: message.attachments,
       };
 
       // ✅ Add message to TanStack Query cache
@@ -176,16 +186,11 @@ function ChatWindow({ room }: ChatWindowProps) {
         ) : (
           <form onSubmit={handleSendMessage}>
             <div className="flex items-end gap-2">
-              {/* Action Button - Left */}
-              <button
-                type="button"
-                className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-[#5b5fc7] dark:hover:text-[#5b5fc7] hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-all duration-200"
-                title="Thêm"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                </svg>
-              </button>
+              {/* File Upload Button */}
+              <FileUploadButton 
+                roomId={roomId} 
+                disabled={sendMessageMutation.isPending}
+              />
 
               {/* Text Input Container */}
               <div className="flex-1 relative">

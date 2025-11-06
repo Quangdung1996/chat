@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -110,6 +111,41 @@ namespace SourceAPI.Controllers.Integrations
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Test endpoint - Get login token for specific userId (Anonymous access for testing)
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("get-login-token/{userId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetLoginTokenByUserId(int userId)
+        {
+            try
+            {
+                if (userId <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Invalid userId" });
+                }
+
+                var token = await _rocketChatUserTokenService.GetOrCreateUserTokenAsync(userId);
+
+                return Ok(new
+                {
+                    success = true,
+                    authToken = token.AuthToken,
+                    userId = token.UserId,
+                    rocketUserId = token.UserId,
+                    expiresAt = token.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting token for userId {userId}");
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 
@@ -746,6 +782,7 @@ namespace SourceAPI.Controllers.Integrations
                         roomId,
                         stream,
                         file.FileName,
+                        file.ContentType,  // ✨ Pass content type
                         description,
                         message);
 

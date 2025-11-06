@@ -230,6 +230,24 @@ export interface ChatMessage {
     username: string;
     name?: string;
   };
+  // File attachment info
+  file?: {
+    _id?: string;
+    name?: string;
+    type?: string;
+    size?: number;
+    url?: string;
+  };
+  attachments?: Array<{
+    _id?: string;
+    title?: string;
+    type?: string;
+    description?: string;
+    title_link?: string;
+    image_url?: string;
+    image_type?: string;
+    image_size?: number;
+  }>;
 }
 
 // Backend message format (from DB)

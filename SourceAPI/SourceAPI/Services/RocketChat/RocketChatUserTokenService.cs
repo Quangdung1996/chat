@@ -12,6 +12,7 @@ namespace SourceAPI.Services.RocketChat;
 public interface IRocketChatUserTokenService
 {
     Task<AuthTokenDto> GetOrCreateUserTokenAsync();
+    Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId);
 }
 
 public class RocketChatUserTokenService : IRocketChatUserTokenService
@@ -39,9 +40,14 @@ public class RocketChatUserTokenService : IRocketChatUserTokenService
 
     public async Task<AuthTokenDto> GetOrCreateUserTokenAsync()
     {
+        int userId = _currentUserService.UserId;
+        return await GetOrCreateUserTokenAsync(userId);
+    }
+
+    public async Task<AuthTokenDto> GetOrCreateUserTokenAsync(int userId)
+    {
         try
         {
-            int userId = _currentUserService.UserId;
             var mapping = _userService.GetUserMapping(userId);
             if (mapping == null)
             {

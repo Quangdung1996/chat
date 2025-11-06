@@ -49,7 +49,7 @@ namespace SourceAPI.Services.RocketChat.Interfaces
 
         Task<bool> LeaveRoomAsync(string roomId, string roomType = "group");
 
-        Task<UploadFileResponse> UploadFileAsync(string roomId, Stream fileStream, string fileName, string? description = null, string? message = null);
+        Task<UploadFileResponse> UploadFileAsync(string roomId, Stream fileStream, string fileName, string contentType, string? description = null, string? message = null);
     }
 }
 

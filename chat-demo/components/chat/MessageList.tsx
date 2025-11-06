@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ChatMessage } from '@/types/rocketchat';
 import SystemMessage from './SystemMessage';
+import FileAttachment from './FileAttachment';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -142,19 +143,29 @@ function MessageList({ messages, currentUserId, currentUsername }: MessageListPr
                   </span>
                 ) : (
                   <div className="group/bubble relative">
-                    <div
-                      className={`inline-block px-3 py-2 ${
-                        isCurrentUser
-                          ? 'bg-[#5B5FC7] dark:bg-[#5B5FC7] text-white rounded-lg shadow-sm'
-                          : 'bg-white dark:bg-[#292929] text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <p className={`whitespace-pre-wrap break-words leading-[1.4] text-[15px] ${
-                        isCurrentUser ? 'text-white' : ''
-                      }`}>
-                        {message.text}
-                      </p>
-                    </div>
+                    {/* File Attachment */}
+                    {message.file && (
+                      <div className="mb-2">
+                        <FileAttachment file={message.file} isCurrentUser={isCurrentUser} />
+                      </div>
+                    )}
+
+                    {/* Text Message */}
+                    {message.text && (
+                      <div
+                        className={`inline-block px-3 py-2 ${
+                          isCurrentUser
+                            ? 'bg-[#5B5FC7] dark:bg-[#5B5FC7] text-white rounded-lg shadow-sm'
+                            : 'bg-white dark:bg-[#292929] text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <p className={`whitespace-pre-wrap break-words leading-[1.4] text-[15px] ${
+                          isCurrentUser ? 'text-white' : ''
+                        }`}>
+                          {message.text}
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Time - Always visible, positioned based on user */}
                     <div className={`text-[11px] mt-1 px-1 ${

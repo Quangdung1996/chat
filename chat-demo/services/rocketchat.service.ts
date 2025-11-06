@@ -4,6 +4,7 @@
  * Updated to match backend controller endpoints
  */
 
+import axios from 'axios';
 import { apiClient } from '@/lib/api-client';
 import { API_CONFIG } from '@/config/api.config';
 import type {
@@ -35,7 +36,7 @@ class RocketChatService {
   // ===== AUTHENTICATION =====
   
   /**
-   * Lấy Rocket.Chat login token từ backend
+   * Lấy Rocket.Chat login token từ backend (requires OAuth token)
    * POST /api/integrations/rocket/get-login-token
    */
   async getLoginToken(userId: number): Promise<{
@@ -45,6 +46,23 @@ class RocketChatService {
     expiresAt: string;
   }> {
     return apiClient.post(this.endpoints.getLoginToken, { userId });
+  }
+
+  /**
+   * Lấy Rocket.Chat login token cho userId cụ thể (Anonymous - for testing)
+   * POST /api/integrations/rocket/get-login-token/{userId}
+   * No authentication required - uses axios directly without auth interceptor
+   */
+  async getLoginTokenByUserId(userId: number): Promise<{
+    success: boolean;
+    authToken: string;
+    userId: string;
+    rocketUserId: string;
+    expiresAt: string;
+  }> {
+    const endpoint = `${API_CONFIG.baseURL}/api/integrations/rocket/get-login-token/${userId}`;
+    const response = await axios.post(endpoint);
+    return response.data;
   }
 
   // ===== USER MANAGEMENT =====
@@ -392,6 +410,15 @@ class RocketChatService {
           },
           // ✨ Backend đã trả về isCurrentUser rồi, dùng luôn (fallback to compare nếu không có)
           isCurrentUser: msg.isCurrentUser,
+          // ✨ File attachment info
+          file: msg.file ? {
+            _id: msg.file._id,
+            name: msg.file.name,
+            type: msg.file.type,
+            size: msg.file.size,
+            url: msg.file.url,
+          } : undefined,
+          attachments: msg.attachments,
         };
       });
 
@@ -411,6 +438,39 @@ class RocketChatService {
       offset: 0,
       total: 0,
     };
+  }
+
+  /**
+   * Upload file vào room
+   * POST /api/integrations/rocket/room/{roomId}/upload
+   * Requires FormData with file, description (optional), message (optional)
+   */
+  async uploadFile(
+    roomId: string,
+    file: File,
+    description?: string,
+    message?: string
+  ): Promise<{
+    success: boolean;
+    messageId: string;
+    file: {
+      name: string;
+      type: string;
+      size: number;
+      url: string;
+    };
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (description) formData.append('description', description);
+    if (message) formData.append('message', message);
+
+    const endpoint = `/api/integrations/rocket/room/${roomId}/upload`;
+    return apiClient.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   }
 
   // ===== HEALTH CHECK =====

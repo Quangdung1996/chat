@@ -45,10 +45,10 @@ export default function LoginPage() {
         userInfo
       );
 
-      // Step 4: Get RocketChat token (chỉ 1 lần duy nhất khi login)
+      // Step 4: Get RocketChat token (Anonymous endpoint - không cần auth)
       console.log('🚀 Getting RocketChat token for user:', userInfo.id);
       try {
-        const rocketToken = await rocketChatService.getLoginToken(userInfo.id);
+        const rocketToken = await rocketChatService.getLoginTokenByUserId(userInfo.id);
         if (rocketToken.success && rocketToken.authToken) {
           setRocketChatAuth(rocketToken.authToken, rocketToken.userId);
           console.log('✅ RocketChat token saved to store');
