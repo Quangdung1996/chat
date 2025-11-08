@@ -7,7 +7,7 @@ import { rocketChatService } from '@/services/rocketchat.service';
 import type { ChatMessage, SendMessageRequest } from '@/types/rocketchat';
 
 // Constants
-const MESSAGES_PER_PAGE = 50;
+const MESSAGES_PER_PAGE = 1000;
 
 // Query keys factory
 export const messageKeys = {
