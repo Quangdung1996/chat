@@ -237,14 +237,19 @@ export const useNotificationStore = create<NotificationState>()(
           // ✨ Sync thread notifications from subscription data
           // Rocket.Chat subscription may contain 'tunread' (thread unread) array
           // Format: tunread: [{ _id: threadId, unread: count }]
-          if (subscription.tunread && Array.isArray(subscription.tunread)) {
+          // Also handle backend format: threadUnread: [{ threadId, unread }]
+          const tunreadData = subscription.tunread || subscription.threadUnread;
+          if (tunreadData && Array.isArray(tunreadData)) {
             const roomThreads = new Map<string, ThreadNotification>();
-            subscription.tunread.forEach((thread: any) => {
-              if (thread._id && thread.unread) {
-                roomThreads.set(thread._id, {
+            tunreadData.forEach((thread: any) => {
+              // Handle both formats: { _id, unread } or { threadId, unread }
+              const threadId = thread._id || thread.threadId;
+              const count = thread.unread;
+              if (threadId && count !== undefined) {
+                roomThreads.set(threadId, {
                   roomId,
-                  threadId: thread._id,
-                  count: thread.unread,
+                  threadId,
+                  count,
                 });
               }
             });

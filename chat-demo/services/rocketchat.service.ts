@@ -113,15 +113,21 @@ class RocketChatService {
         }
 
         // ✨ Extract thread notifications from subscription data
-        // Rocket.Chat subscription may contain 'tunread' (thread unread) array
-        // Format: tunread: [{ _id: threadId, unread: count }]
+        // Backend now returns 'tunread' or 'threadUnread' field from Rocket.Chat API
+        // Format: tunread: [{ _id: threadId, unread: count }] or threadUnread: [{ threadId, unread }]
         const threadNotifications: Array<{ threadId: string; count: number }> = [];
-        if (room.tunread && Array.isArray(room.tunread)) {
-          room.tunread.forEach((thread: any) => {
-            if (thread._id && thread.unread) {
+        
+        // Try both field names (tunread from Rocket.Chat, threadUnread from backend mapping)
+        const tunreadData = room.tunread || room.threadUnread;
+        if (tunreadData && Array.isArray(tunreadData)) {
+          tunreadData.forEach((thread: any) => {
+            // Handle both formats: { _id, unread } or { threadId, unread }
+            const threadId = thread._id || thread.threadId;
+            const count = thread.unread;
+            if (threadId && count !== undefined) {
               threadNotifications.push({
-                threadId: thread._id,
-                count: thread.unread,
+                threadId,
+                count,
               });
             }
           });

@@ -223,10 +223,6 @@ export function useUserSubscriptions(
         unread: subscription.unread,
         alert: subscription.alert,
         name: subscription.name || subscription.fname,
-        tunread: subscription.tunread,
-        tunreadType: typeof subscription.tunread,
-        allFields: Object.keys(subscription),
-        fullSubscription: subscription, // Log full object to debug
       });
 
       // Update notification store

@@ -613,11 +613,20 @@ class RocketChatWebSocketService {
           fname: subscription?.fname,
           unread: subscription?.unread,
           alert: subscription?.alert,
-          tunread: subscription?.tunread,
-          tunreadType: typeof subscription?.tunread,
           allFields: Object.keys(subscription || {}),
-          fullSubscription: subscription // Log full object to see all fields
+          // Log full subscription to see all available fields
+          fullSubscription: subscription
         });
+        
+        // 🔍 Check for thread-related fields
+        if (subscription) {
+          const threadFields = ['tunread', 'threadUnread', 'threads', 'tmid', 'replies'];
+          threadFields.forEach(field => {
+            if (subscription[field] !== undefined) {
+              console.log(`🧵 Found thread field "${field}":`, subscription[field]);
+            }
+          });
+        }
         
         callback({ action, subscription });
       }
