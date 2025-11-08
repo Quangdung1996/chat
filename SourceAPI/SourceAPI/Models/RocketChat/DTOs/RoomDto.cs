@@ -224,27 +224,27 @@ public class SubscriptionData
     public MessageData? LastMessage { get; set; }
 
     // TODO: Re-enable after verifying Rocket.Chat tunread format
-    // /// <summary>
-    // /// Thread unread notifications
-    // /// Format: [{ "_id": "threadId", "unread": count }]
-    // /// Note: This field may not always be present in Rocket.Chat responses
-    // /// </summary>
-    // [JsonProperty("tunread", NullValueHandling = NullValueHandling.Ignore)]
-    // public List<ThreadUnreadData>? Tunread { get; set; }
+    /// <summary>
+    /// Thread unread notifications
+    /// Format: [{ "_id": "threadId", "unread": count }]
+    /// Note: This field may not always be present in Rocket.Chat responses
+    /// </summary>
+    [JsonProperty("tunread", NullValueHandling = NullValueHandling.Ignore)]
+    public List<ThreadUnreadData> Tunread { get; set; }
 }
 
 // TODO: Re-enable after verifying Rocket.Chat tunread format
 // /// <summary>
 // /// Thread unread data from Rocket.Chat subscription
 // /// </summary>
-// public class ThreadUnreadData
-// {
-//     [JsonProperty("_id")]
-//     public string ThreadId { get; set; } = string.Empty;
-//
-//     [JsonProperty("unread")]
-//     public int Unread { get; set; }
-// }
+public class ThreadUnreadData
+{
+    [JsonProperty("_id")]
+    public string ThreadId { get; set; } = string.Empty;
+
+    [JsonProperty("unread")]
+    public int Unread { get; set; }
+}
 
 public class RoomData
 {
