@@ -1,15 +1,3 @@
--- =====================================================
--- Stored Procedure: Get Active Users for Rocket.Chat Sync
--- Schema: dbo (hoặc public tùy database)
--- Purpose: Lấy danh sách users chưa sync vào Rocket.Chat
--- =====================================================
-
--- TODO: CUSTOMIZE procedure này theo cấu trúc DB của bạn
--- Sử dụng table dbo.UserLogin có các fields:
--- - Id (UserId)
--- - Username (from OAuth2 provider - REQUIRED)
--- - EmailAddress (optional - có thể null)
--- - FirstName, LastName (concat để tạo FullName)
 
 -- OPTION 1: PostgreSQL Function (với Username từ UserLogin)
 CREATE OR REPLACE FUNCTION dbo."sp_GetUsersForRocketChatSync"(
@@ -25,7 +13,7 @@ BEGIN
         json_build_object(
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),  -- Email có thể null
-            'FullName', TRIM(CONCAT(u."FirstName", ' ', u."LastName")),  -- Concat FirstName + LastName
+            'FullName', TRIM(CONCAT(u."LastName", ' ', u."FirstName")),  -- Concat FirstName + LastName
             'Username', u."Username"  -- Username từ UserLogin (REQUIRED)
         )
     )::TEXT INTO v_result
@@ -56,7 +44,7 @@ BEGIN
         json_build_object(
             'UserId', u."Id",
             'Email', COALESCE(u."EmailAddress", ''),
-            'FullName', TRIM(CONCAT(u."FirstName", ' ', u."LastName")),  -- Concat FirstName + LastName
+            'FullName', TRIM(CONCAT(u."LastName", ' ', u."FirstName")),  -- Concat FirstName + LastName
             'Username', u."Username"  -- Username từ UserLogin
         )
     )::TEXT INTO v_result
@@ -67,27 +55,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- =====================================================
--- TEST Query (chạy thử)
--- =====================================================
-
--- Test 1: Lấy users chưa sync
--- SELECT dbo."sp_GetUsersForRocketChatSync"('{}');
-
--- Test 2: Lấy tất cả users active
--- SELECT dbo."sp_GetAllActiveUsers"('{}');
-
--- =====================================================
--- Notes:
--- 1. Query trực tiếp từ table dbo.UserLogin (đã có đủ tất cả fields)
--- 2. EmailAddress có thể NULL - code sẽ tự generate fake email: username@noemail.local
--- 3. Username từ UserLogin là BẮT BUỘC
--- 4. FullName = CONCAT(FirstName, ' ', LastName)
--- 5. Có thể thêm filters: department, role, created date, etc.
--- 6. Column names trong dbo.UserLogin table:
---    - Id (UserId)
---    - Username (from OAuth2 provider)
---    - EmailAddress (optional)
---    - FirstName, LastName (concat để tạo FullName)
--- =====================================================
 

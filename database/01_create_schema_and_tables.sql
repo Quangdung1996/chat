@@ -1,18 +1,4 @@
--- =====================================================
--- Rocket.Chat Integration - Database Schema (Simplified)
--- Schema: dbo
--- Database: PostgreSQL
--- =====================================================
--- Chỉ cần 1 bảng Rocket_UserMapping
--- Tất cả dữ liệu room/message lấy trực tiếp từ Rocket.Chat API
--- =====================================================
 
--- Create schema if not exists
-CREATE SCHEMA IF NOT EXISTS dbo;
-
--- =====================================================
--- Table: dbo.Rocket_UserMapping
--- Purpose: Map internal users to Rocket.Chat users
 -- =====================================================
 CREATE TABLE IF NOT EXISTS dbo."Rocket_UserMapping" (
     "Id" SERIAL PRIMARY KEY,
@@ -53,42 +39,3 @@ COMMENT ON TABLE dbo."Rocket_UserMapping" IS 'Maps internal system users to Rock
 COMMENT ON COLUMN dbo."Rocket_UserMapping"."UserId" IS 'Internal system user ID';
 COMMENT ON COLUMN dbo."Rocket_UserMapping"."RocketUserId" IS 'Rocket.Chat user ID (_id)';
 COMMENT ON COLUMN dbo."Rocket_UserMapping"."RocketUsername" IS 'Rocket.Chat username';
-
--- =====================================================
--- Insert initial test data (optional)
--- =====================================================
-
--- Test admin user mapping (example)
--- INSERT INTO dbo."Rocket_UserMapping" 
---     ("UserId", "RocketUserId", "RocketUsername", "Email", "FullName")
--- VALUES 
---     (1, 'admin-rocket-id', 'admin', 'admin@example.com', 'System Admin')
--- ON CONFLICT DO NOTHING;
-
--- =====================================================
--- Grant permissions (adjust as needed)
--- =====================================================
-
--- GRANT USAGE ON SCHEMA dbo TO your_app_user;
--- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA dbo TO your_app_user;
--- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA dbo TO your_app_user;
-
--- =====================================================
--- Summary
--- =====================================================
-
-\echo '======================================================'
-\echo 'Schema "dbo" created successfully!'
-\echo '======================================================'
-\echo ''
-\echo 'Tables created:'
-\echo '  ✓ Rocket_UserMapping - User mapping'
-\echo ''
-\echo 'Data strategy:'
-\echo '  • Rooms: Query từ Rocket.Chat API (rooms.list, groups.list)'
-\echo '  • Members: Query từ Rocket.Chat API (groups.members)'
-\echo '  • Messages: Query từ Rocket.Chat API (chat.getMessage)'
-\echo ''
-\echo 'Simple & Clean! 🎯'
-\echo '======================================================'
-

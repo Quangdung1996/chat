@@ -162,6 +162,11 @@ export interface UserSubscription {
     ts?: { $date: number };
     _updatedAt?: { $date: number };
   };
+  // ✨ Thread notifications from subscription data
+  threadNotifications?: Array<{
+    threadId: string; // parent message ID (tmid)
+    count: number; // unread replies count
+  }>;
 }
 
 export interface GetUserRoomsResponse {

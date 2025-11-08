@@ -5,14 +5,20 @@ import { X, Loader2, Send } from 'lucide-react';
 import { ChatMessage } from '@/types/rocketchat';
 import { rocketChatService } from '@/services/rocketchat.service';
 import MessageEditor, { MessageEditorRef } from './MessageEditor';
+import { rocketChatWS } from '@/services/rocketchat-websocket.service';
+import { useWebSocketConnected } from '@/store/websocketStore';
+import { useNotificationStore } from '@/store/notificationStore';
+import { useThreadMessages } from '@/hooks/use-websocket-subscriptions';
 
 interface ThreadPanelProps {
   roomId: string;
   parentMessage: ChatMessage;
   onClose: () => void;
+  currentUsername?: string;
+  currentUserName?: string;
 }
 
-export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps) {
+export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, currentUserName }: ThreadPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -20,10 +26,70 @@ export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MessageEditorRef>(null);
 
+  // 🕐 Format timestamp (giống MessageList)
+  const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    
+    const now = new Date();
+    const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
+    const diffInMinutes = diffInSeconds / 60;
+    const diffInHours = diffInMinutes / 60;
+
+    // Tin nhắn trong vòng 24 giờ
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    // Tin nhắn cũ hơn 24 giờ
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   // Load thread messages
   useEffect(() => {
     loadThreadMessages();
-  }, [parentMessage.messageId]);
+    
+    // ✅ Mark room as read when opening thread
+    rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
+      console.warn('Failed to mark room as read when opening thread:', error);
+    });
+  }, [parentMessage.messageId, roomId]);
+
+  // ✅ Zustand stores
+  const wsConnected = useWebSocketConnected();
+  const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
+
+  // ✅ Clear thread notification when opening thread panel (user is viewing it)
+  useEffect(() => {
+    clearThreadNotification(roomId, parentMessage.messageId);
+  }, [roomId, parentMessage.messageId, clearThreadNotification]);
+
+  // ✅ Subscribe to WebSocket updates for this thread using custom hook
+  useThreadMessages(
+    roomId,
+    parentMessage.messageId,
+    wsConnected,
+    (newMessage) => {
+      // Add to thread messages if not already exists
+      setMessages(prev => {
+        const exists = prev.some(m => m.messageId === newMessage.messageId);
+        if (exists) return prev;
+        const updated = [...prev, newMessage];
+        setTimeout(scrollToBottom, 100);
+        return updated;
+      });
+    }
+  );
 
   const loadThreadMessages = async () => {
     try {
@@ -35,7 +101,10 @@ export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps
       });
       
       if (response.success) {
-        setMessages(response.messages);
+        // Filter out the parent message (first message without tmid)
+        // We already show it separately above
+        const threadReplies = response.messages.filter(msg => msg.tmid);
+        setMessages(threadReplies);
         scrollToBottom();
       }
     } catch (error) {
@@ -68,6 +137,11 @@ export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps
         editorRef.current?.focus();
         // Reload messages to show new reply
         await loadThreadMessages();
+        
+        // ✅ Mark as read after sending message in thread
+        rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
+          console.warn('Failed to mark room as read after sending thread reply:', error);
+        });
       }
     } catch (error) {
       console.error('Error sending thread message:', error);
@@ -108,14 +182,7 @@ export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps
                 {parentMessage.user?.name || parentMessage.username || 'Unknown'}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {parentMessage.timestamp
-                  ? new Date(parentMessage.timestamp).toLocaleString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      day: '2-digit',
-                      month: '2-digit',
-                    })
-                  : ''}
+                {formatTimestamp(parentMessage.timestamp)}
               </span>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap break-words">
@@ -138,55 +205,64 @@ export function ThreadPanel({ roomId, parentMessage, onClose }: ThreadPanelProps
             </p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.messageId} className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {msg.user?.name?.[0] || msg.username?.[0] || '?'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                    {msg.user?.name || msg.username || 'Unknown'}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {msg.timestamp
-                      ? new Date(msg.timestamp).toLocaleString('vi-VN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          day: '2-digit',
-                          month: '2-digit',
-                        })
-                      : ''}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap break-words">
-                  {msg.text}
-                </p>
-                
-                {/* File attachments */}
-                {msg.attachments && msg.attachments.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {msg.attachments.map((att, idx) => (
-                      <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded p-2">
-                        {att.image_url && (
-                          <img
-                            src={att.image_url}
-                            alt={att.title || 'Attachment'}
-                            className="max-w-full rounded"
-                          />
-                        )}
-                        {att.title && (
-                          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                            {att.title}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+          messages.map((msg) => {
+            const msgUsername = msg.username || msg.user?.username;
+            const isCurrentUser = msgUsername === currentUsername || msg.isCurrentUser;
+            
+            return (
+              <div 
+                key={msg.messageId} 
+                className={`flex items-start gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
+              >
+                {!isCurrentUser && (
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium bg-green-500">
+                    {msg.user?.name?.[0] || msg.username?.[0] || '?'}
                   </div>
                 )}
+                <div className={`flex-1 min-w-0 ${isCurrentUser ? 'flex flex-col items-end' : ''}`}>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                      {isCurrentUser ? 'Tôi' : (msg.user?.name || msg.username || 'Unknown')}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTimestamp(msg.timestamp)}
+                    </span>
+                  </div>
+                  <div className={`mt-1 ${
+                    isCurrentUser 
+                      ? 'bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2' 
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl rounded-tl-sm px-4 py-2'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap break-words">
+                      {msg.text}
+                    </p>
+                    
+                    {/* File attachments */}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {msg.attachments.map((att, idx) => (
+                          <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded p-2">
+                            {att.image_url && (
+                              <img
+                                src={att.image_url}
+                                alt={att.title || 'Attachment'}
+                                className="max-w-full rounded"
+                              />
+                            )}
+                            {att.title && (
+                              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                                {att.title}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>

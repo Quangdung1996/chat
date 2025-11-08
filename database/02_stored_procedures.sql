@@ -1,16 +1,3 @@
--- =====================================================
--- Rocket.Chat Integration - Stored Procedures (Simplified)
--- Schema: dbo
--- Database: PostgreSQL
--- Pattern: JSON input/output (Ezy Framework style)
--- =====================================================
--- Chỉ còn User Mapping procedures
--- Room/Message data lấy trực tiếp từ Rocket.Chat API
--- =====================================================
-
--- =====================================================
--- Rocket_UserMapping Stored Procedures
--- =====================================================
 
 -- SP: Get user mapping by UserId
 CREATE OR REPLACE FUNCTION dbo."sp_GetUserRocketMapping_ByUserId"(
@@ -177,21 +164,3 @@ BEGIN
     RETURN COALESCE(v_result, 'null');
 END;
 $$ LANGUAGE plpgsql;
-
--- =====================================================
--- Summary
--- =====================================================
-
-\echo '======================================================'
-\echo 'Stored Procedures created successfully!'
-\echo '======================================================'
-\echo ''
-\echo 'Available procedures:'
-\echo '  • sp_GetUserRocketMapping_ByUserId'
-\echo '  • sp_GetUserRocketMapping_ByRocketUserId'
-\echo '  • sp_GetAllActiveUsers'
-\echo '  • sp_UpsertUserRocketMapping'
-\echo ''
-\echo 'Rooms, Members, Messages: Query từ Rocket.Chat API'
-\echo '======================================================'
-

@@ -112,6 +112,21 @@ class RocketChatService {
           lastMessageTime = new Date(room.ls);
         }
 
+        // ✨ Extract thread notifications from subscription data
+        // Rocket.Chat subscription may contain 'tunread' (thread unread) array
+        // Format: tunread: [{ _id: threadId, unread: count }]
+        const threadNotifications: Array<{ threadId: string; count: number }> = [];
+        if (room.tunread && Array.isArray(room.tunread)) {
+          room.tunread.forEach((thread: any) => {
+            if (thread._id && thread.unread) {
+              threadNotifications.push({
+                threadId: thread._id,
+                count: thread.unread,
+              });
+            }
+          });
+        }
+
         return {
           id: room._id,                    // subscription ID
           roomId: room.rid,                // actual room ID (for API calls)
@@ -127,6 +142,8 @@ class RocketChatService {
           alert: room.alert || false,
           open: room.open || false,
           lastMessageTime, // Use parsed timestamp from backend
+          // ✨ Thread notifications from subscription
+          threadNotifications, // Array of { threadId, count }
         };
       });
 

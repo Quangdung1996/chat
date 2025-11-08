@@ -702,11 +702,18 @@ namespace SourceAPI.Controllers.Integrations
                     return BadRequest(new { message = "RoomId and Text are required" });
                 }
 
+                // Log thread reply info
+                if (!string.IsNullOrWhiteSpace(request.Tmid))
+                {
+                    _logger.LogInformation($"💬 Sending thread reply: roomId={request.RoomId}, tmid={request.Tmid}, text={request.Text}");
+                }
+
                 // ✅ Send message using Rocket.Chat token directly (no database lookup)
                 var messageId = await _roomService.SendMessageAsync(
                     request.RoomId,
                     request.Text,
-                    request.Alias);
+                    request.Alias,
+                    request.Tmid);
 
                 if (string.IsNullOrWhiteSpace(messageId))
                 {
@@ -907,6 +914,7 @@ namespace SourceAPI.Controllers.Integrations
         public string RoomId { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
         public string? Alias { get; set; }
+        public string? Tmid { get; set; } // For thread replies
     }
 
     public class RenameRoomRequest

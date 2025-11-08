@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useWebSocketStore, useWebSocketConnected } from '@/store/websocketStore';
+import { useNotificationStore } from '@/store/notificationStore';
+import { useUserSubscriptions, useUserRooms } from '@/hooks/use-websocket-subscriptions';
 import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import UserMenu from '@/components/UserMenu';
@@ -47,11 +50,24 @@ export default function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   
+  // ✅ Zustand stores
+  const wsConnected = useWebSocketConnected();
+  const connectWebSocket = useWebSocketStore((state) => state.connect);
+  const roomUnreadCounts = useNotificationStore((state) => state.roomUnreadCounts);
+  const roomAlerts = useNotificationStore((state) => state.roomAlerts);
+  const lastMessageTimes = useNotificationStore((state) => state.lastMessageTimes);
+  const getTotalThreadNotifications = useNotificationStore((state) => state.getTotalThreadNotifications);
+  const initializeFromRooms = useNotificationStore((state) => state.initializeFromRooms);
+  const clearRoomUnread = useNotificationStore((state) => state.clearRoomUnread);
+  
+  // Subscribe to threadNotifications Map to trigger re-render when it changes
+  // We need to access the Map itself to ensure reactivity
+  const threadNotificationsMap = useNotificationStore((state) => state.threadNotifications);
+  
   // ✅ State management without useSWR
   const [rooms, setRooms] = useState<UserSubscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [wsReady, setWsReady] = useState(false); // ✅ Track when WebSocket is ready
   
   // New states for user search
   const [users, setUsers] = useState<User[]>([]);
@@ -79,6 +95,10 @@ export default function ChatSidebar({
           })));
           
           setRooms(response.rooms);
+          
+          // ✅ Initialize notification store from rooms
+          initializeFromRooms(response.rooms);
+          
           setError(null);
         } else {
           throw new Error('Failed to load rooms');
@@ -91,7 +111,7 @@ export default function ChatSidebar({
     };
     
     loadRooms();
-  }, [user?.id]);
+  }, [user?.id, initializeFromRooms]);
 
   useEffect(() => {
     if (user?.id) {
@@ -103,240 +123,141 @@ export default function ChatSidebar({
   useEffect(() => {
     const initWebSocket = async () => {
       if (!token || !rocketChatUserId) {
-        setWsReady(false);
         return;
       }
 
       // Check if already connected
-      if (rocketChatWS.isConnected()) {
+      if (wsConnected) {
         console.log('✅ WebSocket already connected');
-        setWsReady(true);
         return;
       }
 
       try {
         console.log('🔌 Connecting WebSocket...');
-        await rocketChatWS.connect();
-        await rocketChatWS.authenticateWithStoredToken();
+        await connectWebSocket();
         console.log('✅ WebSocket connected and authenticated');
-        setWsReady(true); // ✅ Mark as ready AFTER successful authentication
       } catch (error) {
         console.error('❌ Failed to connect WebSocket:', error);
-        setWsReady(false);
       }
     };
 
     initWebSocket();
-  }, [token, rocketChatUserId]);
+  }, [token, rocketChatUserId, wsConnected, connectWebSocket]);
 
   // ✅ Rocket.Chat WebSocket: Subscribe to user's subscriptions (unread count updates)
-  // 🔥 IMPORTANT: This runs ALWAYS when connected, not just when selectedRoom exists
-  useEffect(() => {
-    if (!rocketChatUserId || !wsReady) {
-      console.log('⏳ Waiting for WebSocket to be ready...', { rocketChatUserId, wsReady });
-      return;
-    }
+  // Sử dụng custom hook để quản lý subscription
+  useUserSubscriptions(rocketChatUserId, wsConnected, (data) => {
+    const { action, subscription } = data;
+    
+    if (!subscription) return;
 
-    // Handler cho subscription updates (unread count, etc)
-    const handleSubscriptionUpdate = (data: any) => {
-      const { action, subscription } = data;
+    // Update rooms state to sync with notification store
+    setRooms(currentRooms => {
+      const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
       
-      if (!subscription) return;
+      if (roomIndex >= 0) {
+        const existingRoom = currentRooms[roomIndex];
+        const newRooms = [...currentRooms];
+        
+        // Get unread count from notification store
+        const unreadCount = roomUnreadCounts.get(subscription.rid) || subscription.unread || 0;
+        const alert = roomAlerts.get(subscription.rid) ?? subscription.alert ?? existingRoom.alert;
+        const lastMessageTime = lastMessageTimes.get(subscription.rid) || new Date();
+        
+        newRooms[roomIndex] = {
+          ...existingRoom,
+          unreadCount,
+          alert,
+          lastMessageTime,
+          ...(subscription.name && { name: subscription.name }),
+          ...(subscription.fname && { fullName: subscription.fname }),
+        };
+        
+        return newRooms;
+      }
+      
+      return currentRooms;
+    });
+  });
 
-      // 🐛 DEBUG: Log subscription update
-      console.log('🔔 Subscription update:', {
-        action,
-        roomId: subscription.rid,
-        type: subscription.t,
-        unread: subscription.unread,
-        alert: subscription.alert,
-        name: subscription.name || subscription.fname
-      });
+  // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
+  // Sử dụng custom hook để quản lý subscription
+  useUserRooms(rocketChatUserId, wsConnected, (data) => {
+    const { action, room } = data;
+    
+    if (!room) return;
 
-      // Update rooms state
+    // Handle different actions
+    if (action === 'inserted' || action === 'updated') {
       setRooms(currentRooms => {
-        const roomIndex = currentRooms.findIndex(r => r.roomId === subscription.rid);
+        const roomIndex = currentRooms.findIndex(r => r.roomId === room._id);
         
         if (roomIndex >= 0) {
-          // ✅ ONLY update specific fields, don't spread subscription to avoid overwriting with undefined
+          // Update existing room
           const existingRoom = currentRooms[roomIndex];
           const newRooms = [...currentRooms];
           
+          // Get unread count from notification store
+          const unreadCount = roomUnreadCounts.get(room._id) ?? existingRoom.unreadCount ?? 0;
+          const lastMessageTime = lastMessageTimes.get(room._id) || new Date();
+          
           newRooms[roomIndex] = {
-            ...existingRoom, // Keep all existing fields
-            unreadCount: subscription.unread || 0,
-            alert: subscription.alert !== undefined ? subscription.alert : existingRoom.alert,
-            lastMessageTime: new Date(), // ✅ Update timestamp when subscription changes (new message)
-            // ✅ Only update name/fullName if they exist in subscription
-            ...(subscription.name && { name: subscription.name }),
-            ...(subscription.fname && { fullName: subscription.fname }),
+            ...existingRoom,
+            ...(room._id && { id: room._id, roomId: room._id }),
+            ...(room.name && { name: room.name }),
+            ...(room.fname && { fullName: room.fname }),
+            ...(room.t && { type: room.t }),
+            ...(room.lastMessage && { lastMessage: room.lastMessage }),
+            unreadCount,
+            lastMessageTime,
           };
-
-          console.log('✅ Updated room:', {
-            name: newRooms[roomIndex].fullName || newRooms[roomIndex].name,
-            type: newRooms[roomIndex].type,
-            unreadCount: newRooms[roomIndex].unreadCount
-          });
           
           return newRooms;
-        }
-        
-        console.warn('⚠️ Room not found in currentRooms:', subscription.rid);
-        return currentRooms;
-      });
-    };
-
-    // Subscribe to user's subscription updates using Rocket.Chat userId
-    const subId = rocketChatWS.subscribeToUserSubscriptions(
-      rocketChatUserId,
-      handleSubscriptionUpdate
-    );
-
-    return () => {
-      console.log('🔕 Unsubscribing from user subscriptions');
-      rocketChatWS.unsubscribe(subId);
-    };
-  }, [rocketChatUserId, wsReady]); // ✅ Subscribe when WS ready, don't re-subscribe on room change
-
-  // ✅ Rocket.Chat WebSocket: Subscribe to user's rooms (new rooms, room changes)
-  useEffect(() => {
-    if (!rocketChatUserId || !wsReady) return;
-
-    // Handler cho room updates (new rooms, room deleted, etc)
-    const handleRoomUpdate = async (data: any) => {
-      const { action, room } = data;
-      
-      if (!room) return;
-
-      // 🐛 DEBUG: Log room update
-      console.log('🏠 [WS] Room update:', {
-        action,
-        roomId: room._id,
-        type: room.t,
-        name: room.name || room.fname,
-        hasUnread: room.unread !== undefined,
-        unread: room.unread
-      });
-
-      // Handle different actions
-      if (action === 'inserted' || action === 'updated') {
-        setRooms(currentRooms => {
-          const roomIndex = currentRooms.findIndex(r => r.roomId === room._id);
-          
-          if (roomIndex >= 0) {
-            // ✅ Update existing room - ONLY update fields that exist
-            const existingRoom = currentRooms[roomIndex];
-            const newRooms = [...currentRooms];
-            
-            // ⚠️ WORKAROUND: rooms-changed event doesn't have unread count
-            // For groups (type='p'), infer unread count from lastMessage
-            let unreadCount = existingRoom.unreadCount || 0;
-            
-            if (room.t === 'p' && room.lastMessage) {
-              // Check if this is a NEW message (different from last known message)
-              const lastMsgId = room.lastMessage._id;
-              const prevLastMsgId = existingRoom.lastMessage?._id;
-              
-              if (lastMsgId && lastMsgId !== prevLastMsgId) {
-                // New message arrived
-                const messageUserId = room.lastMessage.u?._id;
-                
-                // Only increment unread if message is from another user
-                if (messageUserId !== rocketChatUserId) {
-                  unreadCount = (existingRoom.unreadCount || 0) + 1;
-                }
-              }
-            }
-            
-            newRooms[roomIndex] = {
-              ...existingRoom, // Keep all existing fields
-              // ✅ Only update fields if they exist in WebSocket data
-              ...(room._id && { id: room._id, roomId: room._id }),
-              ...(room.name && { name: room.name }),
-              ...(room.fname && { fullName: room.fname }),
-              ...(room.t && { type: room.t }),
-              ...(room.lastMessage && { lastMessage: room.lastMessage }),
-              unreadCount,
-              lastMessageTime: new Date(), // ✅ Update timestamp on room update
-            };
-            
-            console.log('✅ [WS] Updated room state:', {
-              name: newRooms[roomIndex].fullName || newRooms[roomIndex].name,
-              type: newRooms[roomIndex].type,
-              unreadCount: newRooms[roomIndex].unreadCount
-            });
-            
-            return newRooms;
-          } else if (action === 'inserted') {
-            // 🔧 FIX: Double-check for duplicates (race condition protection)
-            // 1. Check if this room is already being added by another concurrent event
-            if (pendingRoomAdditions.current.has(room._id)) {
-              console.log('⚠️ [WS] Room is already being added (pending), skipping:', room._id);
-              return currentRooms;
-            }
-            
-            // 2. Check if room already exists in current state
-            const exists = currentRooms.some(r => r.roomId === room._id);
-            if (exists) {
-              console.log('⚠️ [WS] Room already exists in state, skipping:', room._id);
-              return currentRooms;
-            }
-            
-            // 🔒 Mark this room as being added (prevents concurrent duplicates)
-            pendingRoomAdditions.current.add(room._id);
-            
-            // ✅ Add new room - create full object with required fields
-            const newRoom: UserSubscription = {
-              id: room._id,
-              roomId: room._id,
-              name: room.name || room.fname || 'Unknown',
-              fullName: room.fname || room.name || 'Unknown',
-              type: room.t || 'd',
-              unreadCount: room.unread || 0,
-              alert: room.alert || false,
-              open: room.open !== undefined ? room.open : true,
-              user: room.user || {
-                id: rocketChatUserId || '',
-                username: '',
-                name: ''
-              },
-              lastMessageTime: new Date(), // ✅ New rooms get current timestamp
-            };
-            
-            console.log('✅ [WS] Adding new room:', {
-              roomId: newRoom.roomId,
-              name: newRoom.fullName,
-              type: newRoom.type
-            });
-            
-            // 🔓 Clear pending status after a short delay (cleanup)
-            setTimeout(() => {
-              pendingRoomAdditions.current.delete(room._id);
-            }, 1000);
-            
-            return [newRoom, ...currentRooms];
+        } else if (action === 'inserted') {
+          // Check for duplicates
+          if (pendingRoomAdditions.current.has(room._id)) {
+            return currentRooms;
           }
           
-          return currentRooms;
-        });
-      } else if (action === 'removed') {
-        // Remove room from list
-        setRooms(currentRooms => {
-          return currentRooms.filter(r => r.roomId !== room._id);
-        });
-      }
-    };
-
-    // Subscribe to user's room updates using Rocket.Chat userId
-    const subId = rocketChatWS.subscribeToUserRooms(
-      rocketChatUserId,
-      handleRoomUpdate
-    );
-
-    return () => {
-      rocketChatWS.unsubscribe(subId);
-    };
-  }, [rocketChatUserId, wsReady]);
+          const exists = currentRooms.some(r => r.roomId === room._id);
+          if (exists) {
+            return currentRooms;
+          }
+          
+          pendingRoomAdditions.current.add(room._id);
+          
+          const newRoom: UserSubscription = {
+            id: room._id,
+            roomId: room._id,
+            name: room.name || room.fname || 'Unknown',
+            fullName: room.fname || room.name || 'Unknown',
+            type: room.t || 'd',
+            unreadCount: roomUnreadCounts.get(room._id) || 0,
+            alert: roomAlerts.get(room._id) || false,
+            open: room.open !== undefined ? room.open : true,
+            user: room.user || {
+              id: rocketChatUserId || '',
+              username: '',
+              name: ''
+            },
+            lastMessageTime: new Date(),
+          };
+          
+          setTimeout(() => {
+            pendingRoomAdditions.current.delete(room._id);
+          }, 1000);
+          
+          return [newRoom, ...currentRooms];
+        }
+        
+        return currentRooms;
+      });
+    } else if (action === 'removed') {
+      setRooms(currentRooms => {
+        return currentRooms.filter(r => r.roomId !== room._id);
+      });
+    }
+  });
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -358,11 +279,13 @@ export default function ChatSidebar({
       roomId: room.roomId,
       name: room.name,
       unreadCount: room.unreadCount,
-      wsConnected: rocketChatWS.isConnected()
+      wsConnected: wsConnected
     });
 
-    // Optimistic update: Reset unread count immediately
+    // Optimistic update: Reset unread count immediately in both store and local state
     if (room.unreadCount > 0) {
+      clearRoomUnread(room.roomId);
+      
       setRooms(currentRooms => 
         currentRooms.map(r => 
           r.id === room.id 
@@ -377,10 +300,11 @@ export default function ChatSidebar({
       } catch (error) {
         console.error('❌ Failed to mark room as read:', error);
         // Revert optimistic update if failed
+        const originalCount = room.unreadCount;
         setRooms(currentRooms => 
           currentRooms.map(r => 
             r.id === room.id 
-              ? { ...r, unreadCount: room.unreadCount } 
+              ? { ...r, unreadCount: originalCount } 
               : r
           )
         );
@@ -546,8 +470,22 @@ export default function ChatSidebar({
                     {filteredRooms.map((room) => {
                       const displayName = room.fullName || room.name;
                       const isActive = selectedRoom?.id === room.id;
+                      // Get unread count from notification store (more reliable)
+                      const storeUnreadCount = roomUnreadCounts.get(room.roomId) ?? room.unreadCount ?? 0;
                       // Chỉ show badge khi có unread VÀ KHÔNG phải room đang active
-                      const hasUnread = room.unreadCount > 0 && !isActive;
+                      const hasUnread = storeUnreadCount > 0 && !isActive;
+
+                      // Get thread notifications count for this room
+                      // Access threadNotificationsMap to ensure reactivity
+                      const roomThreads = threadNotificationsMap.get(room.roomId);
+                      let threadNotificationsCount = 0;
+                      if (roomThreads) {
+                        roomThreads.forEach((notification) => {
+                          threadNotificationsCount += notification.count;
+                        });
+                      }
+                      // Chỉ show thread badge khi có thread notifications VÀ KHÔNG phải room đang active
+                      const hasThreadNotifications = threadNotificationsCount > 0 && !isActive;
 
                       // Get initials for avatar
                       const getInitials = (name: string) => {
@@ -586,7 +524,7 @@ export default function ChatSidebar({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between gap-2 mb-0.5">
                                 <span className={`text-[17px] truncate ${
-                                  hasUnread 
+                                  hasUnread || hasThreadNotifications
                                     ? 'font-semibold text-gray-900 dark:text-white' 
                                     : 'font-normal text-gray-900 dark:text-white'
                                 }`}>
@@ -595,17 +533,26 @@ export default function ChatSidebar({
                               </div>
                               <div className="flex items-center justify-between gap-2">
                                 <p className={`text-[15px] truncate ${
-                                  hasUnread 
+                                  hasUnread || hasThreadNotifications
                                     ? 'text-gray-900 dark:text-white font-medium' 
                                     : 'text-gray-500 dark:text-gray-400'
                                 }`}>
                                   {getRoomTypeLabel(room.type)}
                                 </p>
-                                {hasUnread && (
-                                  <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">
-                                    {room.unreadCount}
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {/* Thread notifications badge */}
+                                  {hasThreadNotifications && (
+                                    <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">
+                                      {threadNotificationsCount > 99 ? '99+' : threadNotificationsCount}
+                                    </span>
+                                  )}
+                                  {/* Unread messages badge */}
+                                  {hasUnread && (
+                                    <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">
+                                      {storeUnreadCount > 99 ? '99+' : storeUnreadCount}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

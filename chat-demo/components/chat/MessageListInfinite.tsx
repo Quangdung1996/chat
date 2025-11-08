@@ -189,6 +189,7 @@ function MessageListInfinite({
       {/* Messages - reversed to show newest at bottom */}
       <MessageList
         messages={[...allMessages].reverse()}
+        roomId={roomId}
         currentUserId={currentUserId}
         currentUsername={currentUsername}
         onThreadClick={onThreadClick}

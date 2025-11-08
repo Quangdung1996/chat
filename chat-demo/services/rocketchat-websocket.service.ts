@@ -613,7 +613,10 @@ class RocketChatWebSocketService {
           fname: subscription?.fname,
           unread: subscription?.unread,
           alert: subscription?.alert,
-          allFields: Object.keys(subscription || {})
+          tunread: subscription?.tunread,
+          tunreadType: typeof subscription?.tunread,
+          allFields: Object.keys(subscription || {}),
+          fullSubscription: subscription // Log full object to see all fields
         });
         
         callback({ action, subscription });

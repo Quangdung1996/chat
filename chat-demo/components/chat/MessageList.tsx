@@ -9,12 +9,13 @@ import { ThreadButton } from './ThreadButton';
 
 interface MessageListProps {
   messages: ChatMessage[];
+  roomId?: string;
   currentUserId?: number;
   currentUsername?: string;
   onThreadClick?: (message: ChatMessage) => void;
 }
 
-function MessageList({ messages, currentUserId, currentUsername, onThreadClick }: MessageListProps) {
+function MessageList({ messages, roomId, currentUserId, currentUsername, onThreadClick }: MessageListProps) {
 
   const formatTime = (timestamp?: string) => {
     if (!timestamp) return '';
@@ -174,10 +175,11 @@ function MessageList({ messages, currentUserId, currentUsername, onThreadClick }
                     )}
                     
                     {/* Thread Button - Show below message */}
-                    {onThreadClick && !message.tmid && (
+                    {onThreadClick && !message.tmid && roomId && (
                       <div className="mt-1">
                         <ThreadButton 
-                          message={message} 
+                          message={message}
+                          roomId={roomId}
                           onClick={() => onThreadClick(message)} 
                         />
                       </div>

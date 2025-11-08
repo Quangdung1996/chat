@@ -35,7 +35,7 @@ namespace SourceAPI.Services.RocketChat.Interfaces
 
         Task<bool> SetAnnouncementAsync(string roomId, string announcement, string roomType = "group");
 
-        Task<string?> SendMessageAsync(string roomId, string text, string? alias = null);
+        Task<string?> SendMessageAsync(string roomId, string text, string? alias = null, string? tmid = null);
 
         Task<RoomMessagesResponse> GetRoomMessagesAsync(string roomId, string roomType = "group", int count = 50, int offset = 0);
 

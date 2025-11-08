@@ -354,15 +354,21 @@ namespace SourceAPI.Services.RocketChat
             }
         }
 
-        public async Task<string?> SendMessageAsync(string roomId, string text, string? alias = null)
+        public async Task<string?> SendMessageAsync(string roomId, string text, string? alias = null, string? tmid = null)
         {
             try
             {
                 var request = new PostMessageRequest
                 {
                     RoomId = roomId,
-                    Text = text
+                    Text = text,
+                    Tmid = tmid  // For thread replies
                 };
+
+                if (!string.IsNullOrWhiteSpace(tmid))
+                {
+                    _logger.LogInformation($"🧵 Sending thread reply to Rocket.Chat: roomId={roomId}, tmid={tmid}");
+                }
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 var response = await _userProxy.PostMessageAsync(request);
@@ -554,9 +560,16 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} messages from room {roomId} (offset: {offset})");
+                
+                // ✅ Filter out thread replies (messages with tmid) - they belong to threads only
+                var mainMessages = response.Messages.Where(m => string.IsNullOrEmpty(m.Tmid)).ToList();
+                _logger.LogInformation($"Filtered to {mainMessages.Count} main messages (removed {response.Messages.Count - mainMessages.Count} thread replies)");
+                
                 // Sort by timestamp descending (newest first) for infinite scroll
                 // First page gets newest messages, subsequent pages get older messages
-                response.Messages = response.Messages.OrderBy(m => m.Ts).ToList();
+                response.Messages = mainMessages.OrderBy(m => m.Ts).ToList();
+                response.Count = response.Messages.Count;
+                // Note: Total from API includes thread replies, but we only return main messages
                 return response;
             }
             catch (Exception ex)
