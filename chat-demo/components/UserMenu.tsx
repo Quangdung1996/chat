@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { useAllThreadNotificationsCount } from '@/store/notificationStore';
 import authService from '@/services/auth.service';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
@@ -16,7 +15,6 @@ export default function UserMenu() {
   const user = useAuthStore(selectUser);
   const token = useAuthStore(selectToken);
   const clearAuth = useAuthStore(selectClearAuth);
-  const threadNotificationCount = useAllThreadNotificationsCount();
   const [showMenu, setShowMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -68,12 +66,6 @@ export default function UserMenu() {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
               {getInitials(displayName)}
             </div>
-          )}
-          {/* Thread Notification Badge */}
-          {threadNotificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
-              {threadNotificationCount > 99 ? '99+' : threadNotificationCount}
-            </span>
           )}
         </div>
         <div className="hidden lg:block text-left">

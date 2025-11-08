@@ -28,12 +28,14 @@ interface Subscription {
   name: string;
   params: any[];
   callback: (data: any) => void;
+  callbacks?: Set<(data: any) => void>; // Support multiple callbacks per subscription
 }
 
 class RocketChatWebSocketService {
   private ws: WebSocket | null = null;
   private messageId = 0;
   private subscriptions = new Map<string, Subscription>();
+  private subscriptionsByKey = new Map<string, string>(); // Map subscription key (name+params) to subscription ID
   private callbacks = new Map<string, (data: any, error?: any) => void>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -522,29 +524,50 @@ class RocketChatWebSocketService {
         throw new Error('WebSocket not connected');
       }
       
-      // Try different method names that RocketChat might support
-      // Common options: readMessages, subscriptions.read, rooms.read
-      try {
-        console.log('🔧 Trying: readMessages');
-        const result = await this.callMethod('readMessages', roomId);
-        console.log('✅ [WS] Room marked as read successfully with readMessages:', { roomId, result });
-        return result;
-      } catch (e1) {
-        console.log('❌ readMessages failed, trying subscriptions.read:', e1);
-        try {
-          const result = await this.callMethod('subscriptions.read', roomId);
-          console.log('✅ [WS] Room marked as read successfully with subscriptions.read:', { roomId, result });
-          return result;
-        } catch (e2) {
-          console.log('❌ subscriptions.read failed, trying rooms.read:', e2);
-          const result = await this.callMethod('rooms.read', roomId);
-          console.log('✅ [WS] Room marked as read successfully with rooms.read:', { roomId, result });
-          return result;
-        }
-      }
+      // Use readMessages method as documented in Rocket.Chat API
+      // readMessages(roomId: string) - marks all messages in room as read
+      // See: https://developer.rocket.chat/v1-api/apidocs/realtime-method-calls
+      const result = await this.callMethod('readMessages', roomId);
+      console.log('✅ [WS] Room marked as read successfully:', { roomId, result });
+      return result;
     } catch (error) {
       console.error('❌ [WS] All mark-as-read methods failed:', {
         roomId,
+        error: error instanceof Error ? error.message : error
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Mark thread as read (clear thread unread count)
+   * @param roomId Room ID
+   * @param threadId Thread message ID (tmid)
+   */
+  async markThreadAsRead(roomId: string, threadId: string): Promise<void> {
+    try {
+      console.log('🧵 [WS] Marking thread as read:', {
+        roomId,
+        threadId,
+        connected: this.isConnected(),
+        authenticated: !!this.userId
+      });
+      
+      if (!this.isConnected()) {
+        throw new Error('WebSocket not connected');
+      }
+      
+      // Rocket.Chat readMessages method signature:
+      // readMessages(roomId: string, threadId?: string)
+      // When threadId is provided, it marks the thread as read
+      // See: https://developer.rocket.chat/v1-api/apidocs/realtime-method-calls
+      const result = await this.callMethod('readMessages', roomId, threadId);
+      console.log('✅ [WS] Thread marked as read successfully:', { roomId, threadId, result });
+      return result;
+    } catch (error) {
+      console.error('❌ [WS] All mark-thread-as-read methods failed:', {
+        roomId,
+        threadId,
         error: error instanceof Error ? error.message : error
       });
       throw error;
@@ -562,7 +585,10 @@ class RocketChatWebSocketService {
     return this.subscribe('stream-room-messages', [roomId, false], (data) => {
       if (data.type === 'changed' && data.fields?.args) {
         const [message] = data.fields.args;
-        callback(message);
+        // Filter out control messages (like "updated", "removed", etc)
+        if (typeof message === 'object' && message !== null && message._id) {
+          callback(message);
+        }
       }
     });
   }

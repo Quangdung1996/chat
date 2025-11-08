@@ -53,6 +53,7 @@ export default function ChatSidebar({
   // ✅ Zustand stores
   const wsConnected = useWebSocketConnected();
   const connectWebSocket = useWebSocketStore((state) => state.connect);
+  const markRoomAsRead = useWebSocketStore((state) => state.markRoomAsRead);
   const roomUnreadCounts = useNotificationStore((state) => state.roomUnreadCounts);
   const roomAlerts = useNotificationStore((state) => state.roomAlerts);
   const lastMessageTimes = useNotificationStore((state) => state.lastMessageTimes);
@@ -294,21 +295,8 @@ export default function ChatSidebar({
         )
       );
       
-      // Mark as read via WebSocket
-      try {
-        await rocketChatWS.markRoomAsRead(room.roomId);
-      } catch (error) {
-        console.error('❌ Failed to mark room as read:', error);
-        // Revert optimistic update if failed
-        const originalCount = room.unreadCount;
-        setRooms(currentRooms => 
-          currentRooms.map(r => 
-            r.id === room.id 
-              ? { ...r, unreadCount: originalCount } 
-              : r
-          )
-        );
-      }
+      // Mark as read via WebSocket (debounced via store)
+      markRoomAsRead(room.roomId);
     }
     
     // Call parent callback

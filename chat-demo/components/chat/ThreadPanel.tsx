@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Loader2, Send } from 'lucide-react';
+import { X, Loader2, Send, MessageSquare } from 'lucide-react';
 import { ChatMessage } from '@/types/rocketchat';
 import { rocketChatService } from '@/services/rocketchat.service';
 import MessageEditor, { MessageEditorRef } from './MessageEditor';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
-import { useWebSocketConnected } from '@/store/websocketStore';
+import { useWebSocketConnected, useWebSocketStore } from '@/store/websocketStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useThreadMessages } from '@/hooks/use-websocket-subscriptions';
+import { useThreadSubscription } from '@/hooks/use-room-subscription';
 
 interface ThreadPanelProps {
   roomId: string;
@@ -55,41 +55,32 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
     });
   };
 
+  // ✅ Zustand stores (must be declared before useEffect)
+  const wsConnected = useWebSocketConnected();
+  const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
+  const markRoomAsRead = useWebSocketStore((state) => state.markRoomAsRead);
+
   // Load thread messages
   useEffect(() => {
     loadThreadMessages();
     
-    // ✅ Mark room as read when opening thread
-    rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
-      console.warn('Failed to mark room as read when opening thread:', error);
+    // ✅ Mark thread as read when opening thread panel (via WebSocket)
+    // This will sync with server and update subscription, clearing tunread
+    rocketChatWS.markThreadAsRead(roomId, parentMessage.messageId).catch((error: any) => {
+      console.warn('Failed to mark thread as read when opening thread:', error);
     });
-  }, [parentMessage.messageId, roomId]);
-
-  // ✅ Zustand stores
-  const wsConnected = useWebSocketConnected();
-  const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
+    
+    // Also mark room as read (debounced via store)
+    markRoomAsRead(roomId);
+  }, [parentMessage.messageId, roomId, markRoomAsRead]);
 
   // ✅ Clear thread notification when opening thread panel (user is viewing it)
   useEffect(() => {
     clearThreadNotification(roomId, parentMessage.messageId);
   }, [roomId, parentMessage.messageId, clearThreadNotification]);
 
-  // ✅ Subscribe to WebSocket updates for this thread using custom hook
-  useThreadMessages(
-    roomId,
-    parentMessage.messageId,
-    wsConnected,
-    (newMessage) => {
-      // Add to thread messages if not already exists
-      setMessages(prev => {
-        const exists = prev.some(m => m.messageId === newMessage.messageId);
-        if (exists) return prev;
-        const updated = [...prev, newMessage];
-        setTimeout(scrollToBottom, 100);
-        return updated;
-      });
-    }
-  );
+  // ✅ Centralized thread subscription (ref-counted in store)
+  useThreadSubscription(roomId, parentMessage.messageId);
 
   const loadThreadMessages = async () => {
     try {
@@ -97,7 +88,7 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
       const response = await rocketChatService.getThreadMessages({
         tmid: parentMessage.messageId,
         roomId,
-        count: 50,
+        count: 99999999, // Load all thread messages
       });
       
       if (response.success) {
@@ -138,10 +129,13 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
         // Reload messages to show new reply
         await loadThreadMessages();
         
-        // ✅ Mark as read after sending message in thread
-        rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
-          console.warn('Failed to mark room as read after sending thread reply:', error);
+        // ✅ Mark thread as read after sending message in thread
+        rocketChatWS.markThreadAsRead(roomId, parentMessage.messageId).catch((error: any) => {
+          console.warn('Failed to mark thread as read after sending thread reply:', error);
         });
+        
+        // Also mark room as read (debounced via store)
+        markRoomAsRead(roomId);
       }
     } catch (error) {
       console.error('Error sending thread message:', error);
@@ -154,12 +148,13 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
     <div className="fixed right-0 top-0 h-full w-[400px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <h3 className="font-semibold text-gray-900 dark:text-white">Thread</h3>
           {messages.length > 0 && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {messages.length} {messages.length === 1 ? 'reply' : 'replies'}
-            </span>
+            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+              <MessageSquare className="w-4 h-4" />
+              <span className="text-sm font-medium">{messages.length}</span>
+            </div>
           )}
         </div>
         <button

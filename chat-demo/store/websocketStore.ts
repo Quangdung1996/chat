@@ -7,6 +7,13 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 
+interface RoomSubscription {
+  roomId: string;
+  subscriptionId: string;
+  refCount: number; // Số components đang dùng subscription này (room + all threads)
+  threadRefCounts: Map<string, number>; // tmid -> refCount
+}
+
 interface WebSocketState {
   // Connection state
   isConnected: boolean;
@@ -14,8 +21,9 @@ interface WebSocketState {
   isAuthenticated: boolean;
   connectionError: string | null;
   
-  // Active subscriptions
+  // Active subscriptions - managed centrally
   activeSubscriptions: Set<string>;
+  roomSubscriptions: Map<string, RoomSubscription>; // roomId -> subscription info (includes thread tracking)
   
   // Actions
   setConnected: (connected: boolean) => void;
@@ -26,13 +34,28 @@ interface WebSocketState {
   removeSubscription: (subscriptionId: string) => void;
   clearSubscriptions: () => void;
   
+  // Room subscription management (centralized)
+  subscribeToRoom: (roomId: string) => void;
+  unsubscribeFromRoom: (roomId: string) => void;
+  
+  // Thread subscription management (centralized)
+  subscribeToThread: (roomId: string, tmid: string) => void;
+  unsubscribeFromThread: (roomId: string, tmid: string) => void;
+  
   // Connection management
   connect: () => Promise<void>;
   disconnect: () => void;
   
   // Check connection status
   checkConnection: () => boolean;
+  
+  // Mark room as read (debounced)
+  markRoomAsRead: (roomId: string) => void;
 }
+
+// Debounce timers for markRoomAsRead (outside store to persist)
+const markRoomAsReadTimers = new Map<string, NodeJS.Timeout>();
+const MARK_AS_READ_DEBOUNCE_MS = 1000; // 1 second
 
 export const useWebSocketStore = create<WebSocketState>()(
   devtools(
@@ -43,6 +66,7 @@ export const useWebSocketStore = create<WebSocketState>()(
       isAuthenticated: false,
       connectionError: null,
       activeSubscriptions: new Set(),
+      roomSubscriptions: new Map(),
 
       // Set connected state
       setConnected: (connected) => {
@@ -84,7 +108,165 @@ export const useWebSocketStore = create<WebSocketState>()(
 
       // Clear all subscriptions
       clearSubscriptions: () => {
-        set({ activeSubscriptions: new Set() });
+        set({ 
+          activeSubscriptions: new Set(), 
+          roomSubscriptions: new Map(),
+        });
+      },
+      
+      // Subscribe to room (centralized, ref-counted)
+      subscribeToRoom: (roomId: string) => {
+        const state = get();
+        const existing = state.roomSubscriptions.get(roomId);
+        
+        if (existing) {
+          // Already subscribed, increment ref count
+          const updated = new Map(state.roomSubscriptions);
+          updated.set(roomId, {
+            ...existing,
+            refCount: existing.refCount + 1,
+          });
+          set({ roomSubscriptions: updated });
+          console.log(`♻️ Room ${roomId} subscription reused (refCount: ${existing.refCount + 1})`);
+          return;
+        }
+        
+        // New subscription needed
+        console.log(`🆕 Subscribing to room ${roomId}...`);
+        const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, (data) => {
+          // Messages will be handled by messageStore
+          console.log(`📨 Message received for room ${roomId}:`, data);
+        });
+        
+        const updated = new Map(state.roomSubscriptions);
+        updated.set(roomId, {
+          roomId,
+          subscriptionId,
+          refCount: 1,
+          threadRefCounts: new Map(),
+        });
+        
+        set({ roomSubscriptions: updated });
+        state.addSubscription(subscriptionId);
+      },
+      
+      // Unsubscribe from room (ref-counted)
+      unsubscribeFromRoom: (roomId: string) => {
+        const state = get();
+        const existing = state.roomSubscriptions.get(roomId);
+        
+        if (!existing) {
+          return;
+        }
+        
+        const newRefCount = existing.refCount - 1;
+        
+        // Calculate total refs (room + threads)
+        const threadRefsTotal = Array.from(existing.threadRefCounts.values()).reduce((sum, count) => sum + count, 0);
+        const totalRefs = newRefCount + threadRefsTotal;
+        
+        if (totalRefs > 0) {
+          // Still have other subscribers (room or threads), decrement room ref count
+          const updated = new Map(state.roomSubscriptions);
+          updated.set(roomId, {
+            ...existing,
+            refCount: newRefCount,
+          });
+          set({ roomSubscriptions: updated });
+          console.log(`♻️ Room ${roomId} refCount decreased to ${newRefCount} (${threadRefsTotal} thread refs active)`);
+          return;
+        }
+        
+        // Last subscriber, actually unsubscribe
+        console.log(`🗑️ Unsubscribing from room ${roomId} (no more refs)...`);
+        rocketChatWS.unsubscribe(existing.subscriptionId);
+        
+        const updated = new Map(state.roomSubscriptions);
+        updated.delete(roomId);
+        set({ roomSubscriptions: updated });
+        state.removeSubscription(existing.subscriptionId);
+      },
+      
+      // Subscribe to thread (centralized, ref-counted)
+      // Threads share the same room subscription
+      subscribeToThread: (roomId: string, tmid: string) => {
+        const state = get();
+        let roomSub = state.roomSubscriptions.get(roomId);
+        
+        // Ensure room subscription exists
+        if (!roomSub) {
+          // Create room subscription if not exists
+          console.log(`🆕 Creating room subscription for thread ${roomId}:${tmid}...`);
+          const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, (data) => {
+            // Messages will be handled by messageStore
+            console.log(`📨 Message received for room ${roomId}:`, data);
+          });
+          
+          roomSub = {
+            roomId,
+            subscriptionId,
+            refCount: 0, // No room-level refs yet
+            threadRefCounts: new Map(),
+          };
+          
+          const updated = new Map(state.roomSubscriptions);
+          updated.set(roomId, roomSub);
+          set({ roomSubscriptions: updated });
+          state.addSubscription(subscriptionId);
+        }
+        
+        // Update thread ref count
+        const currentThreadRefCount = roomSub.threadRefCounts.get(tmid) || 0;
+        const updated = new Map(state.roomSubscriptions);
+        const updatedRoomSub = { ...roomSub };
+        updatedRoomSub.threadRefCounts = new Map(roomSub.threadRefCounts);
+        updatedRoomSub.threadRefCounts.set(tmid, currentThreadRefCount + 1);
+        updated.set(roomId, updatedRoomSub);
+        set({ roomSubscriptions: updated });
+        
+        console.log(`♻️ Thread ${roomId}:${tmid} refCount: ${currentThreadRefCount + 1}`);
+      },
+      
+      // Unsubscribe from thread (ref-counted)
+      unsubscribeFromThread: (roomId: string, tmid: string) => {
+        const state = get();
+        const roomSub = state.roomSubscriptions.get(roomId);
+        
+        if (!roomSub) {
+          return;
+        }
+        
+        const currentThreadRefCount = roomSub.threadRefCounts.get(tmid) || 0;
+        const newThreadRefCount = Math.max(0, currentThreadRefCount - 1);
+        
+        const updated = new Map(state.roomSubscriptions);
+        const updatedRoomSub = { ...roomSub };
+        updatedRoomSub.threadRefCounts = new Map(roomSub.threadRefCounts);
+        
+        if (newThreadRefCount === 0) {
+          // No more refs for this thread, remove it
+          updatedRoomSub.threadRefCounts.delete(tmid);
+          console.log(`🗑️ Removed thread ${roomId}:${tmid} (no more refs)`);
+        } else {
+          updatedRoomSub.threadRefCounts.set(tmid, newThreadRefCount);
+          console.log(`♻️ Thread ${roomId}:${tmid} refCount decreased to ${newThreadRefCount}`);
+        }
+        
+        // Calculate total refs (room + all threads)
+        const threadRefsTotal = Array.from(updatedRoomSub.threadRefCounts.values()).reduce((sum, count) => sum + count, 0);
+        const totalRefs = updatedRoomSub.refCount + threadRefsTotal;
+        
+        if (totalRefs === 0) {
+          // No more refs at all, unsubscribe from room
+          console.log(`🗑️ Unsubscribing from room ${roomId} (no more refs after thread cleanup)...`);
+          rocketChatWS.unsubscribe(updatedRoomSub.subscriptionId);
+          updated.delete(roomId);
+          state.removeSubscription(updatedRoomSub.subscriptionId);
+        } else {
+          updated.set(roomId, updatedRoomSub);
+        }
+        
+        set({ roomSubscriptions: updated });
       },
 
       // Connect WebSocket
@@ -145,6 +327,27 @@ export const useWebSocketStore = create<WebSocketState>()(
         }
         
         return isConnected;
+      },
+      
+      // Mark room as read (debounced to prevent rate limiting)
+      markRoomAsRead: (roomId: string) => {
+        // Clear existing timer for this room
+        const existingTimer = markRoomAsReadTimers.get(roomId);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+        }
+        
+        // Set new debounced timer
+        const timer = setTimeout(() => {
+          rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
+            console.warn('Failed to mark room as read:', error);
+          });
+          
+          // Clean up timer
+          markRoomAsReadTimers.delete(roomId);
+        }, MARK_AS_READ_DEBOUNCE_MS);
+        
+        markRoomAsReadTimers.set(roomId, timer);
       },
     }),
     { name: 'WebSocketStore' }

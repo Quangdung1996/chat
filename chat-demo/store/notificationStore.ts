@@ -235,26 +235,69 @@ export const useNotificationStore = create<NotificationState>()(
           newTimes.set(roomId, new Date());
           
           // ✨ Sync thread notifications from subscription data
-          // Rocket.Chat subscription may contain 'tunread' (thread unread) array
-          // Format: tunread: [{ _id: threadId, unread: count }]
-          // Also handle backend format: threadUnread: [{ threadId, unread }]
+          // Rocket.Chat subscription contains 'tunread' as array of thread IDs (strings)
+          // Format: tunread: ["threadId1", "threadId2", ...]
+          // Backend may map it to 'threadUnread' field
           const tunreadData = subscription.tunread || subscription.threadUnread;
+          
+          // 🐛 DEBUG: Log thread data
+          if (tunreadData) {
+            console.log('🧵 [Store] Found tunread data in subscription:', {
+              roomId,
+              tunreadData,
+              type: Array.isArray(tunreadData) ? 'array' : typeof tunreadData,
+              length: Array.isArray(tunreadData) ? tunreadData.length : 'N/A',
+            });
+          }
+          
           if (tunreadData && Array.isArray(tunreadData)) {
             const roomThreads = new Map<string, ThreadNotification>();
-            tunreadData.forEach((thread: any) => {
-              // Handle both formats: { _id, unread } or { threadId, unread }
-              const threadId = thread._id || thread.threadId;
-              const count = thread.unread;
-              if (threadId && count !== undefined) {
-                roomThreads.set(threadId, {
+            tunreadData.forEach((item: any) => {
+              // Handle both formats:
+              // 1. Array of strings: ["threadId1", "threadId2"] (from Rocket.Chat)
+              // 2. Array of objects: [{ threadId, unread }] (if backend transforms it)
+              if (typeof item === 'string') {
+                // Direct thread ID string
+                roomThreads.set(item, {
                   roomId,
-                  threadId,
-                  count,
+                  threadId: item,
+                  count: 1, // Default to 1, actual count may need to be queried separately
                 });
+              } else if (item && typeof item === 'object') {
+                // Object format: { _id, unread } or { threadId, unread }
+                const threadId = item._id || item.threadId;
+                const count = item.unread || 1;
+                if (threadId) {
+                  roomThreads.set(threadId, {
+                    roomId,
+                    threadId,
+                    count,
+                  });
+                }
               }
             });
+            
+            console.log('🧵 [Store] Synced thread notifications:', {
+              roomId,
+              threadCount: roomThreads.size,
+              threadIds: Array.from(roomThreads.keys()),
+            });
+            
             newThreadNotifications.set(roomId, roomThreads);
+          } else if (tunreadData === null || (Array.isArray(tunreadData) && tunreadData.length === 0)) {
+            // Clear thread notifications if tunread is empty/null
+            newThreadNotifications.delete(roomId);
+            console.log('🧵 [Store] Cleared thread notifications for room:', roomId);
           }
+          
+          // 🐛 DEBUG: Log total thread count after update
+          let totalThreadCount = 0;
+          newThreadNotifications.forEach((roomThreads) => {
+            roomThreads.forEach((notification) => {
+              totalThreadCount += notification.count;
+            });
+          });
+          console.log('🧵 [Store] Total thread notifications count:', totalThreadCount);
           
           return {
             roomUnreadCounts: newCounts,
@@ -273,6 +316,8 @@ export const useNotificationStore = create<NotificationState>()(
           const newTimes = new Map(state.lastMessageTimes);
           const newThreadNotifications = new Map(state.threadNotifications);
           
+          let totalThreadCount = 0;
+          
           rooms.forEach((room) => {
             newCounts.set(room.roomId, room.unreadCount || 0);
             newAlerts.set(room.roomId, room.alert || false);
@@ -289,10 +334,20 @@ export const useNotificationStore = create<NotificationState>()(
                   threadId: thread.threadId,
                   count: thread.count,
                 });
+                totalThreadCount += thread.count;
               });
               newThreadNotifications.set(room.roomId, roomThreads);
+              
+              console.log('🧵 [Store] Initialized thread notifications from room:', {
+                roomId: room.roomId,
+                roomName: room.name || room.fullName,
+                threadCount: roomThreads.size,
+                totalCount: totalThreadCount,
+              });
             }
           });
+          
+          console.log('🧵 [Store] Total thread notifications after init:', totalThreadCount);
           
           return {
             roomUnreadCounts: newCounts,

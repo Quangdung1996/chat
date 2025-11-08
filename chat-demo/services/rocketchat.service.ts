@@ -113,22 +113,44 @@ class RocketChatService {
         }
 
         // ✨ Extract thread notifications from subscription data
-        // Backend now returns 'tunread' or 'threadUnread' field from Rocket.Chat API
-        // Format: tunread: [{ _id: threadId, unread: count }] or threadUnread: [{ threadId, unread }]
+        // Rocket.Chat returns 'tunread' as array of thread IDs (strings): ["threadId1", "threadId2", ...]
+        // Backend may map it to 'threadUnread' field
         const threadNotifications: Array<{ threadId: string; count: number }> = [];
+        
+        // 🐛 DEBUG: Log room data to see what fields are available
+        if (room.tunread || room.threadUnread) {
+          console.log('🧵 [Service] Found tunread in room data:', {
+            roomId: room.rid,
+            roomName: room.name || room.fname,
+            tunread: room.tunread,
+            threadUnread: room.threadUnread,
+            allKeys: Object.keys(room),
+          });
+        }
         
         // Try both field names (tunread from Rocket.Chat, threadUnread from backend mapping)
         const tunreadData = room.tunread || room.threadUnread;
         if (tunreadData && Array.isArray(tunreadData)) {
-          tunreadData.forEach((thread: any) => {
-            // Handle both formats: { _id, unread } or { threadId, unread }
-            const threadId = thread._id || thread.threadId;
-            const count = thread.unread;
-            if (threadId && count !== undefined) {
+          tunreadData.forEach((item: any) => {
+            // Handle both formats:
+            // 1. Array of strings: ["threadId1", "threadId2"] (from Rocket.Chat)
+            // 2. Array of objects: [{ threadId, unread }] (if backend transforms it)
+            if (typeof item === 'string') {
+              // Direct thread ID string
               threadNotifications.push({
-                threadId,
-                count,
+                threadId: item,
+                count: 1, // Default to 1, actual count may need to be queried separately
               });
+            } else if (item && typeof item === 'object') {
+              // Object format: { _id, unread } or { threadId, unread }
+              const threadId = item._id || item.threadId;
+              const count = item.unread || 1;
+              if (threadId) {
+                threadNotifications.push({
+                  threadId,
+                  count,
+                });
+              }
             }
           });
         }

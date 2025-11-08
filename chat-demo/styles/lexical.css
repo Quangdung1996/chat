@@ -1,0 +1,37 @@
+/* Lexical Editor Styles */
+
+.lexical-editor {
+  position: relative;
+}
+
+.lexical-editor :global(.font-bold) {
+  font-weight: 700;
+}
+
+.lexical-editor :global(.italic) {
+  font-style: italic;
+}
+
+.lexical-editor :global(.line-through) {
+  text-decoration: line-through;
+}
+
+.lexical-editor :global(.bg-gray-100) {
+  background-color: #f3f4f6;
+}
+
+.dark .lexical-editor :global(.bg-gray-100) {
+  background-color: #374151;
+}
+
+/* Make sure paragraph has no margin */
+.lexical-editor p {
+  margin: 0;
+}
+
+/* Code formatting */
+.lexical-editor code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875em;
+}
+

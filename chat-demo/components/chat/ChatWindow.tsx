@@ -4,7 +4,7 @@ import { useState, useRef, memo, useEffect } from 'react';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import { useAuthStore } from '@/store/authStore';
 import { useWebSocketConnected } from '@/store/websocketStore';
-import { useRoomMessages } from '@/hooks/use-websocket-subscriptions';
+import { useRoomSubscription } from '@/hooks/use-room-subscription';
 import { useSendMessage } from '@/hooks/use-messages';
 import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
@@ -49,8 +49,8 @@ function ChatWindow({ room }: ChatWindowProps) {
     setMessageText(''); // Clear input khi chuyển room
   }, [roomId]); // Chạy khi roomId thay đổi
 
-  // ✅ Rocket.Chat WebSocket: Subscribe to room messages using custom hook
-  useRoomMessages(roomId, wsConnected);
+  // ✅ Rocket.Chat WebSocket: Centralized subscription (ref-counted in store)
+  useRoomSubscription(roomId);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

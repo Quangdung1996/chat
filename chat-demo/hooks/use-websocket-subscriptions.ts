@@ -19,6 +19,7 @@ export function useRoomMessages(roomId: string | null, enabled = true) {
   const wsConnected = useWebSocketStore((state) => state.isConnected && state.isAuthenticated);
   const addSubscription = useWebSocketStore((state) => state.addSubscription);
   const removeSubscription = useWebSocketStore((state) => state.removeSubscription);
+  const markRoomAsRead = useWebSocketStore((state) => state.markRoomAsRead);
   const addMessageToCache = useAddMessageToCache();
   const updateLastMessageTime = useNotificationStore((state) => state.updateLastMessageTime);
   const incrementRoomUnread = useNotificationStore((state) => state.incrementRoomUnread);
@@ -91,27 +92,29 @@ export function useRoomMessages(roomId: string | null, enabled = true) {
       // Update last message time
       updateLastMessageTime(roomId, new Date());
 
-      // ✅ Auto mark as read when receiving new messages in current room
+      // ✅ Auto mark as read when receiving new messages in current room (debounced via store)
       // Note: This is handled by the subscription-changed event, but we also mark here
       // to ensure immediate feedback
-      rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
-        console.warn('Failed to auto-mark room as read:', error);
-      });
+      markRoomAsRead(roomId);
     };
 
     // Subscribe
     const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, handleNewMessage);
     subscriptionIdRef.current = subscriptionId;
     addSubscription(subscriptionId);
+    console.log('🔌 [Hook] useRoomMessages subscribed:', { roomId, subscriptionId });
 
     return () => {
       if (subscriptionIdRef.current) {
+        console.log('🔌 [Hook] useRoomMessages cleanup:', { roomId, subscriptionId: subscriptionIdRef.current });
         rocketChatWS.unsubscribe(subscriptionIdRef.current);
         removeSubscription(subscriptionIdRef.current);
         subscriptionIdRef.current = null;
       }
     };
-  }, [roomId, wsConnected, enabled, addMessageToCache, updateLastMessageTime, addThreadNotification, currentUserId, addSubscription, removeSubscription]);
+    // Note: Zustand store actions are stable references, don't include in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, wsConnected, enabled, currentUserId]);
 }
 
 /**
@@ -127,6 +130,7 @@ export function useThreadMessages(
   const wsConnected = useWebSocketStore((state) => state.isConnected && state.isAuthenticated);
   const addSubscription = useWebSocketStore((state) => state.addSubscription);
   const removeSubscription = useWebSocketStore((state) => state.removeSubscription);
+  const markRoomAsRead = useWebSocketStore((state) => state.markRoomAsRead);
   const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
   const currentUserId = useAuthStore((state) => state.rocketChatUserId);
   const subscriptionIdRef = useRef<string | null>(null);
@@ -173,25 +177,34 @@ export function useThreadMessages(
         onNewMessage(newMessage);
       }
 
-      // Mark room as read when receiving thread reply
-      rocketChatWS.markRoomAsRead(roomId).catch((error: any) => {
-        console.warn('Failed to mark room as read after receiving thread reply:', error);
+      // ✅ Mark thread as read when receiving thread reply (via WebSocket)
+      // This will sync with server and update subscription, clearing tunread
+      rocketChatWS.markThreadAsRead(roomId, threadId).catch((error: any) => {
+        console.warn('Failed to mark thread as read after receiving thread reply:', error);
       });
+      
+      // Also mark room as read (debounced via store)
+      markRoomAsRead(roomId);
     };
 
     // Subscribe to room messages (will receive thread replies too)
     const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, handleNewThreadMessage);
     subscriptionIdRef.current = subscriptionId;
     addSubscription(subscriptionId);
+    console.log('🧵 [Hook] useThreadMessages subscribed:', { roomId, threadId, subscriptionId });
 
     return () => {
       if (subscriptionIdRef.current) {
+        console.log('🧵 [Hook] useThreadMessages cleanup:', { roomId, threadId, subscriptionId: subscriptionIdRef.current });
         rocketChatWS.unsubscribe(subscriptionIdRef.current);
         removeSubscription(subscriptionIdRef.current);
         subscriptionIdRef.current = null;
       }
     };
-  }, [roomId, threadId, wsConnected, enabled, clearThreadNotification, currentUserId, onNewMessage, addSubscription, removeSubscription]);
+    // Note: Zustand store actions are stable references, don't include in deps
+    // onNewMessage callback is intentionally not in deps to use latest version
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, threadId, wsConnected, enabled, currentUserId]);
 }
 
 /**
@@ -246,7 +259,10 @@ export function useUserSubscriptions(
         subscriptionIdRef.current = null;
       }
     };
-  }, [userId, wsConnected, enabled, updateFromSubscription, onSubscriptionUpdate, addSubscription, removeSubscription]);
+    // Note: Zustand actions (updateFromSubscription, addSubscription, removeSubscription) are stable references
+    // onSubscriptionUpdate is from parent and may change, but we want to use latest version
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, wsConnected, enabled]);
 }
 
 /**
@@ -295,6 +311,9 @@ export function useUserRooms(
         subscriptionIdRef.current = null;
       }
     };
-  }, [userId, wsConnected, enabled, onRoomUpdate, addSubscription, removeSubscription]);
+    // Note: Zustand actions (addSubscription, removeSubscription) are stable references
+    // onRoomUpdate is from parent and may change, but we want to use latest version
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, wsConnected, enabled]);
 }
 

@@ -1,43 +1,44 @@
 'use client';
 
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import Image from '@tiptap/extension-image';
-import Dropcursor from '@tiptap/extension-dropcursor';
-import { Extension } from '@tiptap/core';
-import { useEffect, forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Smile, Bold, Italic, Strikethrough, Code, Paperclip, X, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { rocketChatService } from '@/services/rocketchat.service';
-import '@/styles/tiptap.css';
+import dynamic from 'next/dynamic';
 
-// Custom extension to handle Enter key (send) and Shift+Enter (new line)
-const EnterKeyHandler = Extension.create({
-  name: 'enterKeyHandler',
+// Dynamic import emoji picker to avoid SSR issues
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
-  addKeyboardShortcuts() {
-    return {
-      'Enter': () => {
-        // Call the custom onSubmit handler
-        const onSubmit = this.options.onSubmit;
-        if (onSubmit) {
-          onSubmit();
-          return true; // Prevent default behavior
-        }
-        return false;
-      },
-      'Shift-Enter': () => {
-        // Insert a new line
-        return this.editor.commands.first(({ commands }) => [
-          () => commands.newlineInCode(),
-          () => commands.createParagraphNear(),
-          () => commands.liftEmptyBlock(),
-          () => commands.splitBlock(),
-        ]);
-      },
-    };
+// Lexical imports
+import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
+import { ContentEditable } from '@lexical/react/LexicalContentEditable';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { 
+  $getRoot, 
+  $getSelection,
+  $isRangeSelection,
+  FORMAT_TEXT_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  KEY_ENTER_COMMAND,
+  EditorState,
+  TextFormatType,
+  $createTextNode
+} from 'lexical';
+import { useEffect } from 'react';
+
+// Lexical theme
+const theme = {
+  text: {
+    bold: 'font-bold',
+    italic: 'italic',
+    strikethrough: 'line-through',
+    code: 'bg-gray-100 dark:bg-gray-700 rounded px-1 py-0.5 font-mono text-sm',
   },
-});
+  paragraph: 'mb-0',
+};
 
 interface MessageEditorProps {
   value: string;
@@ -45,7 +46,7 @@ interface MessageEditorProps {
   onSubmit: () => void;
   placeholder?: string;
   disabled?: boolean;
-  roomId: string; // For file upload
+  roomId: string;
 }
 
 export interface MessageEditorRef {
@@ -53,88 +54,262 @@ export interface MessageEditorRef {
   clear: () => void;
 }
 
+// Plugin to handle Enter key submission
+function EnterKeyPlugin({ onSubmit }: { onSubmit: () => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent) => {
+        if (event.shiftKey) {
+          // Shift+Enter = new line (default behavior)
+          return false;
+        }
+        // Enter = submit
+        event.preventDefault();
+        
+        // Get text content before clearing
+        const textContent = editor.getEditorState().read(() => {
+          return $getRoot().getTextContent();
+        });
+        
+        // Only submit if there's content
+        if (textContent.trim()) {
+          onSubmit();
+          
+          // Clear editor after submit
+          editor.update(() => {
+            const root = $getRoot();
+            root.clear();
+          });
+        }
+        
+        return true;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor, onSubmit]);
+
+  return null;
+}
+
+// Plugin to expose editor methods via ref
+function EditorRefPlugin({ editorRef, onEmojiInsert }: { editorRef: React.MutableRefObject<any>, onEmojiInsert?: (insertFn: (emoji: string) => void) => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const insertEmoji = (emoji: string) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const emojiNode = $createTextNode(emoji);
+          selection.insertNodes([emojiNode]);
+        }
+      });
+    };
+
+    editorRef.current = {
+      focus: () => editor.focus(),
+      clear: () => {
+        editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+        });
+      },
+      insertEmoji,
+    };
+
+    // Pass insert function to parent
+    if (onEmojiInsert) {
+      onEmojiInsert(insertEmoji);
+    }
+  }, [editor, editorRef, onEmojiInsert]);
+
+  return null;
+}
+
+// Toolbar component
+function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPicker, setShowEmojiPicker }: any) {
+  const [editor] = useLexicalComposerContext();
+  const [activeFormats, setActiveFormats] = useState<Set<TextFormatType>>(new Set());
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const formats = new Set<TextFormatType>();
+          if (selection.hasFormat('bold')) formats.add('bold');
+          if (selection.hasFormat('italic')) formats.add('italic');
+          if (selection.hasFormat('strikethrough')) formats.add('strikethrough');
+          if (selection.hasFormat('code')) formats.add('code');
+          setActiveFormats(formats);
+        }
+      });
+    });
+  }, [editor]);
+
+  const formatText = (format: TextFormatType) => {
+    editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+  };
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2c] rounded-t">
+      <button
+        type="button"
+        onClick={() => formatText('bold')}
+        disabled={disabled}
+        className={`p-1.5 rounded transition-colors ${
+          activeFormats.has('bold')
+            ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title="Bold (Ctrl+B)"
+      >
+        <Bold className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => formatText('italic')}
+        disabled={disabled}
+        className={`p-1.5 rounded transition-colors ${
+          activeFormats.has('italic')
+            ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title="Italic (Ctrl+I)"
+      >
+        <Italic className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => formatText('strikethrough')}
+        disabled={disabled}
+        className={`p-1.5 rounded transition-colors ${
+          activeFormats.has('strikethrough')
+            ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title="Strikethrough"
+      >
+        <Strikethrough className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => formatText('code')}
+        disabled={disabled}
+        className={`p-1.5 rounded transition-colors ${
+          activeFormats.has('code')
+            ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title="Inline Code"
+      >
+        <Code className="w-4 h-4" />
+      </button>
+
+      <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={disabled || uploading}
+        className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+        title="Attach file (or drag & drop)"
+      >
+        <Paperclip className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+        disabled={disabled}
+        className={`p-1.5 rounded transition-colors ${
+          showEmojiPicker
+            ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title="Emoji"
+      >
+        <Smile className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
   ({ value, onChange, onSubmit, placeholder = 'Nhập tin nhắn...', disabled = false, roomId }, ref) => {
+    const editorRef = useRef<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const emojiButtonRef = useRef<HTMLButtonElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
-
-    const editor = useEditor({
-      immediatelyRender: false,
-      extensions: [
-        StarterKit.configure({
-          // Disable heading, blockquote, etc. for simple chat
-          heading: false,
-          blockquote: false,
-          codeBlock: false,
-          horizontalRule: false,
-        }),
-        Placeholder.configure({
-          placeholder,
-        }),
-        Image.configure({
-          inline: true,
-          allowBase64: true,
-        }),
-        Dropcursor,
-        EnterKeyHandler.configure({
-          onSubmit,
-        }),
-      ],
-      content: value,
-      editorProps: {
-        attributes: {
-          class: 'prose prose-sm max-w-none focus:outline-none min-h-[36px] max-h-[120px] overflow-y-auto px-3 py-2 text-[14px] text-gray-900 dark:text-white',
-        },
-        handleDrop: (view, event, slice, moved) => {
-          if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
-            const file = event.dataTransfer.files[0];
-            event.preventDefault();
-            handleFileSelect(file);
-            return true;
-          }
-          return false;
-        },
-        handlePaste: (view, event) => {
-          const items = event.clipboardData?.items;
-          if (items) {
-            for (let i = 0; i < items.length; i++) {
-              if (items[i].type.indexOf('image') !== -1) {
-                const file = items[i].getAsFile();
-                if (file) {
-                  event.preventDefault();
-                  handleFileSelect(file);
-                  return true;
-                }
-              }
-            }
-          }
-          return false;
-        },
-      },
-      onUpdate: ({ editor }) => {
-        const text = editor.getText();
-        onChange(text);
-      },
-      editable: !disabled,
-    });
+    const insertEmojiRef = useRef<((emoji: string) => void) | null>(null);
 
     // Expose methods to parent via ref
     useImperativeHandle(ref, () => ({
-      focus: () => {
-        editor?.commands.focus();
-      },
-      clear: () => {
-        editor?.commands.clearContent();
-      },
+      focus: () => editorRef.current?.focus(),
+      clear: () => editorRef.current?.clear(),
     }));
+
+    // Lexical initial config
+    const initialConfig = {
+      namespace: 'MessageEditor',
+      theme,
+      onError: (error: Error) => console.error(error),
+      editable: !disabled,
+    };
+
+    // Handle editor changes
+    const handleEditorChange = (editorState: EditorState) => {
+      editorState.read(() => {
+        const root = $getRoot();
+        const text = root.getTextContent();
+        onChange(text);
+      });
+    };
+
+    // Handle emoji selection
+    const handleEmojiClick = (emojiData: any) => {
+      if (insertEmojiRef.current) {
+        insertEmojiRef.current(emojiData.emoji);
+      }
+      setShowEmojiPicker(false);
+      editorRef.current?.focus();
+    };
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        
+        // Check if click is outside emoji picker and emoji button
+        if (showEmojiPicker) {
+          const emojiPicker = document.querySelector('.emoji-picker-react');
+          const emojiButton = target.closest('[title="Emoji"]');
+          
+          if (emojiPicker && !emojiPicker.contains(target) && !emojiButton) {
+            setShowEmojiPicker(false);
+          }
+        }
+      };
+
+      if (showEmojiPicker) {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+      }
+    }, [showEmojiPicker]);
 
     // File handling functions
     const handleFileSelect = (file: File) => {
-      // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         setError('File quá lớn. Kích thước tối đa là 10MB');
         setTimeout(() => setError(null), 3000);
@@ -157,7 +332,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 
       setUploading(true);
       setError(null);
-      
+
       try {
         const response = await rocketChatService.uploadFile(
           roomId,
@@ -170,7 +345,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
           setSelectedFile(null);
           setMessage('');
           setShowPreview(false);
-          
+
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
@@ -199,12 +374,12 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
       const k = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+      return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     };
 
     const getFileIcon = (fileName: string) => {
       const ext = fileName.split('.').pop()?.toLowerCase();
-      
+
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
         return '🖼️';
       } else if (['pdf'].includes(ext || '')) {
@@ -222,36 +397,6 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
       }
       return '📎';
     };
-
-    // Sync external value changes (e.g., when clearing after send)
-    useEffect(() => {
-      if (editor && value === '' && editor.getText() !== '') {
-        editor.commands.clearContent();
-      }
-    }, [value, editor]);
-
-    // Handle Enter key
-    useEffect(() => {
-      if (!editor) return;
-
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-          event.preventDefault();
-          onSubmit();
-        }
-      };
-
-      const editorElement = editor.view.dom;
-      editorElement.addEventListener('keydown', handleKeyDown);
-
-      return () => {
-        editorElement.removeEventListener('keydown', handleKeyDown);
-      };
-    }, [editor, onSubmit]);
-
-    if (!editor) {
-      return null;
-    }
 
     return (
       <>
@@ -273,83 +418,52 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
         )}
 
         <div className="flex-1">
-          {/* Toolbar */}
-          <div className="flex items-center gap-1 px-2 py-1 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2c] rounded-t">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              disabled={disabled}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                editor.isActive('bold') ? 'bg-gray-200 dark:bg-gray-700' : ''
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title="Bold (Ctrl+B)"
-            >
-              <Bold className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              disabled={disabled}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                editor.isActive('italic') ? 'bg-gray-200 dark:bg-gray-700' : ''
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title="Italic (Ctrl+I)"
-            >
-              <Italic className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              disabled={disabled}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                editor.isActive('strike') ? 'bg-gray-200 dark:bg-gray-700' : ''
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title="Strikethrough"
-            >
-              <Strikethrough className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleCode().run()}
-              disabled={disabled}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                editor.isActive('code') ? 'bg-gray-200 dark:bg-gray-700' : ''
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title="Inline Code"
-            >
-              <Code className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
+          <LexicalComposer initialConfig={initialConfig}>
+            {/* Toolbar */}
+            <ToolbarPlugin 
+              disabled={disabled} 
+              roomId={roomId} 
+              fileInputRef={fileInputRef}
+              uploading={uploading}
+              showEmojiPicker={showEmojiPicker}
+              setShowEmojiPicker={setShowEmojiPicker}
+            />
 
-            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-            
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || uploading}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Attach file (or drag & drop)"
-            >
-              <Paperclip className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-            
-            <button
-              type="button"
-              disabled={disabled}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Emoji"
-            >
-              <Smile className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-          </div>
-
-          {/* Editor Content */}
-          <div className="relative bg-white dark:bg-[#3a3a3c] border border-t-0 border-gray-300 dark:border-gray-600 rounded-b">
-            <EditorContent editor={editor} />
-          </div>
+            {/* Editor */}
+            <div className="relative bg-white dark:bg-[#3a3a3c] border border-t-0 border-gray-300 dark:border-gray-600 rounded-b">
+              <RichTextPlugin
+                contentEditable={
+                  <ContentEditable className="min-h-[40px] max-h-[120px] overflow-y-auto px-3 py-2 text-[14px] text-gray-900 dark:text-white focus:outline-none" />
+                }
+                placeholder={
+                  <div className="absolute top-2 left-3 text-[14px] text-gray-400 dark:text-gray-500 pointer-events-none">
+                    {placeholder}
+                  </div>
+                }
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+              <OnChangePlugin onChange={handleEditorChange} />
+              <HistoryPlugin />
+              <EnterKeyPlugin onSubmit={onSubmit} />
+              <EditorRefPlugin 
+                editorRef={editorRef} 
+                onEmojiInsert={(fn) => { insertEmojiRef.current = fn; }}
+              />
+            </div>
+          </LexicalComposer>
         </div>
+
+        {/* Emoji Picker */}
+        {showEmojiPicker && (
+          <div className="fixed bottom-20 right-4 z-50 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden emoji-picker-react">
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              autoFocusSearch={false}
+              width={350}
+              height={450}
+            />
+          </div>
+        )}
 
         {/* File Preview Modal */}
         {showPreview && selectedFile && (
@@ -357,9 +471,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
             <div className="bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl w-full max-w-md mx-4">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Upload File
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upload File</h3>
                 <button
                   onClick={handleCancel}
                   disabled={uploading}
@@ -381,9 +493,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 
                 {/* File Preview */}
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-3xl">
-                    {getFileIcon(selectedFile.name)}
-                  </div>
+                  <div className="text-3xl">{getFileIcon(selectedFile.name)}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {selectedFile.name}
@@ -448,4 +558,3 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 MessageEditor.displayName = 'MessageEditor';
 
 export default MessageEditor;
-
