@@ -224,18 +224,9 @@ public class SubscriptionData
     public MessageData? LastMessage { get; set; }
 
     // ✨ Thread unread notifications
-    // Format: [{ _id: threadId (tmid), unread: count }]
+    // Format: ["threadId1", "threadId2", ...] - array of thread IDs (tmid) with unread messages
     [JsonProperty("tunread")]
-    public List<ThreadUnreadData>? ThreadUnread { get; set; }
-}
-
-public class ThreadUnreadData
-{
-    [JsonProperty("_id")]
-    public string ThreadId { get; set; } = string.Empty; // tmid (parent message ID)
-
-    [JsonProperty("unread")]
-    public int Unread { get; set; }
+    public List<string>? ThreadUnread { get; set; }
 }
 
 public class RoomData
