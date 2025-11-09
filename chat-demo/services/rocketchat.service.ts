@@ -7,6 +7,7 @@
 import axios from 'axios';
 import { apiClient } from '@/lib/api-client';
 import { API_CONFIG } from '@/config/api.config';
+import { parseTimestamp } from '@/utils/dateUtils';
 import type {
   CreateGroupRequest,
   CreateGroupResponse,
@@ -425,15 +426,6 @@ class RocketChatService {
       },
     });
 
-    // Helper to parse Rocket.Chat timestamp format
-    const parseTimestamp = (ts: any): string => {
-      if (!ts) return new Date().toISOString();
-      if (typeof ts === 'string') return ts;
-      if (ts.$date) return new Date(ts.$date).toISOString();
-      if (typeof ts === 'number') return new Date(ts).toISOString();
-      return new Date().toISOString();
-    };
-
     // Transform backend response to match frontend expected format
     if (response.success && response.messages) {
       const transformedMessages = response.messages.map((msg: any) => {
@@ -549,15 +541,6 @@ class RocketChatService {
           offset,
         },
       });
-
-      // Helper to parse Rocket.Chat timestamp format
-      const parseTimestamp = (ts: any): string => {
-        if (!ts) return new Date().toISOString();
-        if (typeof ts === 'string') return ts;
-        if (ts.$date) return new Date(ts.$date).toISOString();
-        if (typeof ts === 'number') return new Date(ts).toISOString();
-        return new Date().toISOString();
-      };
 
       // Transform messages
       if (response.success && response.messages) {

@@ -50,11 +50,14 @@ function MessageListInfinite({
   const allMessages = data?.pages.flatMap((page) => page.messages).reverse() || [];
 
   // Notify parent of messages change
+  // Use JSON.stringify to compare array contents instead of reference
+  const allMessagesString = JSON.stringify(allMessages.map(m => m.messageId));
   useEffect(() => {
     if (onMessagesChange && allMessages.length > 0) {
       onMessagesChange(allMessages);
     }
-  }, [allMessages, onMessagesChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMessagesString, onMessagesChange]);
 
   // Scroll to bottom on initial load or new message
   useEffect(() => {

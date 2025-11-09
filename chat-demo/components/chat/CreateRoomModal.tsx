@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Users, Lock, Globe, Eye, X, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { getInitials, getAvatarColor } from '@/utils/avatarUtils';
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -183,24 +184,6 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
     );
   });
 
-  // Get avatar initials
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  // Get avatar color
-  const getAvatarColor = (username: string) => {
-    const colors = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-purple-600',
-      'from-pink-500 to-pink-600',
-      'from-green-500 to-green-600',
-      'from-yellow-500 to-yellow-600',
-      'from-red-500 to-red-600',
-    ];
-    const index = username.charCodeAt(0) % colors.length;
-    return `bg-gradient-to-br ${colors[index]}`;
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import authService from '@/services/auth.service';
+import { getInitials } from '@/utils/avatarUtils';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -34,16 +35,6 @@ export default function UserMenu() {
   };
 
   if (!user) return null;
-
-  const getInitials = (name?: string) => {
-    if (!name) return '??';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-  };
 
   const displayName = user.displayName || user.username;
   const avatarUrl = user.profilePicturePath;

@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Users, UserPlus, X, Check, AlertCircle, UserMinus } from 'lucide-react';
 import type { RoomMember, RoomTypeApiName } from '@/types/rocketchat';
 import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
+import { getInitials, getAvatarColor } from '@/utils/avatarUtils';
 
 interface InviteMembersModalProps {
   isOpen: boolean;
@@ -190,26 +191,6 @@ export default function InviteMembersModal({
     );
   });
 
-  // Get avatar initials
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  // Get avatar color
-  const getAvatarColor = (username: string) => {
-    const colors = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-purple-600',
-      'from-pink-500 to-pink-600',
-      'from-green-500 to-green-600',
-      'from-yellow-500 to-yellow-600',
-      'from-red-500 to-red-600',
-      'from-indigo-500 to-indigo-600',
-      'from-teal-500 to-teal-600',
-    ];
-    const index = username.charCodeAt(0) % colors.length;
-    return `bg-gradient-to-br ${colors[index]}`;
-  };
 
   return (
     <>

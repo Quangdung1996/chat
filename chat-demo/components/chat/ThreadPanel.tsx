@@ -10,6 +10,7 @@ import { useNotificationStore } from '@/store/notificationStore';
 import { useThreadSubscription } from '@/hooks/use-room-subscription';
 import { useThreadMessages, useSendThreadReply } from '@/hooks/use-messages';
 import { ThreadMessageSkeleton } from './MessageSkeleton';
+import { formatMessageTime } from '@/utils/dateUtils';
 
 interface ThreadPanelProps {
   roomId: string;
@@ -34,35 +35,6 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
   
   // Flatten messages from pages
   const messages = data?.pages.flatMap((page) => page.messages) || [];
-
-  // 🕐 Format timestamp (giống MessageList)
-  const formatTimestamp = (timestamp?: string) => {
-    if (!timestamp) return '';
-    
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return '';
-    
-    const now = new Date();
-    const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
-    const diffInMinutes = diffInSeconds / 60;
-    const diffInHours = diffInMinutes / 60;
-
-    // Tin nhắn trong vòng 24 giờ
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-
-    // Tin nhắn cũ hơn 24 giờ
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   // ✅ Zustand stores
   const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
@@ -159,7 +131,7 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
                 {parentMessage.user?.name || parentMessage.username || 'Unknown'}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {formatTimestamp(parentMessage.timestamp)}
+                {formatMessageTime(parentMessage.timestamp)}
               </span>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap break-words">
@@ -207,7 +179,7 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
                       {isCurrentUser ? 'Tôi' : (msg.user?.name || msg.username || 'Unknown')}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatTimestamp(msg.timestamp)}
+                      {formatMessageTime(msg.timestamp)}
                     </span>
                   </div>
                   <div className={`mt-1 ${

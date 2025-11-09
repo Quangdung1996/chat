@@ -6,6 +6,8 @@ import type { ChatMessage } from '@/types/rocketchat';
 import SystemMessage from './SystemMessage';
 import FileAttachment from './FileAttachment';
 import { ThreadButton } from './ThreadButton';
+import { formatMessageTime } from '@/utils/dateUtils';
+import { getInitials, getAvatarColor } from '@/utils/avatarUtils';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -16,60 +18,6 @@ interface MessageListProps {
 }
 
 function MessageList({ messages, roomId, currentUserId, currentUsername, onThreadClick }: MessageListProps) {
-
-  const formatTime = (timestamp?: string) => {
-    if (!timestamp) return '';
-    
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return '';
-    
-    const now = new Date();
-    const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
-    const diffInMinutes = diffInSeconds / 60;
-    const diffInHours = diffInMinutes / 60;
-
-    // Tin nhắn trong vòng 24 giờ
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-
-    // Tin nhắn cũ hơn 24 giờ
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getInitials = (name?: string) => {
-    if (!name) return '??';
-    const words = name.trim().split(/\s+/);
-    if (words.length >= 2) {
-      // Lấy chữ cái đầu của 2 từ đầu tiên (cho fullName như "Nguyễn Văn A")
-      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const getAvatarColor = (name?: string) => {
-    const colors = [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-pink-400 to-pink-600',
-      'bg-gradient-to-br from-green-400 to-green-600',
-      'bg-gradient-to-br from-yellow-400 to-yellow-600',
-      'bg-gradient-to-br from-red-400 to-red-600',
-      'bg-gradient-to-br from-indigo-400 to-indigo-600',
-      'bg-gradient-to-br from-teal-400 to-teal-600',
-    ];
-    if (!name) return colors[0];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
 
   return (
     <div className="space-y-0.5">
@@ -191,7 +139,7 @@ function MessageList({ messages, roomId, currentUserId, currentUsername, onThrea
                         ? 'text-right text-gray-500 dark:text-gray-400' 
                         : 'text-left text-gray-500 dark:text-gray-400'
                     }`}>
-                      {formatTime(message.timestamp)}
+                      {formatMessageTime(message.timestamp)}
                       {message.edited && isCurrentUser && (
                         <span className="ml-1.5">· đã chỉnh sửa</span>
                       )}

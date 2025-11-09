@@ -194,13 +194,37 @@ class RocketChatWebSocketService {
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
       console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
       
-      setTimeout(() => {
-        this.connect().catch(err => {
+      setTimeout(async () => {
+        try {
+          await this.connect();
+          // Re-authenticate after reconnecting
+          if (this.authToken && this.userId) {
+            await this.authenticate(this.authToken, this.userId);
+            console.log('✅ Re-authenticated after reconnect');
+          }
+        } catch (err) {
           console.error('❌ Reconnect failed:', err);
-        });
+        }
       }, delay);
     } else {
       console.error('❌ Max reconnect attempts reached');
+    }
+  }
+
+  /**
+   * Public method to manually trigger reconnect
+   * Useful when detecting connection issues (e.g., method calls failing)
+   */
+  async reconnect(): Promise<void> {
+    console.log('🔄 Manual reconnect triggered');
+    this.reconnectAttempts = 0; // Reset attempts for manual reconnect
+    this.disconnect(); // Close existing connection
+    await this.connect();
+    
+    // Re-authenticate if we have credentials
+    if (this.authToken && this.userId) {
+      await this.authenticate(this.authToken, this.userId);
+      console.log('✅ Re-authenticated after manual reconnect');
     }
   }
 
@@ -451,6 +475,12 @@ class RocketChatWebSocketService {
 
   callMethod(method: string, ...params: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
+      // Check connection health before making call
+      if (!this.isDDPConnected()) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
       const id = this.getNextId();
       
       // Store both resolve and reject so we can handle errors
@@ -462,12 +492,18 @@ class RocketChatWebSocketService {
         }
       });
 
-      this.send({
-        msg: 'method',
-        method,
-        id,
-        params,
-      });
+      try {
+        this.send({
+          msg: 'method',
+          method,
+          id,
+          params,
+        });
+      } catch (error) {
+        this.callbacks.delete(id);
+        reject(new Error(`Failed to send method call: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        return;
+      }
 
       // Timeout after 30 seconds
       setTimeout(() => {
@@ -521,7 +557,14 @@ class RocketChatWebSocketService {
       });
       
       if (!this.isConnected()) {
-        throw new Error('WebSocket not connected');
+        // Try to reconnect if not connected
+        console.log('⚠️ [WS] Not connected, attempting reconnect...');
+        try {
+          await this.reconnect();
+        } catch (reconnectError) {
+          console.error('❌ [WS] Reconnect failed:', reconnectError);
+          throw new Error('WebSocket not connected and reconnect failed');
+        }
       }
       
       // Use readMessages method as documented in Rocket.Chat API
@@ -531,10 +574,20 @@ class RocketChatWebSocketService {
       console.log('✅ [WS] Room marked as read successfully:', { roomId, result });
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ [WS] All mark-as-read methods failed:', {
         roomId,
-        error: error instanceof Error ? error.message : error
+        error: errorMessage
       });
+      
+      // If it's a connection error, try to reconnect (but don't block)
+      if (errorMessage.includes('not connected') || errorMessage.includes('timeout') || errorMessage.includes('failed to send')) {
+        console.log('🔄 [WS] Connection error detected, attempting reconnect in background...');
+        this.reconnect().catch(reconnectError => {
+          console.error('❌ [WS] Background reconnect failed:', reconnectError);
+        });
+      }
+      
       throw error;
     }
   }
@@ -554,7 +607,14 @@ class RocketChatWebSocketService {
       });
       
       if (!this.isConnected()) {
-        throw new Error('WebSocket not connected');
+        // Try to reconnect if not connected
+        console.log('⚠️ [WS] Not connected, attempting reconnect...');
+        try {
+          await this.reconnect();
+        } catch (reconnectError) {
+          console.error('❌ [WS] Reconnect failed:', reconnectError);
+          throw new Error('WebSocket not connected and reconnect failed');
+        }
       }
       
       // Rocket.Chat readMessages method signature:
@@ -565,11 +625,21 @@ class RocketChatWebSocketService {
       console.log('✅ [WS] Thread marked as read successfully:', { roomId, threadId, result });
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ [WS] All mark-thread-as-read methods failed:', {
         roomId,
         threadId,
-        error: error instanceof Error ? error.message : error
+        error: errorMessage
       });
+      
+      // If it's a connection error, try to reconnect (but don't block)
+      if (errorMessage.includes('not connected') || errorMessage.includes('timeout') || errorMessage.includes('failed to send')) {
+        console.log('🔄 [WS] Connection error detected, attempting reconnect in background...');
+        this.reconnect().catch(reconnectError => {
+          console.error('❌ [WS] Background reconnect failed:', reconnectError);
+        });
+      }
+      
       throw error;
     }
   }

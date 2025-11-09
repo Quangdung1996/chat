@@ -16,6 +16,7 @@ import {
   getRoomTypeLabel, 
   getRoomTypeGradient 
 } from '@/utils/roomTypeUtils';
+import { getInitials, getAvatarColorApple } from '@/utils/avatarUtils';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -475,11 +476,6 @@ export default function ChatSidebar({
                       // Chỉ show thread badge khi có thread notifications VÀ KHÔNG phải room đang active
                       const hasThreadNotifications = threadNotificationsCount > 0 && !isActive;
 
-                      // Get initials for avatar
-                      const getInitials = (name: string) => {
-                        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                      };
-
                       // Avatar color based on type - Apple style
                       const avatarColor = getRoomTypeGradient(room.type);
 
@@ -564,24 +560,6 @@ export default function ChatSidebar({
                       const displayName = contactUser.name || contactUser.username;
                       const isCreating = creatingDM === contactUser._id;
 
-                      // Get initials for avatar
-                      const getInitials = (name: string) => {
-                        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                      };
-
-                      // Get avatar color
-                      const getAvatarColor = (username: string) => {
-                        const colors = [
-                          'from-[#007aff] to-[#0051d5]',
-                          'from-[#5856d6] to-[#3634a3]',
-                          'from-[#ff2d55] to-[#c7254e]',
-                          'from-[#34c759] to-[#248a3d]',
-                          'from-[#ff9500] to-[#c93400]',
-                          'from-[#af52de] to-[#8e24aa]',
-                        ];
-                        const index = username.charCodeAt(0) % colors.length;
-                        return `bg-gradient-to-br ${colors[index]}`;
-                      };
 
                       return (
                         <button
@@ -592,7 +570,7 @@ export default function ChatSidebar({
                         >
                           <div className="flex items-center gap-3">
                             {/* Avatar */}
-                            <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColor(contactUser.username)} flex items-center justify-center text-white font-semibold text-[15px] shadow-md`}>
+                            <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColorApple(contactUser.username)} flex items-center justify-center text-white font-semibold text-[15px] shadow-md`}>
                               {isCreating ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                               ) : (

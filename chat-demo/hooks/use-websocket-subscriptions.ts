@@ -9,6 +9,7 @@ import { useWebSocketStore } from '@/store/websocketStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAddMessageToCache } from './use-messages';
+import { parseTimestamp } from '@/utils/dateUtils';
 import type { ChatMessage } from '@/types/rocketchat';
 
 /**
@@ -31,15 +32,6 @@ export function useRoomMessages(roomId: string | null, enabled = true) {
     if (!roomId || !wsConnected || !enabled) return;
 
     const handleNewMessage = (message: any) => {
-      // Helper to parse Rocket.Chat timestamp format
-      const parseTimestamp = (ts: any): string => {
-        if (!ts) return new Date().toISOString();
-        if (typeof ts === 'string') return ts;
-        if (ts.$date) return new Date(ts.$date).toISOString();
-        if (typeof ts === 'number') return new Date(ts).toISOString();
-        return new Date().toISOString();
-      };
-
       // Validate message
       if (!message._id || !message.rid || !message.u || !message.u._id) {
         console.warn('⚠️ Received invalid message from WebSocket, skipping:', message);
@@ -141,15 +133,6 @@ export function useThreadMessages(
     const handleNewThreadMessage = (message: any) => {
       // Only process messages for this specific thread
       if (message.tmid !== threadId) return;
-
-      // Helper to parse Rocket.Chat timestamp format
-      const parseTimestamp = (ts: any): string => {
-        if (!ts) return new Date().toISOString();
-        if (typeof ts === 'string') return ts;
-        if (ts.$date) return new Date(ts.$date).toISOString();
-        if (typeof ts === 'number') return new Date(ts).toISOString();
-        return new Date().toISOString();
-      };
 
       // Convert to ChatMessage format
       const newMessage: ChatMessage = {
