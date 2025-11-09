@@ -25,7 +25,11 @@ import {
   KEY_ENTER_COMMAND,
   EditorState,
   TextFormatType,
-  $createTextNode
+  $createTextNode,
+  $createParagraphNode,
+  $isElementNode,
+  $setSelection,
+  $createRangeSelection
 } from 'lexical';
 import { useEffect } from 'react';
 
@@ -41,9 +45,7 @@ const theme = {
 };
 
 interface MessageEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: (text: string) => void;
   placeholder?: string;
   disabled?: boolean;
   roomId: string;
@@ -52,10 +54,11 @@ interface MessageEditorProps {
 export interface MessageEditorRef {
   focus: () => void;
   clear: () => void;
+  getText: () => string;
 }
 
 // Plugin to handle Enter key submission
-function EnterKeyPlugin({ onSubmit }: { onSubmit: () => void }) {
+function EnterKeyPlugin({ onSubmit }: { onSubmit: (text: string) => void }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -76,7 +79,7 @@ function EnterKeyPlugin({ onSubmit }: { onSubmit: () => void }) {
         
         // Only submit if there's content
         if (textContent.trim()) {
-          onSubmit();
+          onSubmit(textContent.trim());
           
           // Clear editor after submit
           editor.update(() => {
@@ -100,11 +103,28 @@ function EditorRefPlugin({ editorRef, onEmojiInsert }: { editorRef: React.Mutabl
 
   useEffect(() => {
     const insertEmoji = (emoji: string) => {
+      // Focus editor first to ensure we have a selection
+      editor.focus();
+      
       editor.update(() => {
         const selection = $getSelection();
+        const root = $getRoot();
+        const emojiNode = $createTextNode(emoji);
+        
         if ($isRangeSelection(selection)) {
-          const emojiNode = $createTextNode(emoji);
+          // Insert at current selection
           selection.insertNodes([emojiNode]);
+        } else {
+          // No selection, get last paragraph or create one
+          const lastChild = root.getLastChild();
+          if (lastChild && $isElementNode(lastChild) && lastChild.getType() === 'paragraph') {
+            lastChild.append(emojiNode);
+          } else {
+            // Create new paragraph with emoji
+            const paragraph = $createParagraphNode();
+            paragraph.append(emojiNode);
+            root.append(paragraph);
+          }
         }
       });
     };
@@ -115,6 +135,11 @@ function EditorRefPlugin({ editorRef, onEmojiInsert }: { editorRef: React.Mutabl
         editor.update(() => {
           const root = $getRoot();
           root.clear();
+        });
+      },
+      getText: () => {
+        return editor.getEditorState().read(() => {
+          return $getRoot().getTextContent();
         });
       },
       insertEmoji,
@@ -151,7 +176,44 @@ function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPic
   }, [editor]);
 
   const formatText = (format: TextFormatType) => {
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+    // Focus editor first
+    editor.focus();
+    
+    let shouldApplyFormat = false;
+    
+    editor.update(() => {
+      const selection = $getSelection();
+      const root = $getRoot();
+      
+      if ($isRangeSelection(selection)) {
+        // Has selection, apply format normally
+        shouldApplyFormat = true;
+      } else if (root.isEmpty()) {
+        // Editor is empty, create paragraph with empty text node
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('');
+        paragraph.append(textNode);
+        root.append(paragraph);
+        
+        // Create selection and select the text node
+        const rangeSelection = $createRangeSelection();
+        rangeSelection.anchor.set(textNode.getKey(), 0, 'text');
+        rangeSelection.focus.set(textNode.getKey(), 0, 'text');
+        $setSelection(rangeSelection);
+        shouldApplyFormat = true;
+      }
+      // If editor has content but no selection, format will be applied to next typed text
+    });
+    
+    // Apply format command after update completes
+    if (shouldApplyFormat) {
+      requestAnimationFrame(() => {
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+      });
+    } else {
+      // No selection but editor has content - format will apply to next typed text
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+    }
   };
 
   return (
@@ -242,7 +304,7 @@ function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPic
 }
 
 const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
-  ({ value, onChange, onSubmit, placeholder = 'Nhập tin nhắn...', disabled = false, roomId }, ref) => {
+  ({ onSubmit, placeholder = 'Nhập tin nhắn...', disabled = false, roomId }, ref) => {
     const editorRef = useRef<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -258,6 +320,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
       clear: () => editorRef.current?.clear(),
+      getText: () => editorRef.current?.getText() || '',
     }));
 
     // Lexical initial config
@@ -266,15 +329,6 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
       theme,
       onError: (error: Error) => console.error(error),
       editable: !disabled,
-    };
-
-    // Handle editor changes
-    const handleEditorChange = (editorState: EditorState) => {
-      editorState.read(() => {
-        const root = $getRoot();
-        const text = root.getTextContent();
-        onChange(text);
-      });
     };
 
     // Handle emoji selection
@@ -430,19 +484,18 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
             />
 
             {/* Editor */}
-            <div className="relative bg-white dark:bg-[#3a3a3c] border border-t-0 border-gray-300 dark:border-gray-600 rounded-b">
+            <div className="relative bg-white dark:bg-[#3a3a3c] border border-t-0 border-gray-300 dark:border-gray-600 rounded-b transition-all duration-200">
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className="min-h-[40px] max-h-[120px] overflow-y-auto px-3 py-2 text-[14px] text-gray-900 dark:text-white focus:outline-none" />
+                  <ContentEditable className="min-h-[40px] max-h-[120px] overflow-y-auto px-3 py-2 text-[14px] text-gray-900 dark:text-white focus:outline-none transition-all duration-150" />
                 }
                 placeholder={
-                  <div className="absolute top-2 left-3 text-[14px] text-gray-400 dark:text-gray-500 pointer-events-none">
+                  <div className="absolute top-2 left-3 text-[14px] text-gray-400 dark:text-gray-500 pointer-events-none select-none">
                     {placeholder}
                   </div>
                 }
                 ErrorBoundary={LexicalErrorBoundary}
               />
-              <OnChangePlugin onChange={handleEditorChange} />
               <HistoryPlugin />
               <EnterKeyPlugin onSubmit={onSubmit} />
               <EditorRefPlugin 
@@ -453,21 +506,29 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
           </LexicalComposer>
         </div>
 
-        {/* Emoji Picker */}
+        {/* Emoji Picker - Responsive positioning */}
         {showEmojiPicker && (
-          <div className="fixed bottom-20 right-4 z-50 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden emoji-picker-react">
+          <div className="fixed bottom-20 right-4 md:bottom-24 md:right-8 z-50 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden emoji-picker-react max-w-[90vw]">
             <EmojiPicker
               onEmojiClick={handleEmojiClick}
               autoFocusSearch={false}
-              width={350}
-              height={450}
+              width={Math.min(350, window.innerWidth - 32)}
+              height={Math.min(450, window.innerHeight - 200)}
             />
           </div>
         )}
 
         {/* File Preview Modal */}
         {showPreview && selectedFile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              // Close on backdrop click
+              if (e.target === e.currentTarget && !uploading) {
+                handleCancel();
+              }
+            }}
+          >
             <div className="bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl w-full max-w-md mx-4">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">

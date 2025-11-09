@@ -204,3 +204,132 @@ export function useAddMessageToCache() {
   };
 }
 
+// Query keys for thread messages
+export const threadMessageKeys = {
+  all: ['thread-messages'] as const,
+  thread: (roomId: string, tmid: string) => [...threadMessageKeys.all, roomId, tmid] as const,
+};
+
+interface UseThreadMessagesOptions {
+  roomId: string;
+  tmid: string;
+  enabled?: boolean;
+}
+
+/**
+ * Hook để fetch thread messages với TanStack Query
+ * Load all thread replies for a parent message
+ */
+export function useThreadMessages({ roomId, tmid, enabled = true }: UseThreadMessagesOptions) {
+  return useInfiniteQuery<MessagesPage, Error>({
+    queryKey: threadMessageKeys.thread(roomId, tmid),
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await rocketChatService.getThreadMessages({
+        tmid,
+        roomId,
+        count: 99999999, // Load all thread messages
+        offset: pageParam as number,
+      });
+
+      // Filter out parent message (we show it separately)
+      const threadReplies = response.messages.filter(msg => msg.tmid);
+
+      return {
+        messages: threadReplies,
+        nextOffset: undefined, // No pagination for threads (load all)
+        hasMore: false,
+        total: threadReplies.length,
+        count: threadReplies.length,
+        offset: 0,
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: () => undefined, // No pagination
+    enabled: enabled && !!roomId && !!tmid,
+    staleTime: 10 * 1000, // 10 seconds (threads update less frequently)
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook để gửi thread reply với optimistic update
+ */
+export function useSendThreadReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: SendMessageRequest) => {
+      return rocketChatService.sendMessage(request);
+    },
+    onMutate: async (newMessage) => {
+      if (!newMessage.tmid) return;
+
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: threadMessageKeys.thread(newMessage.roomId, newMessage.tmid) 
+      });
+
+      // Snapshot previous value
+      const previousMessages = queryClient.getQueryData(
+        threadMessageKeys.thread(newMessage.roomId, newMessage.tmid)
+      );
+
+      // Optimistically update - add message to thread
+      queryClient.setQueryData(
+        threadMessageKeys.thread(newMessage.roomId, newMessage.tmid),
+        (old: any) => {
+          if (!old?.pages) return old;
+
+          // Create optimistic message
+          const optimisticMessage: ChatMessage = {
+            messageId: `temp-${Date.now()}`,
+            roomId: newMessage.roomId,
+            text: newMessage.text,
+            timestamp: new Date().toISOString(),
+            isCurrentUser: true,
+            tmid: newMessage.tmid,
+            user: {
+              id: 'current',
+              username: 'You',
+              name: 'You',
+            },
+          };
+
+          // Add to first page
+          const newPages = [...old.pages];
+          if (newPages[0]) {
+            newPages[0] = {
+              ...newPages[0],
+              messages: [...newPages[0].messages, optimisticMessage], // Append to end (chronological)
+            };
+          }
+
+          return {
+            ...old,
+            pages: newPages,
+          };
+        }
+      );
+
+      return { previousMessages };
+    },
+    onError: (_error, newMessage, context) => {
+      // Rollback on error
+      if (context?.previousMessages && newMessage.tmid) {
+        queryClient.setQueryData(
+          threadMessageKeys.thread(newMessage.roomId, newMessage.tmid),
+          context.previousMessages
+        );
+      }
+    },
+    onSuccess: (_data, variables) => {
+      // Refetch to get real message from server
+      if (variables.tmid) {
+        queryClient.invalidateQueries({ 
+          queryKey: threadMessageKeys.thread(variables.roomId, variables.tmid) 
+        });
+      }
+    },
+  });
+}
+

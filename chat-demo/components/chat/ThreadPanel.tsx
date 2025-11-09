@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { X, Loader2, Send, MessageSquare } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { X, MessageSquare } from 'lucide-react';
 import { ChatMessage } from '@/types/rocketchat';
-import { rocketChatService } from '@/services/rocketchat.service';
 import MessageEditor, { MessageEditorRef } from './MessageEditor';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
-import { useWebSocketConnected, useWebSocketStore } from '@/store/websocketStore';
+import { useWebSocketStore } from '@/store/websocketStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useThreadSubscription } from '@/hooks/use-room-subscription';
+import { useThreadMessages, useSendThreadReply } from '@/hooks/use-messages';
+import { ThreadMessageSkeleton } from './MessageSkeleton';
 
 interface ThreadPanelProps {
   roomId: string;
@@ -19,12 +20,20 @@ interface ThreadPanelProps {
 }
 
 export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, currentUserName }: ThreadPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MessageEditorRef>(null);
+  
+  // ✅ TanStack Query hooks
+  const { data, isLoading, isError } = useThreadMessages({
+    roomId,
+    tmid: parentMessage.messageId,
+    enabled: !!roomId && !!parentMessage.messageId,
+  });
+  
+  const sendThreadReplyMutation = useSendThreadReply();
+  
+  // Flatten messages from pages
+  const messages = data?.pages.flatMap((page) => page.messages) || [];
 
   // 🕐 Format timestamp (giống MessageList)
   const formatTimestamp = (timestamp?: string) => {
@@ -55,17 +64,13 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
     });
   };
 
-  // ✅ Zustand stores (must be declared before useEffect)
-  const wsConnected = useWebSocketConnected();
+  // ✅ Zustand stores
   const clearThreadNotification = useNotificationStore((state) => state.clearThreadNotification);
   const markRoomAsRead = useWebSocketStore((state) => state.markRoomAsRead);
 
-  // Load thread messages
+  // ✅ Mark thread as read when opening thread panel
   useEffect(() => {
-    loadThreadMessages();
-    
-    // ✅ Mark thread as read when opening thread panel (via WebSocket)
-    // This will sync with server and update subscription, clearing tunread
+    // Mark thread as read via WebSocket
     rocketChatWS.markThreadAsRead(roomId, parentMessage.messageId).catch((error: any) => {
       console.warn('Failed to mark thread as read when opening thread:', error);
     });
@@ -81,29 +86,13 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
 
   // ✅ Centralized thread subscription (ref-counted in store)
   useThreadSubscription(roomId, parentMessage.messageId);
-
-  const loadThreadMessages = async () => {
-    try {
-      setLoading(true);
-      const response = await rocketChatService.getThreadMessages({
-        tmid: parentMessage.messageId,
-        roomId,
-        count: 99999999, // Load all thread messages
-      });
-      
-      if (response.success) {
-        // Filter out the parent message (first message without tmid)
-        // We already show it separately above
-        const threadReplies = response.messages.filter(msg => msg.tmid);
-        setMessages(threadReplies);
-        scrollToBottom();
-      }
-    } catch (error) {
-      console.error('Error loading thread messages:', error);
-    } finally {
-      setLoading(false);
+  
+  // ✅ Auto-scroll to bottom when messages load or change
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
     }
-  };
+  }, [messages.length]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -111,36 +100,29 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
     }, 100);
   };
 
-  const handleSendMessage = async () => {
-    if (!messageText.trim() || sending) return;
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim() || sendThreadReplyMutation.isPending) return;
 
     try {
-      setSending(true);
-      const response = await rocketChatService.sendMessage({
+      // ✅ Send with optimistic update (handled by useSendThreadReply hook)
+      await sendThreadReplyMutation.mutateAsync({
         roomId,
-        text: messageText.trim(),
+        text: text.trim(),
         tmid: parentMessage.messageId, // Reply in thread
       });
-
-      if (response.success) {
-        setMessageText('');
-        editorRef.current?.clear();
-        editorRef.current?.focus();
-        // Reload messages to show new reply
-        await loadThreadMessages();
-        
-        // ✅ Mark thread as read after sending message in thread
-        rocketChatWS.markThreadAsRead(roomId, parentMessage.messageId).catch((error: any) => {
-          console.warn('Failed to mark thread as read after sending thread reply:', error);
-        });
-        
-        // Also mark room as read (debounced via store)
-        markRoomAsRead(roomId);
-      }
+      
+      // Focus editor after send
+      editorRef.current?.focus();
+      
+      // ✅ Mark thread as read after sending message in thread
+      rocketChatWS.markThreadAsRead(roomId, parentMessage.messageId).catch((error: any) => {
+        console.warn('Failed to mark thread as read after sending thread reply:', error);
+      });
+      
+      // Also mark room as read (debounced via store)
+      markRoomAsRead(roomId);
     } catch (error) {
       console.error('Error sending thread message:', error);
-    } finally {
-      setSending(false);
     }
   };
 
@@ -188,19 +170,24 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
       </div>
 
       {/* Thread Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <ThreadMessageSkeleton count={3} />
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <p className="text-sm text-red-500 dark:text-red-400">
+              Failed to load thread messages. Please try again.
+            </p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No replies yet. Be the first to reply!
             </p>
           </div>
         ) : (
-          messages.map((msg) => {
+          <div className="p-4 space-y-4">
+            {messages.map((msg) => {
             const msgUsername = msg.username || msg.user?.username;
             const isCurrentUser = msgUsername === currentUsername || msg.isCurrentUser;
             
@@ -257,20 +244,19 @@ export function ThreadPanel({ roomId, parentMessage, onClose, currentUsername, c
                 </div>
               </div>
             );
-          })
+          })}
+          <div ref={messagesEndRef} />
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <MessageEditor
           ref={editorRef}
-          value={messageText}
-          onChange={setMessageText}
           onSubmit={handleSendMessage}
           placeholder="Reply in thread..."
-          disabled={sending}
+          disabled={sendThreadReplyMutation.isPending}
           roomId={roomId}
         />
       </div>

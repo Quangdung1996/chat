@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import TeamsSidebar from '@/components/TeamsSidebar';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { UserSubscription } from '@/types/rocketchat';
 
 function HomeContent() {
@@ -40,7 +41,9 @@ function HomeContent() {
 
           {/* Chat Window */}
           {selectedRoom ? (
-            <ChatWindow room={selectedRoom} />
+            <ErrorBoundary>
+              <ChatWindow room={selectedRoom} />
+            </ErrorBoundary>
           ) : (
             <div className="flex-1 flex items-center justify-center bg-[#f5f5f7] dark:bg-[#1c1c1e]">
               <div className="text-center">

@@ -8,7 +8,7 @@ import { useRoomSubscription } from '@/hooks/use-room-subscription';
 import { useSendMessage } from '@/hooks/use-messages';
 import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
-import MessageEditor from './MessageEditor';
+import MessageEditor, { MessageEditorRef } from './MessageEditor';
 import { ThreadPanel } from './ThreadPanel';
 import { Send } from 'lucide-react';
 import type { UserSubscription, ChatMessage } from '@/types/rocketchat';
@@ -22,7 +22,7 @@ interface ChatWindowProps {
 }
 
 function ChatWindow({ room }: ChatWindowProps) {
-  const [messageText, setMessageText] = useState('');
+  const editorRef = useRef<MessageEditorRef>(null);
   
   // ✅ Use stable selector functions
   const user = useAuthStore(selectUser);
@@ -44,28 +44,22 @@ function ChatWindow({ room }: ChatWindowProps) {
   const roomId = room.roomId;
   const roomType = room.type || 'p';
 
-  // ✅ Reset message text khi chuyển room
+  // ✅ Clear editor khi chuyển room
   useEffect(() => {
-    setMessageText(''); // Clear input khi chuyển room
-  }, [roomId]); // Chạy khi roomId thay đổi
+    editorRef.current?.clear();
+  }, [roomId]);
 
   // ✅ Rocket.Chat WebSocket: Centralized subscription (ref-counted in store)
   useRoomSubscription(roomId);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim() || sendMessageMutation.isPending) return;
-
-    const textToSend = messageText.trim();
-    
-    // Clear input immediately for better UX
-    setMessageText('');
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim() || sendMessageMutation.isPending) return;
     
     try {
       // ✅ Send with optimistic update (handled by useSendMessage hook)
       await sendMessageMutation.mutateAsync({
         roomId: room.roomId,
-        text: textToSend,
+        text: text.trim(),
       });
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -111,37 +105,37 @@ function ChatWindow({ room }: ChatWindowProps) {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSendMessage}>
-            <div className="flex items-end gap-2">
-              {/* Rich Text Editor with integrated file upload */}
-              <MessageEditor
-                value={messageText}
-                onChange={setMessageText}
-                onSubmit={() => {
-                  if (messageText.trim() && !sendMessageMutation.isPending) {
-                    handleSendMessage(new Event('submit') as any);
-                  }
-                }}
-                placeholder="Nhập tin nhắn..."
-                disabled={sendMessageMutation.isPending}
-                roomId={roomId}
-              />
+          <div className="flex items-end gap-2">
+            {/* Rich Text Editor with integrated file upload */}
+            <MessageEditor
+              ref={editorRef}
+              onSubmit={handleSendMessage}
+              placeholder="Nhập tin nhắn..."
+              disabled={sendMessageMutation.isPending}
+              roomId={roomId}
+            />
 
-              {/* Send Button - MS Teams Purple */}
-              <button
-                type="submit"
-                disabled={!messageText.trim() || sendMessageMutation.isPending}
-                className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded transition-all duration-200 disabled:opacity-50"
-                title="Gửi"
-              >
-                {sendMessageMutation.isPending ? (
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </form>
+            {/* Send Button - MS Teams Purple with better disabled state */}
+            <button
+              type="button"
+              onClick={() => {
+                const text = editorRef.current?.getText() || '';
+                if (text.trim() && !sendMessageMutation.isPending) {
+                  handleSendMessage(text);
+                  editorRef.current?.clear();
+                }
+              }}
+              disabled={sendMessageMutation.isPending}
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#5b5fc7] hover:bg-[#464a9e] disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-white disabled:text-gray-400 dark:disabled:text-gray-600 rounded transition-all duration-200 shadow-sm hover:shadow-md disabled:shadow-none"
+              title={sendMessageMutation.isPending ? "Đang gửi..." : "Gửi (hoặc nhấn Enter)"}
+            >
+              {sendMessageMutation.isPending ? (
+                <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         )}
       </div>
 
