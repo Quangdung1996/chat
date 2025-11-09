@@ -28,6 +28,8 @@ function MessageListInfinite({
   const isInitialLoad = useRef(true);
   const previousScrollHeight = useRef(0);
   const hasUserScrolled = useRef(false); // Track if user has manually scrolled
+  const lastMessageIdRef = useRef<string | null>(null); // Track last message ID
+  const isNearBottomRef = useRef(true); // Track if user is near bottom
 
   const {
     data,
@@ -59,21 +61,68 @@ function MessageListInfinite({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allMessagesString, onMessagesChange]);
 
-  // Scroll to bottom on initial load or new message
+  // Helper function to check if user is near bottom
+  const checkIfNearBottom = (): boolean => {
+    if (!scrollRef.current) return false;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    return distanceFromBottom < 150; // Within 150px of bottom
+  };
+
+  // Helper function to scroll to bottom
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
+  // Scroll to bottom on initial load
   useEffect(() => {
     if (isInitialLoad.current && allMessages.length > 0 && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollToBottom();
       isInitialLoad.current = false;
+      if (allMessages.length > 0) {
+        lastMessageIdRef.current = allMessages[allMessages.length - 1].messageId;
+      }
     }
   }, [allMessages.length]);
 
+  // Auto-scroll when new message arrives (especially from current user)
+  useEffect(() => {
+    if (allMessages.length === 0 || !scrollRef.current) return;
+    
+    const lastMessage = allMessages[allMessages.length - 1];
+    const lastMessageId = lastMessage?.messageId;
+    
+    // Check if this is a new message (different from last tracked)
+    if (lastMessageId && lastMessageId !== lastMessageIdRef.current) {
+      const isFromCurrentUser = lastMessage?.isCurrentUser === true;
+      const isNearBottom = checkIfNearBottom();
+      
+      // Update last message ID
+      lastMessageIdRef.current = lastMessageId;
+      
+      // Scroll if:
+      // 1. It's a new message from current user (always scroll)
+      // 2. It's a new message and user is near bottom (scroll to show new message)
+      if (isFromCurrentUser || isNearBottom) {
+        // Use setTimeout to ensure DOM has updated
+        setTimeout(() => {
+          scrollToBottom();
+        }, 50);
+      }
+    }
+  }, [allMessagesString]); // Use allMessagesString to avoid unnecessary re-renders
+
   // Track user scroll to enable infinite scroll only after user interaction
+  // Also track if user is near bottom for auto-scroll logic
   useEffect(() => {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
     const handleScroll = () => {
       hasUserScrolled.current = true;
+      isNearBottomRef.current = checkIfNearBottom();
     };
 
     scrollElement.addEventListener('scroll', handleScroll);
@@ -127,6 +176,8 @@ function MessageListInfinite({
     isInitialLoad.current = true;
     previousScrollHeight.current = 0;
     hasUserScrolled.current = false; // Reset scroll tracking
+    lastMessageIdRef.current = null; // Reset last message tracking
+    isNearBottomRef.current = true; // Reset near bottom tracking
   }, [roomId]);
 
   if (isLoading) {

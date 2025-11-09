@@ -1,6 +1,12 @@
 /**
  * WebSocket Store - Zustand
- * Quản lý WebSocket connection state và subscriptions
+ * Centralized WebSocket connection and subscription management
+ * 
+ * Features:
+ * - Ref-counted subscriptions (room + threads)
+ * - Automatic cleanup on unmount
+ * - Thread notification handling
+ * - Connection state management
  */
 
 import { create } from 'zustand';
@@ -9,12 +15,40 @@ import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import { useNotificationStore } from './notificationStore';
 import { useAuthStore } from './authStore';
 
+// ===== TYPES =====
+
+interface WebSocketMessage {
+  _id: string;
+  rid: string;
+  msg?: string;
+  tmid?: string;
+  u: {
+    _id: string;
+    username?: string;
+    name?: string;
+  };
+  ts?: string;
+  [key: string]: any;
+}
+
 interface RoomSubscription {
   roomId: string;
   subscriptionId: string;
-  refCount: number; // Số components đang dùng subscription này (room + all threads)
-  threadRefCounts: Map<string, number>; // tmid -> refCount
+  refCount: number;
+  threadRefCounts: Map<string, number>;
 }
+
+type ConnectionErrorType = 'not connected' | 'timeout' | 'failed to send' | 'reconnect failed';
+
+// ===== CONSTANTS =====
+
+const MARK_AS_READ_DEBOUNCE_MS = 1000;
+const CONNECTION_ERROR_PATTERNS: ConnectionErrorType[] = [
+  'not connected',
+  'timeout',
+  'failed to send',
+  'reconnect failed',
+];
 
 interface WebSocketState {
   // Connection state
@@ -56,9 +90,118 @@ interface WebSocketState {
   markRoomAsRead: (roomId: string) => void;
 }
 
-// Debounce timers for markRoomAsRead (outside store to persist)
+// ===== EXTERNAL STATE (persists outside store) =====
+
 const markRoomAsReadTimers = new Map<string, NodeJS.Timeout>();
-const MARK_AS_READ_DEBOUNCE_MS = 1000; // 1 second
+
+// ===== HELPER FUNCTIONS =====
+
+/**
+ * Validates WebSocket message structure
+ */
+function isValidMessage(message: any): message is WebSocketMessage {
+  return !!(
+    message?._id &&
+    message?.rid &&
+    message?.u &&
+    message?.u._id
+  );
+}
+
+/**
+ * Checks if user is currently viewing a thread
+ */
+function isViewingThread(
+  roomSub: RoomSubscription | undefined,
+  tmid: string
+): boolean {
+  if (!roomSub) return false;
+  const refCount = roomSub.threadRefCounts.get(tmid) || 0;
+  return refCount > 0;
+}
+
+/**
+ * Calculates total reference count (room + all threads)
+ */
+function calculateTotalRefs(roomSub: RoomSubscription): number {
+  const threadRefsTotal = Array.from(roomSub.threadRefCounts.values()).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  return roomSub.refCount + threadRefsTotal;
+}
+
+/**
+ * Checks if error is a connection-related error
+ */
+function isConnectionError(errorMessage: string): boolean {
+  return CONNECTION_ERROR_PATTERNS.some((pattern) =>
+    errorMessage.toLowerCase().includes(pattern)
+  );
+}
+
+/**
+ * Handles thread reply messages - updates notifications based on user state
+ */
+function handleThreadMessage(
+  message: WebSocketMessage,
+  roomId: string,
+  getRoomSubscription: () => RoomSubscription | undefined
+): void {
+  if (!message.tmid) return;
+
+  const notificationStore = useNotificationStore.getState();
+  const authStore = useAuthStore.getState();
+  const currentUserId = authStore.rocketChatUserId;
+  const isFromCurrentUser = message.u._id === currentUserId;
+  const roomSub = getRoomSubscription();
+  const isViewing = isViewingThread(roomSub, message.tmid);
+
+  // User sent their own message
+  if (isFromCurrentUser) {
+    if (isViewing) {
+      notificationStore.clearThreadNotification(roomId, message.tmid);
+    }
+    return;
+  }
+
+  // Message from another user
+  if (isViewing) {
+    // User is viewing thread, clear notification
+    notificationStore.clearThreadNotification(roomId, message.tmid);
+  } else {
+    // User not viewing, add notification
+    notificationStore.addThreadNotification(
+      roomId,
+      message.tmid,
+      message.u?.username
+    );
+  }
+}
+
+/**
+ * Creates message handler for room subscription
+ */
+function createRoomMessageHandler(
+  roomId: string,
+  getRoomSubscription: () => RoomSubscription | undefined
+) {
+  return (message: any) => {
+    if (!isValidMessage(message)) {
+      console.warn('⚠️ Invalid WebSocket message, skipping:', message);
+      return;
+    }
+
+    // Handle thread replies
+    if (message.tmid) {
+      handleThreadMessage(message, roomId, getRoomSubscription);
+      return; // Thread replies don't go to main message cache
+    }
+
+    // Regular room messages can be handled by messageStore if needed
+    console.log(`📨 [Store] Regular message received for room ${roomId}:`, message._id);
+  };
+}
 
 export const useWebSocketStore = create<WebSocketState>()(
   devtools(
@@ -123,7 +266,7 @@ export const useWebSocketStore = create<WebSocketState>()(
         const existing = state.roomSubscriptions.get(roomId);
         
         if (existing) {
-          // Already subscribed, increment ref count
+          // Increment ref count for existing subscription
           const updated = new Map(state.roomSubscriptions);
           updated.set(roomId, {
             ...existing,
@@ -134,55 +277,13 @@ export const useWebSocketStore = create<WebSocketState>()(
           return;
         }
         
-        // New subscription needed
+        // Create new subscription
         console.log(`🆕 Subscribing to room ${roomId}...`);
-        const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, (message) => {
-          // Validate message
-          if (!message?._id || !message?.rid || !message?.u || !message?.u._id) {
-            console.warn('⚠️ Received invalid message from WebSocket, skipping:', message);
-            return;
-          }
-
-          // ✅ Handle thread replies - update thread notifications
-          if (message.tmid) {
-            const notificationStore = useNotificationStore.getState();
-            const authStore = useAuthStore.getState();
-            const currentUserId = authStore.rocketChatUserId;
-            
-            // Check if this message is from current user (don't notify yourself)
-            const isFromCurrentUser = message.u._id === currentUserId;
-            
-            // Check if user is currently viewing this thread (thread subscription active)
-            const currentState = get();
-            const roomSub = currentState.roomSubscriptions.get(roomId);
-            const threadRefCount = roomSub?.threadRefCounts.get(message.tmid) || 0;
-            const isViewingThread = threadRefCount > 0;
-            
-            if (isFromCurrentUser) {
-              console.log('🧵 [Store] Thread reply from current user, skipping notification');
-              // Clear notification if user sent message in thread they're viewing
-              if (isViewingThread) {
-                notificationStore.clearThreadNotification(roomId, message.tmid);
-              }
-            } else {
-              // If user is viewing this thread, don't add notification (they're actively viewing it)
-              if (isViewingThread) {
-                console.log('🧵 [Store] Thread reply received but user is viewing thread, clearing notification');
-                notificationStore.clearThreadNotification(roomId, message.tmid);
-              } else {
-                // Update thread notification for other users who are not viewing
-                console.log('🧵 [Store] Thread reply received (tmid:', message.tmid, '), updating notification');
-                notificationStore.addThreadNotification(roomId, message.tmid, message.u?.username);
-              }
-            }
-            
-            // Don't add to main message cache (thread replies belong to thread panel)
-            return;
-          }
-
-          // Regular room messages (non-thread) - can be handled by messageStore if needed
-          console.log(`📨 [Store] Regular message received for room ${roomId}:`, message._id);
+        const messageHandler = createRoomMessageHandler(roomId, () => {
+          return get().roomSubscriptions.get(roomId);
         });
+        
+        const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, messageHandler);
         
         const updated = new Map(state.roomSubscriptions);
         updated.set(roomId, {
@@ -206,19 +307,19 @@ export const useWebSocketStore = create<WebSocketState>()(
         }
         
         const newRefCount = existing.refCount - 1;
-        
-        // Calculate total refs (room + threads)
-        const threadRefsTotal = Array.from(existing.threadRefCounts.values()).reduce((sum, count) => sum + count, 0);
-        const totalRefs = newRefCount + threadRefsTotal;
+        const updatedRoomSub = {
+          ...existing,
+          refCount: newRefCount,
+        };
+        const totalRefs = calculateTotalRefs(updatedRoomSub);
         
         if (totalRefs > 0) {
-          // Still have other subscribers (room or threads), decrement room ref count
+          // Still have other subscribers, just decrement ref count
           const updated = new Map(state.roomSubscriptions);
-          updated.set(roomId, {
-            ...existing,
-            refCount: newRefCount,
-          });
+          updated.set(roomId, updatedRoomSub);
           set({ roomSubscriptions: updated });
+          
+          const threadRefsTotal = totalRefs - newRefCount;
           console.log(`♻️ Room ${roomId} refCount decreased to ${newRefCount} (${threadRefsTotal} thread refs active)`);
           return;
         }
@@ -239,57 +340,14 @@ export const useWebSocketStore = create<WebSocketState>()(
         const state = get();
         let roomSub = state.roomSubscriptions.get(roomId);
         
-        // Ensure room subscription exists
+        // Create room subscription if it doesn't exist
         if (!roomSub) {
-          // Create room subscription if not exists
           console.log(`🆕 Creating room subscription for thread ${roomId}:${tmid}...`);
-          const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, (message) => {
-            // Validate message
-            if (!message?._id || !message?.rid || !message?.u || !message?.u._id) {
-              console.warn('⚠️ Received invalid message from WebSocket, skipping:', message);
-              return;
-            }
-
-            // ✅ Handle thread replies - update thread notifications
-            if (message.tmid) {
-              const notificationStore = useNotificationStore.getState();
-              const authStore = useAuthStore.getState();
-              const currentUserId = authStore.rocketChatUserId;
-              
-              // Check if this message is from current user (don't notify yourself)
-              const isFromCurrentUser = message.u._id === currentUserId;
-              
-              // Check if user is currently viewing this thread (thread subscription active)
-              const currentState = get();
-              const roomSub = currentState.roomSubscriptions.get(roomId);
-              const threadRefCount = roomSub?.threadRefCounts.get(message.tmid) || 0;
-              const isViewingThread = threadRefCount > 0;
-              
-              if (isFromCurrentUser) {
-                console.log('🧵 [Store] Thread reply from current user, skipping notification');
-                // Clear notification if user sent message in thread they're viewing
-                if (isViewingThread) {
-                  notificationStore.clearThreadNotification(roomId, message.tmid);
-                }
-              } else {
-                // If user is viewing this thread, don't add notification (they're actively viewing it)
-                if (isViewingThread) {
-                  console.log('🧵 [Store] Thread reply received but user is viewing thread, clearing notification');
-                  notificationStore.clearThreadNotification(roomId, message.tmid);
-                } else {
-                  // Update thread notification for other users who are not viewing
-                  console.log('🧵 [Store] Thread reply received (tmid:', message.tmid, '), updating notification');
-                  notificationStore.addThreadNotification(roomId, message.tmid, message.u?.username);
-                }
-              }
-              
-              // Don't add to main message cache (thread replies belong to thread panel)
-              return;
-            }
-
-            // Regular room messages (non-thread) - can be handled by messageStore if needed
-            console.log(`📨 [Store] Regular message received for room ${roomId}:`, message._id);
+          const messageHandler = createRoomMessageHandler(roomId, () => {
+            return get().roomSubscriptions.get(roomId);
           });
+          
+          const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, messageHandler);
           
           roomSub = {
             roomId,
@@ -304,11 +362,13 @@ export const useWebSocketStore = create<WebSocketState>()(
           state.addSubscription(subscriptionId);
         }
         
-        // Update thread ref count
+        // Increment thread ref count
         const currentThreadRefCount = roomSub.threadRefCounts.get(tmid) || 0;
         const updated = new Map(state.roomSubscriptions);
-        const updatedRoomSub = { ...roomSub };
-        updatedRoomSub.threadRefCounts = new Map(roomSub.threadRefCounts);
+        const updatedRoomSub = {
+          ...roomSub,
+          threadRefCounts: new Map(roomSub.threadRefCounts),
+        };
         updatedRoomSub.threadRefCounts.set(tmid, currentThreadRefCount + 1);
         updated.set(roomId, updatedRoomSub);
         set({ roomSubscriptions: updated });
@@ -329,11 +389,12 @@ export const useWebSocketStore = create<WebSocketState>()(
         const newThreadRefCount = Math.max(0, currentThreadRefCount - 1);
         
         const updated = new Map(state.roomSubscriptions);
-        const updatedRoomSub = { ...roomSub };
-        updatedRoomSub.threadRefCounts = new Map(roomSub.threadRefCounts);
+        const updatedRoomSub = {
+          ...roomSub,
+          threadRefCounts: new Map(roomSub.threadRefCounts),
+        };
         
         if (newThreadRefCount === 0) {
-          // No more refs for this thread, remove it
           updatedRoomSub.threadRefCounts.delete(tmid);
           console.log(`🗑️ Removed thread ${roomId}:${tmid} (no more refs)`);
         } else {
@@ -341,9 +402,7 @@ export const useWebSocketStore = create<WebSocketState>()(
           console.log(`♻️ Thread ${roomId}:${tmid} refCount decreased to ${newThreadRefCount}`);
         }
         
-        // Calculate total refs (room + all threads)
-        const threadRefsTotal = Array.from(updatedRoomSub.threadRefCounts.values()).reduce((sum, count) => sum + count, 0);
-        const totalRefs = updatedRoomSub.refCount + threadRefsTotal;
+        const totalRefs = calculateTotalRefs(updatedRoomSub);
         
         if (totalRefs === 0) {
           // No more refs at all, unsubscribe from room
@@ -464,28 +523,24 @@ export const useWebSocketStore = create<WebSocketState>()(
         const timer = setTimeout(async () => {
           try {
             await rocketChatWS.markRoomAsRead(roomId);
-          } catch (error: any) {
+          } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn('⚠️ Failed to mark room as read:', errorMessage);
             
-            // If it's a connection error, trigger reconnect
-            if (errorMessage.includes('not connected') || 
-                errorMessage.includes('timeout') || 
-                errorMessage.includes('failed to send') ||
-                errorMessage.includes('reconnect failed')) {
+            // Trigger reconnect on connection errors
+            if (isConnectionError(errorMessage)) {
               console.log('🔄 Connection error detected in markRoomAsRead, triggering reconnect...');
               const state = get();
-              // Only reconnect if not already connecting
               if (!state.isConnecting) {
-                state.reconnect().catch(reconnectError => {
+                state.reconnect().catch((reconnectError) => {
                   console.error('❌ Reconnect from markRoomAsRead failed:', reconnectError);
                 });
               }
             }
+          } finally {
+            // Clean up timer
+            markRoomAsReadTimers.delete(roomId);
           }
-          
-          // Clean up timer
-          markRoomAsReadTimers.delete(roomId);
         }, MARK_AS_READ_DEBOUNCE_MS);
         
         markRoomAsReadTimers.set(roomId, timer);
