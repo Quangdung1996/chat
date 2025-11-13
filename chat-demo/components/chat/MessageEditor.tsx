@@ -3,6 +3,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Smile, Bold, Italic, Strikethrough, Code, Paperclip, X, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { rocketChatService } from '@/services/rocketchat.service';
+import { toastHelpers } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
 
 // Dynamic import emoji picker to avoid SSR issues
@@ -399,6 +400,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
           setSelectedFile(null);
           setMessage('');
           setShowPreview(false);
+          toastHelpers.success('Đã tải lên file thành công');
 
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -408,6 +410,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
         }
       } catch (error: any) {
         console.error('Upload error:', error);
+        toastHelpers.error('Không thể tải lên file', error.message || 'Lỗi không xác định');
         setError(error.message || 'Không thể upload file. Vui lòng thử lại.');
       } finally {
         setUploading(false);

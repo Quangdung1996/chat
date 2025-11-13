@@ -20,6 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Dialog,
@@ -28,10 +29,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toastHelpers } from '@/hooks/use-toast';
+import { Archive, Edit2, Settings, Trash2 } from 'lucide-react';
 import RoomAnnouncementSettings from './RoomAnnouncementSettings';
 
 interface RoomSettingsMenuProps {
@@ -62,10 +67,11 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
     setLoading(true);
     try {
       await rocketChatService.renameRoom(room.roomId, newName, roomType);
+      toastHelpers.success('Đã đổi tên phòng thành công');
       onUpdate?.();
       setShowRenameModal(false);
     } catch (error) {
-      alert('Failed to rename room: ' + (error as Error).message);
+      toastHelpers.error('Không thể đổi tên phòng', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -75,9 +81,10 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
     setLoading(true);
     try {
       await rocketChatService.archiveRoom(room.roomId, roomType);
+      toastHelpers.success('Đã lưu trữ phòng thành công');
       onUpdate?.();
     } catch (error) {
-      alert('Failed to archive room: ' + (error as Error).message);
+      toastHelpers.error('Không thể lưu trữ phòng', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -87,10 +94,11 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
     setLoading(true);
     try {
       await rocketChatService.deleteRoom(room.roomId, roomType);
+      toastHelpers.success('Đã xóa phòng thành công');
       onUpdate?.();
       setShowDeleteConfirm(false);
     } catch (error) {
-      alert('Failed to delete room: ' + (error as Error).message);
+      toastHelpers.error('Không thể xóa phòng', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -102,9 +110,10 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
       // Use roomInfo?.readOnly for consistent data source
       const currentReadOnly = roomInfo?.readOnly || false;
       await rocketChatService.setAnnouncementMode(room.roomId, !currentReadOnly, roomType);
+      toastHelpers.success(`Đã ${!currentReadOnly ? 'bật' : 'tắt'} chế độ chỉ đọc`);
       onUpdate?.();
     } catch (error) {
-      alert('Không thể thay đổi chế độ read-only: ' + (error as Error).message);
+      toastHelpers.error('Không thể thay đổi chế độ chỉ đọc', (error as Error).message);
     } finally {
       setLoading(false);
     }

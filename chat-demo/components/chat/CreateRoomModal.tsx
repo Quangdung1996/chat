@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
+import { toastHelpers } from '@/hooks/use-toast';
 import type { CreateGroupRequest } from '@/types/rocketchat';
 import {
   Dialog,
@@ -163,13 +164,17 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
 
       if (response.success) {
         // Success
+        toastHelpers.success('Tạo phòng thành công!');
         onSuccess();
         onClose();
       } else {
         setError(response.message || 'Không thể tạo phòng');
+        toastHelpers.error('Không thể tạo phòng', response.message);
       }
     } catch (err) {
-      setError((err as Error).message);
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      toastHelpers.error('Lỗi tạo phòng', errorMessage);
     } finally {
       setLoading(false);
     }

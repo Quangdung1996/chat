@@ -13,6 +13,7 @@ import {
   getRoomTypeIcon, 
   getRoomTypeApiName 
 } from '@/utils/roomTypeUtils';
+import { toastHelpers } from '@/hooks/use-toast';
 
 interface RoomHeaderProps {
   room: UserSubscription;
@@ -162,7 +163,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
       setShowLeaveModal(false);
     } catch (error) {
       console.error('Failed to leave room:', error);
-      alert('Failed to leave room: ' + (error as Error).message);
+      toastHelpers.error('Không thể rời phòng', (error as Error).message);
     } finally {
       setLeavingRoom(false);
     }
@@ -203,7 +204,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
       
     } catch (error) {
       console.error('Failed to change role:', error);
-      alert('Không thể thay đổi vai trò: ' + (error as Error).message);
+      toastHelpers.error('Không thể thay đổi vai trò', (error as Error).message);
     } finally {
       setProcessingRole(false);
     }

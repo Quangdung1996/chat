@@ -2,17 +2,19 @@
 
 import { useState, useRef, memo, useEffect } from 'react';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
-import { useAuthStore } from '@/store/authStore';
-import { useWebSocketConnected } from '@/store/websocketStore';
+import { useAuthStore } from '@/store/authStore'
+import { useWebSocketConnected } from '@/store/websocketStore'
+import { toastHelpers } from '@/hooks/use-toast'
 import { useRoomSubscription } from '@/hooks/use-room-subscription';
 import { useSendMessage } from '@/hooks/use-messages';
-import MessageListInfinite from './MessageListInfinite';
-import RoomHeader from './RoomHeader';
-import RoomInfoBanner from './RoomInfoBanner';
+import { ChatMessage, UserSubscription } from '@/types/rocketchat'
 import MessageEditor, { MessageEditorRef } from './MessageEditor';
-import { ThreadPanel } from './ThreadPanel';
+import MessageList from './MessageList'
+import MessageListInfinite from './MessageListInfinite'
+import RoomHeader from './RoomHeader'
+import RoomInfoBanner from './RoomInfoBanner'
+import { ThreadPanel } from './ThreadPanel'
 import { Send } from 'lucide-react';
-import type { UserSubscription, ChatMessage } from '@/types/rocketchat';
 
 // 🔧 Selector functions - tránh infinite loop với Zustand
 const selectUser = (state: any) => state.user;
@@ -65,6 +67,7 @@ function ChatWindow({ room }: ChatWindowProps) {
       });
     } catch (error) {
       console.error('Failed to send message:', error);
+      toastHelpers.error('Không thể gử i tin nhắn', (error as Error).message);
       // Message is already rolled back by the mutation's onError
     }
   };

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import rocketChatService from '@/services/rocketchat.service';
+import { toastHelpers } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -124,16 +125,22 @@ export default function InviteMembersModal({
       const response = await rocketChatService.addMembers(roomId, selectedMembers, roomType);
 
       if (response.success) {
-        setSuccess(`Đã thêm ${response.successCount} thành viên thành công!`);
+        const successMsg = `Đã thêm ${response.successCount} thành viên thành công!`;
+        setSuccess(successMsg);
+        toastHelpers.success(successMsg);
         setTimeout(() => {
         onSuccess();
         onClose();
         }, 1500);
       } else {
-        setError('Không thể thêm thành viên');
+        const errorMsg = 'Không thể thêm thành viên';
+        setError(errorMsg);
+        toastHelpers.error(errorMsg);
       }
     } catch (err) {
-      setError((err as Error).message || 'Đã xảy ra lỗi');
+      const errorMsg = (err as Error).message || 'Đã xảy ra lỗi';
+      setError(errorMsg);
+      toastHelpers.error('Lỗi thêm thành viên', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -158,20 +165,25 @@ export default function InviteMembersModal({
       const response = await rocketChatService.removeMember(roomId, memberToRemove.id, roomType);
       
       if (response.success) {
-        setSuccess(`Đã xóa ${memberToRemove.name} khỏi nhóm!`);
+        const successMsg = `Đã xóa ${memberToRemove.name} khỏi nhóm!`;
+        setSuccess(successMsg);
+        toastHelpers.success(successMsg);
         setConfirmModalOpen(false);
         setMemberToRemove(null);
         setTimeout(() => {
           onSuccess(); // Refresh member list
         }, 1000);
       } else {
-        setError('Không thể xóa thành viên');
+        const errorMsg = 'Không thể xóa thành viên';
+        setError(errorMsg);
+        toastHelpers.error(errorMsg);
       }
     } catch (err: any) {
       console.error('Failed to remove member:', err);
       // Display specific error message from API or fallback
       const errorMessage = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi xóa thành viên';
       setError(errorMessage);
+      toastHelpers.error('Lỗi xóa thành viên', errorMessage);
     } finally {
       setRemovingMember(false);
     }
