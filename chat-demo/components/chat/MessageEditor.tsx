@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Smile, Bold, Italic, Strikethrough, Code, Paperclip, X, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { rocketChatService } from '@/services/rocketchat.service';
 import { toastHelpers } from '@/hooks/use-toast';
@@ -306,6 +307,7 @@ function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPic
 
 const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
   ({ onSubmit, placeholder = 'Nhập tin nhắn...', disabled = false, roomId }, ref) => {
+    const queryClient = useQueryClient();
     const editorRef = useRef<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -405,6 +407,11 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
+
+          // 🔥 Invalidate messages query to refresh chat immediately
+          queryClient.invalidateQueries({ 
+            queryKey: ['messages', roomId] 
+          });
         } else {
           throw new Error('Upload failed');
         }
