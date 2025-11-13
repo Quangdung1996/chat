@@ -73,28 +73,26 @@ const Toast = React.forwardRef<
     >
       <motion.div
         className={cn(toastVariants({ variant }), className)}
-        initial={{ opacity: 0, x: 400, scale: 0.4, rotate: 2 }}
+        initial={{ opacity: 0, x: 300, scale: 0.8 }}
         animate={{ 
-          opacity: fading ? 0.3 : 1, 
+          opacity: fading ? 0.4 : 1, 
           x: 0, 
-          scale: fading ? 0.95 : 1, 
-          rotate: 0,
+          scale: fading ? 0.98 : 1,
           transition: {
             type: fading ? "tween" : "spring",
-            stiffness: 300,
-            damping: 25,
-            duration: fading ? 1 : undefined, // 1s fade out
-            ease: fading ? "easeOut" : undefined
+            stiffness: 400,
+            damping: 30,
+            duration: fading ? 0.8 : 0.3, // Faster animations
+            ease: fading ? "easeOut" : "easeOut"
           }
         }}
         exit={{ 
           opacity: 0, 
-          x: 400, 
-          scale: 0.6, 
-          rotate: -2,
+          x: 300, 
+          scale: 0.8,
           transition: { 
-            duration: 0.25,
-            ease: "easeInOut"
+            duration: 0.2,
+            ease: "easeIn"
           } 
         }}
         whileHover={!fading ? { 

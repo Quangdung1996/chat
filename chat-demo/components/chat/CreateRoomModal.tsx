@@ -195,18 +195,10 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
       <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b">
-          <div className="flex items-center justify-between mb-2">
-            <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
-              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              Tạo nhóm chat mới
-            </DialogTitle>
-            <button
-              onClick={onClose}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
+          <DialogTitle className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            Tạo nhóm chat mới
+          </DialogTitle>
           
           {/* Steps indicator */}
           <div className="flex items-center gap-1 sm:gap-2 mt-3 sm:mt-4">
@@ -419,18 +411,18 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                                 toggleMember(user._id);
                               }
                             }}
-                            className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                               isSelected ? 'bg-primary/5' : ''
                             }`}
                           >
                             {/* Avatar */}
-                            <div className={`relative flex-shrink-0 w-11 h-11 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
+                            <div className={`relative flex-shrink-0 w-8 h-8 rounded-full ${getAvatarColor(user.username)} flex items-center justify-center text-white font-medium text-xs shadow-sm`}>
                               {getInitials(displayName)}
                             </div>
                             
                             {/* Info */}
                             <div className="flex-1 min-w-0 text-left">
-                              <div className="text-sm font-medium truncate">
+                              <div className="text-sm font-medium truncate leading-tight">
                                 {displayName}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">
@@ -441,7 +433,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                             {/* Checkbox */}
                             <Checkbox
                               checked={isSelected}
-                              className="pointer-events-none"
+                              className="pointer-events-none h-4 w-4"
                             />
                           </div>
                         );
