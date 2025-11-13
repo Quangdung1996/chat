@@ -510,11 +510,11 @@ namespace SourceAPI.Services.RocketChat
                 else
                 {
                     if (action.IsInvite())
-                        response = await _adminProxy.InviteToChannelAsync(request);
+                        response = await _userProxy.InviteToChannelAsync(request);
                     else if (action.IsKick())
-                        response = await _adminProxy.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
+                        response = await _userProxy.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action.IsAddModerator())
-                        response = await _adminProxy.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                        response = await _userProxy.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
@@ -548,19 +548,11 @@ namespace SourceAPI.Services.RocketChat
                 switch (endpoint)
                 {
                     case "groups.archive":
-                        response = await _adminProxy.ArchiveGroupAsync(request);
-                        break;
-
-                    case "channels.archive":
-                        response = await _adminProxy.ArchiveChannelAsync(request);
+                        response = await _userProxy.ArchiveGroupAsync(request);
                         break;
 
                     case "groups.delete":
-                        response = await _adminProxy.DeleteGroupAsync(request);
-                        break;
-
-                    case "channels.delete":
-                        response = await _adminProxy.DeleteChannelAsync(request);
+                        response = await _userProxy.DeleteGroupAsync(request);
                         break;
 
                     default:
@@ -788,7 +780,7 @@ namespace SourceAPI.Services.RocketChat
                             var userRoles = rolesResponse.Roles
                                 .GroupBy(r => r.User.Id)
                                 .ToDictionary(
-                                    g => g.Key, 
+                                    g => g.Key,
                                     g => g.SelectMany(r => r.Roles).Distinct().ToList()
                                 );
 

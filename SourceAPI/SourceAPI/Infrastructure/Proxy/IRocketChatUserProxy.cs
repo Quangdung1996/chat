@@ -160,6 +160,12 @@ public interface IRocketChatUserProxy
     [Post("/api/v1/channels.setReadOnly")]
     Task<ApiResponse> SetChannelReadOnlyAsync([Body] SetReadOnlyRequest request);
 
+    [Post("/api/v1/groups.archive")]
+    Task<ApiResponse> ArchiveGroupAsync([Body] RoomActionRequest request);
+
+    [Post("/api/v1/groups.delete")]
+    Task<ApiResponse> DeleteGroupAsync([Body] RoomActionRequest request);
+
 
 }
 

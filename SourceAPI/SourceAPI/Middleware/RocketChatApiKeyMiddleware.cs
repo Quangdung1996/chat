@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Threading.Tasks;
 
 namespace SourceAPI.Middleware
@@ -31,19 +30,19 @@ namespace SourceAPI.Middleware
             // Only check API key for integration endpoints
             if (context.Request.Path.StartsWithSegments("/api/integrations/rocket"))
             {
-                if (!context.Request.Headers.TryGetValue("X-API-Key", out var extractedApiKey))
-                {
-                    context.Response.StatusCode = 401;
-                    await context.Response.WriteAsJsonAsync(new { message = "API Key is missing" });
-                    return;
-                }
+                //if (!context.Request.Headers.TryGetValue("X-API-Key", out var extractedApiKey))
+                //{
+                //    context.Response.StatusCode = 401;
+                //    await context.Response.WriteAsJsonAsync(new { message = "API Key is missing" });
+                //    return;
+                //}
 
-                if (!string.Equals(extractedApiKey, _apiKey, StringComparison.Ordinal))
-                {
-                    context.Response.StatusCode = 401;
-                    await context.Response.WriteAsJsonAsync(new { message = "Invalid API Key" });
-                    return;
-                }
+                //if (!string.Equals(extractedApiKey, _apiKey, StringComparison.Ordinal))
+                //{
+                //    context.Response.StatusCode = 401;
+                //    await context.Response.WriteAsJsonAsync(new { message = "Invalid API Key" });
+                //    return;
+                //}
             }
 
             await _next(context);
