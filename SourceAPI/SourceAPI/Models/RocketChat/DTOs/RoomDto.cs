@@ -364,5 +364,39 @@ public class RoomMemberData
     public List<string> Roles { get; set; } = new(); // ["owner", "moderator", "member"]
 }
 
+/// <summary>
+/// Response from /api/v1/groups.roles API
+/// Contains roles information for group members
+/// </summary>
+public class GroupRolesResponse : ApiResponse
+{
+    [JsonProperty("roles")]
+    public List<GroupRoleData> Roles { get; set; } = new();
+}
+
+public class GroupRoleData
+{
+    [JsonProperty("rid")]
+    public string RoomId { get; set; } = string.Empty;
+
+    [JsonProperty("roles")]
+    public List<string> Roles { get; set; } = new();
+
+    [JsonProperty("u")]
+    public RoleUserData User { get; set; } = new();
+}
+
+public class RoleUserData
+{
+    [JsonProperty("_id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonProperty("username")]
+    public string Username { get; set; } = string.Empty;
+
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+}
+
 #endregion
 

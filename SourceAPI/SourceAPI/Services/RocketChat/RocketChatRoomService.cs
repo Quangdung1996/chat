@@ -776,6 +776,45 @@ namespace SourceAPI.Services.RocketChat
                     return new RoomMembersResponse { Success = false, Members = new List<RoomMemberData>() };
                 }
 
+                // For groups, get roles information and merge with members data
+                if (roomType.IsGroup())
+                {
+                    try
+                    {
+                        var rolesResponse = await _userProxy.GetGroupRolesAsync(roomId);
+                        if (rolesResponse?.Success == true && rolesResponse.Roles?.Count > 0)
+                        {
+                            // Create a dictionary for quick lookup: userId -> roles
+                            var userRoles = rolesResponse.Roles
+                                .GroupBy(r => r.User.Id)
+                                .ToDictionary(
+                                    g => g.Key, 
+                                    g => g.SelectMany(r => r.Roles).Distinct().ToList()
+                                );
+
+                            // Merge roles into members data
+                            foreach (var member in response.Members)
+                            {
+                                if (userRoles.ContainsKey(member.Id))
+                                {
+                                    member.Roles = userRoles[member.Id];
+                                }
+                            }
+
+                            _logger.LogInformation($"Merged roles for {userRoles.Count} members in room {roomId}");
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"No roles found for room {roomId} or roles API failed");
+                        }
+                    }
+                    catch (Exception roleEx)
+                    {
+                        _logger.LogWarning(roleEx, $"Failed to get roles for room {roomId}, continuing without roles: {roleEx.Message}");
+                        // Continue without roles - don't fail the entire request
+                    }
+                }
+
                 _logger.LogInformation($"Retrieved {response.Members.Count} members for room {roomId}");
                 return response;
             }

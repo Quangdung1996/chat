@@ -5,7 +5,7 @@ import rocketChatService from '@/services/rocketchat.service';
 import RoomSettingsMenu from './RoomSettingsMenu';
 import InviteMembersModal from './InviteMembersModal';
 import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
-import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut } from 'lucide-react';
+import { Users, UserPlus, RefreshCw, X, Link as LinkIcon, LogOut, MoreVertical, Crown, Star, UserMinus2 } from 'lucide-react';
 import type { UserSubscription, RoomMember } from '@/types/rocketchat';
 import { useAuthStore } from '@/store/authStore';
 import { 
@@ -42,6 +42,15 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
   // Leave room modal state
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [leavingRoom, setLeavingRoom] = useState(false);
+  
+  // Role management state
+  const [showRoleMenu, setShowRoleMenu] = useState<string | null>(null);
+  const [roleAction, setRoleAction] = useState<{
+    action: 'addOwner' | 'removeOwner' | 'addModerator' | 'removeModerator';
+    memberId: string;
+    memberName: string;
+  } | null>(null);
+  const [processingRole, setProcessingRole] = useState(false);
 
   // Get current user ID from Zustand store
   const currentUserId = useAuthStore((state) => state.rocketChatUserId);
@@ -50,7 +59,6 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
   
   const loadRoomInfo = async () => {
     try {
-      // ✅ Chỉ fetch room info cho group/channel, không cần cho direct message
       if (isDirectMessage(room.type)) {
         setIsReadOnly(false);
         onReadOnlyChange?.(false);
@@ -65,11 +73,9 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
         const readOnly = response.room.readOnly;
         setIsReadOnly(readOnly);
         
-        // ✅ Priority: topic > announcement
         const displayText = response.room.topic || response.room.announcement;
         setRoomDescription(displayText);
         
-        // ✅ Store room info for settings
         const roomInfoData = {
           topic: response.room.topic,
           announcement: response.room.announcement,
@@ -77,13 +83,10 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
         };
         setRoomInfo(roomInfoData);
         
-        // ✅ Check if current user is the owner using room info
         const isOwner = response.room.u?._id === currentUserId;
         
-        // Notify parent with readonly status and owner info
         onReadOnlyChange?.(readOnly, isOwner);
         
-        // ✅ Notify parent with topic and announcement
         onRoomInfoChange?.({
           topic: response.room.topic,
           announcement: response.room.announcement,
@@ -100,9 +103,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
   const loadMembers = async () => {
     setLoadingMembers(true);
     try {
-      // Determine room type for API call
       const roomType = getRoomTypeApiName(room.type);
-
       const response = await rocketChatService.getRoomMembers(room.roomId, roomType);
 
       if (response.success && response.members) {
@@ -137,7 +138,6 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
       if (response.success) {
         setConfirmModalOpen(false);
         setMemberToRemove(null);
-        // Reload members list
         await loadMembers();
         onRefresh?.();
       }
@@ -157,20 +157,55 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
     setLeavingRoom(true);
     try {
       const roomType = getRoomTypeApiName(room.type);
-      const response = await rocketChatService.leaveRoom(room.roomId, roomType);
-
-      if (response.success) {
-        setShowLeaveModal(false);
-        setShowMembers(false);
-        onRefresh?.();
-      } else {
-        alert('Không thể rời khỏi phòng. Vui lòng thử lại.');
-      }
+      await rocketChatService.leaveRoom(room.roomId, roomType);
+      onRefresh?.();
+      setShowLeaveModal(false);
     } catch (error) {
       console.error('Failed to leave room:', error);
-      alert('Có lỗi xảy ra khi rời khỏi phòng.');
+      alert('Failed to leave room: ' + (error as Error).message);
     } finally {
       setLeavingRoom(false);
+    }
+  };
+
+  const canManageRoles = () => {
+    if (!currentUserId || room.type !== 'p') return false;
+    const currentMember = members.find(m => m._id === currentUserId);
+    const isOwner = currentMember?.roles?.includes('owner') || false;
+    const isModerator = currentMember?.roles?.includes('moderator') || false;
+    return isOwner || isModerator;
+  };
+
+  const handleRoleAction = async () => {
+    if (!roleAction) return;
+    
+    setProcessingRole(true);
+    try {
+      const roomType = getRoomTypeApiName(room.type);
+      
+      switch (roleAction.action) {
+        case 'addOwner':
+          await rocketChatService.addOwner(room.roomId, roleAction.memberId, roomType);
+          break;
+        case 'removeOwner':
+          await rocketChatService.removeOwner(room.roomId, roleAction.memberId, roomType);
+          break;
+        case 'addModerator':
+          await rocketChatService.addModerator(room.roomId, roleAction.memberId, roomType);
+          break;
+        case 'removeModerator':
+          await rocketChatService.removeModerator(room.roomId, roleAction.memberId, roomType);
+          break;
+      }
+      
+      await loadMembers();
+      setRoleAction(null);
+      
+    } catch (error) {
+      console.error('Failed to change role:', error);
+      alert('Không thể thay đổi vai trò: ' + (error as Error).message);
+    } finally {
+      setProcessingRole(false);
     }
   };
 
@@ -180,12 +215,10 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
     }
   }, [showMembers]);
 
-  // Load room info when component mounts or room changes
   useEffect(() => {
     loadRoomInfo();
   }, [room.roomId]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -198,6 +231,21 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showMembers]);
+
+  useEffect(() => {
+    if (roleAction) {
+      setShowRoleMenu(null);
+      
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && !processingRole) {
+          setRoleAction(null);
+        }
+      };
+      
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [roleAction, processingRole]);
 
   return (
     <>
@@ -219,7 +267,6 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
                 </p>
               )}
               <div className="flex items-center gap-2.5 mt-0.5">
-                {/* ✅ Chỉ show members count cho group/channel, không cần cho direct message */}
                 {!isDirectMessage(room.type) && (
                   <button
                     onClick={() => {
@@ -251,7 +298,6 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
 
           {/* Actions - Minimalist */}
           <div className="flex items-center gap-0.5">
-            {/* ✅ Chỉ show invite button cho group/channel, không cần cho direct message */}
             {!isDirectMessage(room.type) && (
               <button
                 onClick={() => {
@@ -280,7 +326,6 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
             <RoomSettingsMenu 
               room={room} 
               onUpdate={() => {
-                // Reload room info when settings are updated
                 loadRoomInfo();
                 onRefresh?.();
               }}
@@ -291,19 +336,18 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
         </div>
       </div>
 
-      {/* Members Dropdown - MS Teams style - MOVED OUTSIDE to avoid stacking context */}
-      {/* ✅ Chỉ show members dropdown cho group/channel, không cần cho direct message */}
+      {/* Members Dropdown - MS Teams style */}
       {showMembers && !isDirectMessage(room.type) && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[99998]"
+            className="fixed inset-0 z-[9998]"
             onClick={() => setShowMembers(false)}
           />
           {/* Dropdown */}
           <div
             ref={dropdownRef}
-            className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[99999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
+            className="fixed top-[70px] right-4 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[calc(100vh-80px)] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="px-4 py-3 border-b dark:border-gray-700">
@@ -328,6 +372,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
                   return (
                     <div
                       key={member._id}
+                      data-member-id={member._id}
                       className="px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
@@ -363,8 +408,118 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
                           </div>
                         </div>
 
-                        {/* Kick button - show for all members except current user. API will handle permissions */}
-                        {!isCurrentUser && (
+                        {/* Actions - only show for groups and if user can manage */}
+                        {!isCurrentUser && room.type === 'p' && canManageRoles() && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            {/* Role Management Dropdown */}
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowRoleMenu(showRoleMenu === member._id ? null : member._id);
+                                }}
+                                className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all"
+                                title="Quản lý vai trò"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                              
+                              {/* Role Menu Dropdown */}
+                              {showRoleMenu === member._id && (
+                                <>
+                                  <div 
+                                    className="fixed inset-0 z-[10000]" 
+                                    onClick={() => setShowRoleMenu(null)}
+                                  />
+                                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[10001] py-1">
+                                    {/* Add/Remove Owner */}
+                                    {!isOwner ? (
+                                      <button
+                                        onClick={() => {
+                                          setRoleAction({
+                                            action: 'addOwner',
+                                            memberId: member._id,
+                                            memberName: displayName
+                                          });
+                                          setShowRoleMenu(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      >
+                                        <Crown className="w-4 h-4 text-yellow-500" />
+                                        Gán làm Owner
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setRoleAction({
+                                            action: 'removeOwner',
+                                            memberId: member._id,
+                                            memberName: displayName
+                                          });
+                                          setShowRoleMenu(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      >
+                                        <UserMinus2 className="w-4 h-4 text-gray-500" />
+                                        Bỏ quyền Owner
+                                      </button>
+                                    )}
+                                    
+                                    {/* Add/Remove Moderator */}
+                                    {!isModerator && !isOwner ? (
+                                      <button
+                                        onClick={() => {
+                                          setRoleAction({
+                                            action: 'addModerator',
+                                            memberId: member._id,
+                                            memberName: displayName
+                                          });
+                                          setShowRoleMenu(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      >
+                                        <Star className="w-4 h-4 text-blue-500" />
+                                        Gán làm Moderator
+                                      </button>
+                                    ) : isModerator && !isOwner ? (
+                                      <button
+                                        onClick={() => {
+                                          setRoleAction({
+                                            action: 'removeModerator',
+                                            memberId: member._id,
+                                            memberName: displayName
+                                          });
+                                          setShowRoleMenu(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      >
+                                        <UserMinus2 className="w-4 h-4 text-gray-500" />
+                                        Bỏ quyền Moderator
+                                      </button>
+                                    ) : null}
+                                    
+                                    <div className="border-t dark:border-gray-700 my-1" />
+                                    
+                                    {/* Kick Member */}
+                                    <button
+                                      onClick={() => {
+                                        handleKickMember(member._id, displayName);
+                                        setShowRoleMenu(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                    >
+                                      <X className="w-4 h-4" />
+                                      Kick khỏi nhóm
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Simple kick button for non-group rooms or users without manage permissions */}
+                        {!isCurrentUser && (room.type !== 'p' || !canManageRoles()) && (
                           <button
                             onClick={() => handleKickMember(member._id, displayName)}
                             className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
@@ -383,10 +538,7 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
             {/* Footer Actions */}
             <div className="border-t dark:border-gray-700 p-2">
               <button
-                onClick={() => {
-                  setShowInviteModal(true);
-                  setShowMembers(false);
-                }}
+                onClick={() => setShowInviteModal(true)}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
@@ -437,7 +589,45 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomIn
         mode="leave"
         roomType={room.type}
       />
+      
+      {/* Role Change Confirmation Modal */}
+      {roleAction && (
+        <div 
+          className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={processingRole ? undefined : () => setRoleAction(null)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700 transform transition-all duration-200 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Xác nhận thay đổi vai trò
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              {roleAction.action === 'addOwner' && `Bạn có chắc muốn gán quyền Owner cho "${roleAction.memberName}"?`}
+              {roleAction.action === 'removeOwner' && `Bạn có chắc muốn bỏ quyền Owner của "${roleAction.memberName}"?`}
+              {roleAction.action === 'addModerator' && `Bạn có chắc muốn gán quyền Moderator cho "${roleAction.memberName}"?`}
+              {roleAction.action === 'removeModerator' && `Bạn có chắc muốn bỏ quyền Moderator của "${roleAction.memberName}"?`}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setRoleAction(null)}
+                disabled={processingRole}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleRoleAction}
+                disabled={processingRole}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              >
+                {processingRole ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-

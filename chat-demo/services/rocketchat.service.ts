@@ -368,6 +368,17 @@ class RocketChatService {
   }
 
   /**
+   * Xóa owner role
+   * DELETE /api/integrations/rocket/room/{roomId}/owner/{rocketUserId}?roomType=group
+   */
+  async removeOwner(roomId: string, rocketUserId: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.removeOwner
+      .replace('{roomId}', roomId)
+      .replace('{rocketUserId}', rocketUserId);
+    return apiClient.delete(`${endpoint}?roomType=${roomType}`);
+  }
+
+  /**
    * Lấy danh sách members của room từ Rocket.Chat
    * GET /api/integrations/rocket/rooms/{roomId}/members?roomType=group
    * User must be a member of the room to access this

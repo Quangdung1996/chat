@@ -82,6 +82,9 @@ public interface IRocketChatUserProxy
     [Get("/api/v1/groups.members?roomId={roomId}")]
     Task<RoomMembersResponse> GetGroupMembersAsync(string roomId);
 
+    [Get("/api/v1/groups.roles?roomId={roomId}")]
+    Task<GroupRolesResponse> GetGroupRolesAsync(string roomId);
+
     [Get("/api/v1/channels.members?roomId={roomId}")]
     Task<RoomMembersResponse> GetChannelMembersAsync(string roomId);
 
