@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Users, Lock, Globe, Eye, X, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, Users, Eye, X, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { getInitials, getAvatarColor } from '@/utils/avatarUtils';
 
 interface CreateRoomModalProps {
@@ -260,23 +260,6 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                 </p>
               </div>
 
-              {/* Group Code */}
-              <div className="space-y-2">
-                <Label htmlFor="groupCode" className="text-xs sm:text-sm font-semibold">
-                  Mã nhóm (tùy chọn)
-                </Label>
-                <Input
-                  id="groupCode"
-                  value={formData.groupCode}
-                  onChange={(e) => setFormData({ ...formData, groupCode: e.target.value })}
-                  placeholder="Ví dụ: PROJ-WEB-2024"
-                  className="h-10 sm:h-11 text-sm sm:text-base font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Để trống, hệ thống sẽ tự động tạo mã duy nhất
-                </p>
-              </div>
-
               {/* Topic */}
               <div className="space-y-2">
                 <Label htmlFor="topic" className="text-sm font-semibold">
@@ -312,68 +295,20 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                 </p>
               </div>
 
-              {/* Room Type */}
-              <div className="space-y-3">
-                <Label className="text-xs sm:text-sm font-semibold">Loại nhóm</Label>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, isPrivate: true })}
-                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
-                      formData.isPrivate
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <div className={`p-1.5 sm:p-2 rounded-lg ${
-                        formData.isPrivate ? 'bg-primary text-primary-foreground' : 'bg-gray-100 dark:bg-gray-800'
-                      }`}>
-                        <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1">Riêng tư</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Chỉ thành viên được mời</div>
-                      </div>
-                      {formData.isPrivate && (
-                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, isPrivate: false })}
-                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
-                      !formData.isPrivate
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <div className={`p-1.5 sm:p-2 rounded-lg ${
-                        !formData.isPrivate ? 'bg-primary text-primary-foreground' : 'bg-gray-100 dark:bg-gray-800'
-                      }`}>
-                        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1">Công khai</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Mọi người có thể tham gia</div>
-                      </div>
-                      {!formData.isPrivate && (
-                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                </div>
-              </div>
 
               {/* Additional Options */}
               <div className="space-y-3 pt-2">
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setFormData({ ...formData, isReadOnly: !formData.isReadOnly })}
-                  className={`w-full p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setFormData({ ...formData, isReadOnly: !formData.isReadOnly });
+                    }
+                  }}
+                  className={`w-full p-3 sm:p-4 rounded-xl border-2 transition-all text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     formData.isReadOnly
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -396,7 +331,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                       className="flex-shrink-0 pointer-events-none"
                     />
                   </div>
-                </button>
+                </div>
               </div>
             </div>
           )}
@@ -465,14 +400,21 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                         }
                         
                         return (
-                          <button
+                          <div
                             key={user._id}
-                            type="button"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => {
                               console.log(`🖱️ Clicked user: ${user.username} (${user._id})`);
                               toggleMember(user._id);
                             }}
-                            className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleMember(user._id);
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                               isSelected ? 'bg-primary/5' : ''
                             }`}
                           >
@@ -496,7 +438,7 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }: CreateRo
                               checked={isSelected}
                               className="pointer-events-none"
                             />
-                          </button>
+                          </div>
                         );
                       })}
                     </div>

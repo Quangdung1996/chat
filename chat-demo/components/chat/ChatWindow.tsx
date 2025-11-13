@@ -8,6 +8,7 @@ import { useRoomSubscription } from '@/hooks/use-room-subscription';
 import { useSendMessage } from '@/hooks/use-messages';
 import MessageListInfinite from './MessageListInfinite';
 import RoomHeader from './RoomHeader';
+import RoomInfoBanner from './RoomInfoBanner';
 import MessageEditor, { MessageEditorRef } from './MessageEditor';
 import { ThreadPanel } from './ThreadPanel';
 import { Send } from 'lucide-react';
@@ -36,6 +37,7 @@ function ChatWindow({ room }: ChatWindowProps) {
   
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [roomInfo, setRoomInfo] = useState<{ topic?: string; announcement?: string }>({});
   
   // 🧵 Thread state
   const [activeThread, setActiveThread] = useState<ChatMessage | null>(null);
@@ -75,7 +77,17 @@ function ChatWindow({ room }: ChatWindowProps) {
         onReadOnlyChange={(readOnly, owner) => {
           setIsReadOnly(readOnly);
           setIsOwner(owner ?? false);
-        }} 
+        }}
+        onRoomInfoChange={(info) => {
+          setRoomInfo(info);
+        }}
+      />
+      
+      {/* Room Info Banner - Topic & Announcement */}
+      <RoomInfoBanner 
+        topic={roomInfo.topic}
+        announcement={roomInfo.announcement}
+        roomType={roomType}
       />
       
       {/* WebSocket Status Indicator */}

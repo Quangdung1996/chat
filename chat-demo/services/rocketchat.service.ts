@@ -276,6 +276,33 @@ class RocketChatService {
     return apiClient.put(endpoint, { topic, roomType });
   }
 
+  /**
+   * Set announcement cho room
+   * PUT /api/integrations/rocket/room/{roomId}/announcement
+   */
+  async setRoomAnnouncement(roomId: string, announcement: string, roomType: string = 'group'): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.setAnnouncement.replace('{roomId}', roomId);
+    return apiClient.put(endpoint, { announcement, roomType });
+  }
+
+  /**
+   * Pin message
+   * POST /api/integrations/rocket/message/{messageId}/pin
+   */
+  async pinMessage(messageId: string): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.pinMessage.replace('{messageId}', messageId);
+    return apiClient.post(endpoint);
+  }
+
+  /**
+   * Unpin message
+   * POST /api/integrations/rocket/message/{messageId}/unpin
+   */
+  async unpinMessage(messageId: string): Promise<{ success: boolean }> {
+    const endpoint = this.endpoints.unpinMessage.replace('{messageId}', messageId);
+    return apiClient.post(endpoint);
+  }
+
   // ===== MEMBER MANAGEMENT =====
   
   /**

@@ -238,15 +238,9 @@ namespace SourceAPI.Controllers.Integrations
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(request.GroupCode))
-                {
-                    return BadRequest(new { message = "GroupCode is required" });
-                }
-
-                // Create new group
-                var result = request.IsPrivate
-                    ? await _roomService.CreateGroupAsync(request)
-                    : await _roomService.CreateChannelAsync(request);
+                // GroupCode is optional - Service will auto-generate if not provided
+                // Always create private group (no public channels)
+                var result = await _roomService.CreateGroupAsync(request);
 
                 if (!result.Success)
                 {
@@ -392,6 +386,54 @@ namespace SourceAPI.Controllers.Integrations
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error setting topic for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPut("room/{roomId}/announcement")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> SetAnnouncement(string roomId, [FromBody] SetAnnouncementRequest request)
+        {
+            try
+            {
+                var result = await _roomService.SetAnnouncementAsync(roomId, request.Announcement, request.RoomType ?? "group");
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting announcement for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPost("message/{messageId}/pin")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> PinMessage(string messageId)
+        {
+            try
+            {
+                var result = await _roomService.PinMessageAsync(messageId);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error pinning message {messageId}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPost("message/{messageId}/unpin")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> UnpinMessage(string messageId)
+        {
+            try
+            {
+                var result = await _roomService.UnpinMessageAsync(messageId);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error unpinning message {messageId}");
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
@@ -554,6 +596,32 @@ namespace SourceAPI.Controllers.Integrations
             {
                 _logger.LogError(ex, $"Error adding owner to room {roomId}");
                 return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpPost("room/{roomId}/transfer-owner/{rocketUserId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> TransferOwner(
+            string roomId,
+            string rocketUserId,
+            [FromQuery] string roomType = "group")
+        {
+            try
+            {
+                var result = await _roomService.TransferOwnerAsync(roomId, rocketUserId, roomType);
+                return Ok(new { success = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, $"Invalid operation transferring owner for room {roomId}: {ex.Message}");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error transferring owner for room {roomId}");
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
 
@@ -926,6 +994,12 @@ namespace SourceAPI.Controllers.Integrations
     public class SetAnnouncementModeRequest
     {
         public bool AnnouncementOnly { get; set; }
+        public string? RoomType { get; set; } = "group";
+    }
+
+    public class SetAnnouncementRequest
+    {
+        public string Announcement { get; set; } = string.Empty;
         public string? RoomType { get; set; } = "group";
     }
 

@@ -8,7 +8,6 @@ namespace SourceAPI.Services.RocketChat.Interfaces
     public interface IRocketChatRoomService
     {
         Task<CreateGroupResponse> CreateGroupAsync(CreateGroupRequest request);
-        Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request);
         Task<string> CreateDirectMessageAsync(int currentUserId, string targetUsername);
 
         Task<bool> AddMemberAsync(string roomId, string rocketUserId, string roomType = "group");
@@ -21,6 +20,10 @@ namespace SourceAPI.Services.RocketChat.Interfaces
         Task<bool> RemoveModeratorAsync(string roomId, string rocketUserId, string roomType = "group");
 
         Task<bool> AddOwnerAsync(string roomId, string rocketUserId, string roomType = "group");
+
+        Task<bool> RemoveOwnerAsync(string roomId, string rocketUserId, string roomType = "group");
+
+        Task<bool> TransferOwnerAsync(string roomId, string newOwnerId, string roomType = "group");
 
         Task<Dictionary<string, bool>> AddMembersBulkAsync(string roomId, List<string> rocketUserIds, string roomType = "group");
         Task<bool> RenameRoomAsync(string roomId, string newName, string roomType = "group");
@@ -52,6 +55,10 @@ namespace SourceAPI.Services.RocketChat.Interfaces
         Task<bool> LeaveRoomAsync(string roomId, string roomType = "group");
 
         Task<UploadFileResponse> UploadFileAsync(string roomId, Stream fileStream, string fileName, string contentType, string? description = null, string? message = null);
+
+        Task<bool> PinMessageAsync(string messageId);
+        Task<bool> UnpinMessageAsync(string messageId);
     }
 }
+
 

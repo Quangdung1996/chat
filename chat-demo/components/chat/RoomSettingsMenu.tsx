@@ -32,13 +32,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RoomAnnouncementSettings from './RoomAnnouncementSettings';
 
 interface RoomSettingsMenuProps {
   room: UserSubscription;
   onUpdate?: () => void;
+  roomInfo?: {
+    topic?: string;
+    announcement?: string;
+    readOnly?: boolean;
+  };
+  members?: any[];
 }
 
-export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuProps) {
+export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: RoomSettingsMenuProps) {
   // Don't show settings for DMs
   if (isDirectMessage(room.type)) {
     return null;
@@ -46,6 +53,7 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
 
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAnnouncementSettings, setShowAnnouncementSettings] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const roomType = getRoomTypeApiName(room.type);
@@ -126,6 +134,10 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
             ✏️ Rename Room
           </DropdownMenuItem>
           
+          <DropdownMenuItem onClick={() => setShowAnnouncementSettings(true)}>
+            📢 Cài đặt thông báo
+          </DropdownMenuItem>
+          
           <DropdownMenuItem 
             onClick={handleToggleReadOnly}
             disabled={loading}
@@ -167,6 +179,16 @@ export default function RoomSettingsMenu({ room, onUpdate }: RoomSettingsMenuPro
         onConfirm={handleDelete}
         onClose={() => setShowDeleteConfirm(false)}
         loading={loading}
+      />
+
+      {/* Announcement Settings */}
+      <RoomAnnouncementSettings
+        isOpen={showAnnouncementSettings}
+        onClose={() => setShowAnnouncementSettings(false)}
+        room={room}
+        roomInfo={roomInfo}
+        members={members}
+        onUpdate={onUpdate}
       />
     </>
   );

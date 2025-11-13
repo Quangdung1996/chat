@@ -26,6 +26,12 @@ public interface IRocketChatUserProxy
     [Post("/api/v1/chat.delete")]
     Task<ApiResponse> DeleteMessageAsync([Body] DeleteMessageRequest request);
 
+    [Post("/api/v1/chat.pinMessage")]
+    Task<ApiResponse> PinMessageAsync([Body] PinMessageRequest request);
+
+    [Post("/api/v1/chat.unpinMessage")]
+    Task<ApiResponse> UnpinMessageAsync([Body] UnpinMessageRequest request);
+
     // =====================================================
     // User can join/leave rooms
     // =====================================================
@@ -93,6 +99,12 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/channels.addModerator")]
     Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
+
+    [Post("/api/v1/groups.addOwner")]
+    Task<ApiResponse> AddGroupOwnerAsync([Body] ModeratorRequest request);
+
+    [Post("/api/v1/groups.removeOwner")]
+    Task<ApiResponse> RemoveGroupOwnerAsync([Body] ModeratorRequest request);
 
     [Post("/api/v1/groups.leave")]
     Task<ApiResponse> LeaveGroupAsync([Body] LeaveRoomRequest request);
