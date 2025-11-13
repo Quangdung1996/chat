@@ -251,9 +251,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType.IsGroup())
-                    response = await _adminProxy.RenameGroupAsync(request);
+                    response = await _userProxy.RenameGroupAsync(request);
                 else
-                    response = await _adminProxy.RenameChannelAsync(request);
+                    response = await _userProxy.RenameChannelAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -289,9 +289,9 @@ namespace SourceAPI.Services.RocketChat
                 // Use Refit - DelegatingHandler auto adds auth headers
                 ApiResponse response;
                 if (roomType.IsGroup())
-                    response = await _adminProxy.SetGroupReadOnlyAsync(request);
+                    response = await _userProxy.SetGroupReadOnlyAsync(request);
                 else
-                    response = await _adminProxy.SetChannelReadOnlyAsync(request);
+                    response = await _userProxy.SetChannelReadOnlyAsync(request);
 
                 return response?.Success ?? false;
             }
@@ -386,25 +386,25 @@ namespace SourceAPI.Services.RocketChat
         }
 
         public async Task<UploadFileResponse> UploadFileAsync(
-            string roomId, 
-            Stream fileStream, 
-            string fileName, 
+            string roomId,
+            Stream fileStream,
+            string fileName,
             string contentType,
-            string? description = null, 
+            string? description = null,
             string? message = null)
         {
             try
             {
                 _logger.LogInformation($"📤 Uploading file: {fileName} ({contentType}) to room {roomId}");
-                
+
                 // ✨ Create StreamPart with content type for Refit multipart upload
                 var streamPart = new StreamPart(fileStream, fileName, contentType);
 
                 // Use Refit - DelegatingHandler auto adds auth headers
                 var response = await _userProxy.UploadFileAsync(
-                    roomId, 
-                    streamPart, 
-                    description, 
+                    roomId,
+                    streamPart,
+                    description,
                     message);
 
                 _logger.LogInformation($"✅ File uploaded successfully: {response?.Message?.Id}");
@@ -560,11 +560,11 @@ namespace SourceAPI.Services.RocketChat
                 }
 
                 _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} messages from room {roomId} (offset: {offset})");
-                
+
                 // ✅ Filter out thread replies (messages with tmid) - they belong to threads only
                 var mainMessages = response.Messages.Where(m => string.IsNullOrEmpty(m.Tmid)).ToList();
                 _logger.LogInformation($"Filtered to {mainMessages.Count} main messages (removed {response.Messages.Count - mainMessages.Count} thread replies)");
-                
+
                 // Sort by timestamp descending (newest first) for infinite scroll
                 // First page gets newest messages, subsequent pages get older messages
                 response.Messages = mainMessages.OrderBy(m => m.Ts).ToList();

@@ -51,7 +51,7 @@ public interface IRocketChatUserProxy
 
     // Get messages from room
     [Get("/api/v1/groups.messages")]
-    Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0, [Query] string sort = "%7B%22ts%22%3A-1%7D");
+    Task<RoomMessagesResponse> GetGroupMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
 
     [Get("/api/v1/channels.messages")]
     Task<RoomMessagesResponse> GetChannelMessagesAsync([Query] string roomId, [Query] int count = 50, [Query] int offset = 0);
@@ -62,7 +62,7 @@ public interface IRocketChatUserProxy
     // =====================================================
     // Threads
     // =====================================================
-    
+
     [Get("/api/v1/chat.getThreadMessages")]
     Task<RoomMessagesResponse> GetThreadMessagesAsync([Query] string tmid, [Query] int count = 50, [Query] int offset = 0);
 
@@ -132,5 +132,17 @@ public interface IRocketChatUserProxy
         [AliasAs("file")] StreamPart file,
         [AliasAs("description")] string? description = null,
         [AliasAs("msg")] string? msg = null);
+
+    [Post("/api/v1/groups.rename")]
+    Task<ApiResponse> RenameGroupAsync([Body] RenameRoomRequest request);
+
+    [Post("/api/v1/channels.rename")]
+    Task<ApiResponse> RenameChannelAsync([Body] RenameRoomRequest request);
+
+    [Post("/api/v1/groups.setReadOnly")]
+    Task<ApiResponse> SetGroupReadOnlyAsync([Body] SetReadOnlyRequest request);
+
+    [Post("/api/v1/channels.setReadOnly")]
+    Task<ApiResponse> SetChannelReadOnlyAsync([Body] SetReadOnlyRequest request);
 }
 

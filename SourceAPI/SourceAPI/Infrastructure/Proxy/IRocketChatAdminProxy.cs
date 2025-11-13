@@ -59,12 +59,6 @@ public interface IRocketChatAdminProxy
     [Post("/api/v1/channels.addModerator")]
     Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
 
-    [Post("/api/v1/groups.rename")]
-    Task<ApiResponse> RenameGroupAsync([Body] RenameRoomRequest request);
-
-    [Post("/api/v1/channels.rename")]
-    Task<ApiResponse> RenameChannelAsync([Body] RenameRoomRequest request);
-
     [Post("/api/v1/groups.setTopic")]
     Task<ApiResponse> SetGroupTopicAsync([Body] SetTopicRequest request);
 
@@ -76,12 +70,6 @@ public interface IRocketChatAdminProxy
 
     [Post("/api/v1/channels.setAnnouncement")]
     Task<ApiResponse> SetChannelAnnouncementAsync([Body] SetAnnouncementRequest request);
-
-    [Post("/api/v1/groups.setReadOnly")]
-    Task<ApiResponse> SetGroupReadOnlyAsync([Body] SetReadOnlyRequest request);
-
-    [Post("/api/v1/channels.setReadOnly")]
-    Task<ApiResponse> SetChannelReadOnlyAsync([Body] SetReadOnlyRequest request);
 
     [Post("/api/v1/groups.archive")]
     Task<ApiResponse> ArchiveGroupAsync([Body] RoomActionRequest request);
