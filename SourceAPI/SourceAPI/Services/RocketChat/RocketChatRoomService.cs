@@ -504,19 +504,15 @@ namespace SourceAPI.Services.RocketChat
                         response = await _userProxy.AddGroupOwnerAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else if (action.IsRemoveOwner())
                         response = await _userProxy.RemoveGroupOwnerAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                    else if (action.IsRemoveModerator())
+                        response = await _userProxy.RemoveGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
+
                 }
                 else
                 {
-                    if (action.IsInvite())
-                        response = await _userProxy.InviteToChannelAsync(request);
-                    else if (action.IsKick())
-                        response = await _userProxy.RemoveFromChannelAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
-                    else if (action.IsAddModerator())
-                        response = await _userProxy.AddChannelModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
-                    else
-                        return false;
+                    return false;
                 }
 
                 return response?.Success ?? false;

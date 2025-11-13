@@ -99,6 +99,8 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/groups.addModerator")]
     Task<ApiResponse> AddGroupModeratorAsync([Body] ModeratorRequest request);
+    [Post("/api/v1/groups.removeModerator")]
+    Task<ApiResponse> RemoveGroupModeratorAsync([Body] ModeratorRequest request);
 
     [Post("/api/v1/channels.addModerator")]
     Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
