@@ -51,6 +51,7 @@ interface MessageEditorProps {
   placeholder?: string;
   disabled?: boolean;
   roomId: string;
+  toolbarPosition?: 'top' | 'bottom';
 }
 
 export interface MessageEditorRef {
@@ -157,7 +158,15 @@ function EditorRefPlugin({ editorRef, onEmojiInsert }: { editorRef: React.Mutabl
 }
 
 // Toolbar component
-function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPicker, setShowEmojiPicker }: any) {
+function ToolbarPlugin({ 
+  disabled, 
+  roomId, 
+  fileInputRef, 
+  uploading, 
+  showEmojiPicker, 
+  setShowEmojiPicker,
+  position = 'top',
+}: any) {
   const [editor] = useLexicalComposerContext();
   const [activeFormats, setActiveFormats] = useState<Set<TextFormatType>>(new Set());
 
@@ -218,8 +227,13 @@ function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPic
     }
   };
 
+  const positioningClasses =
+    position === 'top'
+      ? 'rounded-t border-b border-gray-200 dark:border-gray-600'
+      : 'rounded-b border-t border-gray-200 dark:border-gray-600';
+
   return (
-    <div className="flex items-center gap-1 px-2 py-1 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2c] rounded-t">
+    <div className={`flex items-center gap-1 px-2 py-1 bg-gray-50 dark:bg-[#2a2a2c] ${positioningClasses}`}>
       <button
         type="button"
         onClick={() => formatText('bold')}
@@ -306,7 +320,13 @@ function ToolbarPlugin({ disabled, roomId, fileInputRef, uploading, showEmojiPic
 }
 
 const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
-  ({ onSubmit, placeholder = 'Nhập tin nhắn...', disabled = false, roomId }, ref) => {
+  ({ 
+    onSubmit, 
+    placeholder = 'Nhập tin nhắn...', 
+    disabled = false, 
+    roomId,
+    toolbarPosition = 'top',
+  }, ref) => {
     const queryClient = useQueryClient();
     const editorRef = useRef<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -483,18 +503,23 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 
         <div className="flex-1">
           <LexicalComposer initialConfig={initialConfig}>
-            {/* Toolbar */}
-            <ToolbarPlugin 
-              disabled={disabled} 
-              roomId={roomId} 
-              fileInputRef={fileInputRef}
-              uploading={uploading}
-              showEmojiPicker={showEmojiPicker}
-              setShowEmojiPicker={setShowEmojiPicker}
-            />
+            {toolbarPosition === 'top' && (
+              <ToolbarPlugin 
+                disabled={disabled} 
+                roomId={roomId} 
+                fileInputRef={fileInputRef}
+                uploading={uploading}
+                showEmojiPicker={showEmojiPicker}
+                setShowEmojiPicker={setShowEmojiPicker}
+                position="top"
+              />
+            )}
 
-            {/* Editor */}
-            <div className="relative bg-white dark:bg-[#3a3a3c] border border-t-0 border-gray-300 dark:border-gray-600 rounded-b transition-all duration-200">
+            <div
+              className={`relative bg-white dark:bg-[#3a3a3c] border border-gray-300 dark:border-gray-600 transition-all duration-200 ${
+                toolbarPosition === 'top' ? 'border-t-0 rounded-b' : 'border-b-0 rounded-t'
+              }`}
+            >
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable className="min-h-[40px] max-h-[120px] overflow-y-auto px-3 py-2 text-[14px] text-gray-900 dark:text-white focus:outline-none transition-all duration-150" />
@@ -513,6 +538,18 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
                 onEmojiInsert={(fn) => { insertEmojiRef.current = fn; }}
               />
             </div>
+
+            {toolbarPosition === 'bottom' && (
+              <ToolbarPlugin 
+                disabled={disabled} 
+                roomId={roomId} 
+                fileInputRef={fileInputRef}
+                uploading={uploading}
+                showEmojiPicker={showEmojiPicker}
+                setShowEmojiPicker={setShowEmojiPicker}
+                position="bottom"
+              />
+            )}
           </LexicalComposer>
         </div>
 

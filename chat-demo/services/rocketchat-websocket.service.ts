@@ -9,6 +9,8 @@ import { API_CONFIG } from '@/config/api.config';
 import { rocketChatService } from './rocketchat.service';
 import { useAuthStore } from '@/store/authStore';
 
+const WS_DEBUG = process.env.NEXT_PUBLIC_ROCKETCHAT_WS_DEBUG === 'true';
+
 interface DDPMessage {
   msg: string;
   id?: string;
@@ -62,7 +64,9 @@ class RocketChatWebSocketService {
   private send(message: DDPMessage) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-      console.log('📤 Sent:', message);
+      if (WS_DEBUG) {
+        console.log('📤 Sent:', message);
+      }
     } else {
       console.error('❌ WebSocket not open, cannot send:', message);
     }
@@ -145,7 +149,9 @@ class RocketChatWebSocketService {
         this.ws.onmessage = (event) => {
           try {
             const data: DDPMessage = JSON.parse(event.data);
-            console.log('📥 Received:', data);
+            if (WS_DEBUG) {
+              console.log('📥 Received:', data);
+            }
             this.handleMessage(data);
           } catch (error) {
             console.error('❌ Failed to parse message:', error);
@@ -252,14 +258,16 @@ class RocketChatWebSocketService {
           const callback = this.callbacks.get(data.id);
           
           // Always log full response for debugging
-          console.log('🔍 [WS] Method result:', {
-            id: data.id,
-            hasError: !!data.error,
-            error: data.error,
-            hasResult: data.result !== undefined,
-            result: data.result,
-            allKeys: Object.keys(data)
-          });
+          if (WS_DEBUG) {
+            console.log('🔍 [WS] Method result:', {
+              id: data.id,
+              hasError: !!data.error,
+              error: data.error,
+              hasResult: data.result !== undefined,
+              result: data.result,
+              allKeys: Object.keys(data)
+            });
+          }
           
           if (data.error) {
             // Reject promise if server returned error
@@ -274,7 +282,9 @@ class RocketChatWebSocketService {
             callback?.(null, data.error);
           } else {
             // Resolve with result
-            console.log('✅ Method call success:', { id: data.id, result: data.result });
+            if (WS_DEBUG) {
+              console.log('✅ Method call success:', { id: data.id, result: data.result });
+            }
             callback?.(data.result);
           }
           this.callbacks.delete(data.id);
@@ -283,7 +293,9 @@ class RocketChatWebSocketService {
 
       case 'ready':
         // Subscription is ready
-        console.log('✅ Subscriptions ready:', data);
+        if (WS_DEBUG) {
+          console.log('✅ Subscriptions ready:', data);
+        }
         break;
 
       case 'added':
@@ -304,12 +316,14 @@ class RocketChatWebSocketService {
 
   private handleCollectionChange(data: DDPMessage) {
     // 🐛 DEBUG: Log ALL collection changes
-    console.log('📨 [WS] Collection change:', {
-      msg: data.msg,
-      collection: data.collection,
-      eventName: data.fields?.eventName,
-      hasArgs: !!data.fields?.args,
-    });
+    if (WS_DEBUG) {
+      console.log('📨 [WS] Collection change:', {
+        msg: data.msg,
+        collection: data.collection,
+        eventName: data.fields?.eventName,
+        hasArgs: !!data.fields?.args,
+      });
+    }
     
     // Find matching subscription by collection
     for (const [subId, sub] of this.subscriptions.entries()) {
@@ -458,7 +472,9 @@ class RocketChatWebSocketService {
       params,
     });
 
-    console.log(`✅ Subscribed to ${name} with id ${id}, params:`, params);
+    if (WS_DEBUG) {
+      console.log(`✅ Subscribed to ${name} with id ${id}, params:`, params);
+    }
     return id;
   }
 
@@ -469,7 +485,9 @@ class RocketChatWebSocketService {
         id: subscriptionId,
       });
       this.subscriptions.delete(subscriptionId);
-      console.log(`✅ Unsubscribed from ${subscriptionId}`);
+      if (WS_DEBUG) {
+        console.log(`✅ Unsubscribed from ${subscriptionId}`);
+      }
     }
   }
 
@@ -701,27 +719,31 @@ class RocketChatWebSocketService {
         const [action, subscription] = data.fields.args;
         
         // 🐛 DEBUG: Log raw subscription data from WebSocket
-        console.log('📡 [WS] Raw subscription event:', {
-          action,
-          roomId: subscription?.rid,
-          type: subscription?.t,
-          name: subscription?.name,
-          fname: subscription?.fname,
-          unread: subscription?.unread,
-          alert: subscription?.alert,
-          allFields: Object.keys(subscription || {}),
-          // Log full subscription to see all available fields
-          fullSubscription: subscription
-        });
+        if (WS_DEBUG) {
+          console.log('📡 [WS] Raw subscription event:', {
+            action,
+            roomId: subscription?.rid,
+            type: subscription?.t,
+            name: subscription?.name,
+            fname: subscription?.fname,
+            unread: subscription?.unread,
+            alert: subscription?.alert,
+            allFields: Object.keys(subscription || {}),
+            // Log full subscription to see all available fields
+            fullSubscription: subscription
+          });
+        }
         
         // 🔍 Check for thread-related fields
         if (subscription) {
           const threadFields = ['tunread', 'threadUnread', 'threads', 'tmid', 'replies'];
-          threadFields.forEach(field => {
-            if (subscription[field] !== undefined) {
-              console.log(`🧵 Found thread field "${field}":`, subscription[field]);
-            }
-          });
+          if (WS_DEBUG) {
+            threadFields.forEach(field => {
+              if (subscription[field] !== undefined) {
+                console.log(`🧵 Found thread field "${field}":`, subscription[field]);
+              }
+            });
+          }
         }
         
         callback({ action, subscription });

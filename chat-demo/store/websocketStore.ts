@@ -12,6 +12,10 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
+import { queryClient } from '@/lib/queryClient';
+import { messageKeys, threadMessageKeys } from '@/hooks/use-messages';
+import type { ChatMessage } from '@/types/rocketchat';
+import { parseTimestamp } from '@/utils/dateUtils';
 import { useNotificationStore } from './notificationStore';
 import { useAuthStore } from './authStore';
 
@@ -140,6 +144,129 @@ function isConnectionError(errorMessage: string): boolean {
   );
 }
 
+function isRoomActive(roomSub: RoomSubscription | undefined): boolean {
+  if (!roomSub) return false;
+  return roomSub.refCount > 0;
+}
+
+function transformWebSocketMessage(message: any, currentUserId?: string | null): ChatMessage {
+  const timestamp = parseTimestamp(message?.ts);
+  const updatedAt = message?._updatedAt ? parseTimestamp(message._updatedAt) : undefined;
+  const tlm = message?.tlm ? parseTimestamp(message.tlm) : undefined;
+
+  const chatMessage: ChatMessage = {
+    messageId: message._id,
+    roomId: message.rid,
+    text: message.msg || '',
+    timestamp,
+    createdAt: timestamp,
+    updatedAt,
+    deleted: message._deletedAt ? true : undefined,
+    edited: message.editedAt ? true : undefined,
+    type: message.t ?? null,
+    username: message.u?.username,
+    user: message.u
+      ? {
+          id: message.u._id,
+          username: message.u.username,
+          name: message.u.name || message.u.username,
+        }
+      : undefined,
+    attachments: Array.isArray(message.attachments) ? message.attachments : undefined,
+    file: message.file
+      ? {
+          _id: message.file._id,
+          name: message.file.name,
+          type: message.file.type,
+          size: message.file.size,
+          url: message.file.url,
+        }
+      : undefined,
+    tmid: message.tmid,
+    tcount: message.tcount,
+    tlm,
+    replies: message.replies,
+  };
+
+  if (currentUserId && message?.u?._id === currentUserId) {
+    chatMessage.isCurrentUser = true;
+  }
+
+  return chatMessage;
+}
+
+function addMessageToRoomCache(roomId: string, newMessage: ChatMessage) {
+  queryClient.setQueryData(messageKeys.room(roomId), (old: any) => {
+    if (!old?.pages?.length) {
+      return old;
+    }
+
+    const messageExists = old.pages.some((page: any) =>
+      Array.isArray(page.messages) &&
+      page.messages.some((msg: ChatMessage) => msg.messageId === newMessage.messageId)
+    );
+
+    if (messageExists) {
+      return old;
+    }
+
+    const newPages = [...old.pages];
+    const firstPage = newPages[0];
+
+    if (firstPage) {
+      newPages[0] = {
+        ...firstPage,
+        messages: [newMessage, ...(firstPage.messages ?? [])],
+      };
+    }
+
+    return {
+      ...old,
+      pages: newPages,
+    };
+  });
+}
+
+function addMessageToThreadCache(roomId: string, threadId: string, newMessage: ChatMessage) {
+  queryClient.setQueryData(
+    threadMessageKeys.thread(roomId, threadId),
+    (old: any) => {
+      if (!old?.pages?.length) {
+        return old;
+      }
+
+      const messageExists = old.pages.some((page: any) =>
+        Array.isArray(page.messages) &&
+        page.messages.some((msg: ChatMessage) => msg.messageId === newMessage.messageId)
+      );
+
+      if (messageExists) {
+        return old;
+      }
+
+      const newPages = [...old.pages];
+      const targetIndex = newPages.length - 1;
+      const targetPage = newPages[targetIndex];
+
+      if (!targetPage) {
+        return old;
+      }
+
+      newPages[targetIndex] = {
+        ...targetPage,
+        messages: [...(targetPage.messages ?? []), newMessage],
+        total: (targetPage.total ?? targetPage.messages?.length ?? 0) + 1,
+        count: (targetPage.count ?? targetPage.messages?.length ?? 0) + 1,
+      };
+
+      return {
+        ...old,
+        pages: newPages,
+      };
+    }
+  );
+}
+
 /**
  * Handles thread reply messages - updates notifications based on user state
  */
@@ -184,7 +311,8 @@ function handleThreadMessage(
  */
 function createRoomMessageHandler(
   roomId: string,
-  getRoomSubscription: () => RoomSubscription | undefined
+  getRoomSubscription: () => RoomSubscription | undefined,
+  getState: () => WebSocketState
 ) {
   return (message: any) => {
     if (!isValidMessage(message)) {
@@ -192,14 +320,46 @@ function createRoomMessageHandler(
       return;
     }
 
-    // Handle thread replies
+    const authStore = useAuthStore.getState();
+    const notificationStore = useNotificationStore.getState();
+    const currentUserId = authStore.rocketChatUserId;
+    const isFromCurrentUser = message.u?._id === currentUserId;
+    const roomSub = getRoomSubscription();
+    const chatMessage = transformWebSocketMessage(message, currentUserId);
+    const messageDate = new Date(chatMessage.timestamp || Date.now());
+
     if (message.tmid) {
       handleThreadMessage(message, roomId, getRoomSubscription);
-      return; // Thread replies don't go to main message cache
+      addMessageToThreadCache(roomId, message.tmid, chatMessage);
+      notificationStore.updateLastMessageTime(roomId, messageDate);
+
+      if (!isFromCurrentUser && !isRoomActive(roomSub)) {
+        notificationStore.incrementRoomUnread(roomId);
+        notificationStore.setRoomAlert(roomId, true);
+      } else if (isRoomActive(roomSub)) {
+        notificationStore.clearRoomUnread(roomId);
+        notificationStore.setRoomAlert(roomId, false);
+        getState().markRoomAsRead(roomId);
+      }
+      return;
     }
 
-    // Regular room messages can be handled by messageStore if needed
-    console.log(`📨 [Store] Regular message received for room ${roomId}:`, message._id);
+    addMessageToRoomCache(roomId, chatMessage);
+    notificationStore.updateLastMessageTime(roomId, messageDate);
+
+    if (!isFromCurrentUser) {
+      if (isRoomActive(roomSub)) {
+        notificationStore.clearRoomUnread(roomId);
+        notificationStore.setRoomAlert(roomId, false);
+        getState().markRoomAsRead(roomId);
+      } else {
+        notificationStore.incrementRoomUnread(roomId);
+        notificationStore.setRoomAlert(roomId, true);
+      }
+    } else {
+      notificationStore.clearRoomUnread(roomId);
+      notificationStore.setRoomAlert(roomId, false);
+    }
   };
 }
 
@@ -279,9 +439,11 @@ export const useWebSocketStore = create<WebSocketState>()(
         
         // Create new subscription
         console.log(`🆕 Subscribing to room ${roomId}...`);
-        const messageHandler = createRoomMessageHandler(roomId, () => {
-          return get().roomSubscriptions.get(roomId);
-        });
+        const messageHandler = createRoomMessageHandler(
+          roomId,
+          () => get().roomSubscriptions.get(roomId),
+          get
+        );
         
         const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, messageHandler);
         
@@ -343,9 +505,11 @@ export const useWebSocketStore = create<WebSocketState>()(
         // Create room subscription if it doesn't exist
         if (!roomSub) {
           console.log(`🆕 Creating room subscription for thread ${roomId}:${tmid}...`);
-          const messageHandler = createRoomMessageHandler(roomId, () => {
-            return get().roomSubscriptions.get(roomId);
-          });
+          const messageHandler = createRoomMessageHandler(
+            roomId,
+            () => get().roomSubscriptions.get(roomId),
+            get
+          );
           
           const subscriptionId = rocketChatWS.subscribeToRoomMessages(roomId, messageHandler);
           

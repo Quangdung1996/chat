@@ -68,6 +68,10 @@ export default function ChatSidebar({
   
   // ✅ State management without useSWR
   const [rooms, setRooms] = useState<UserSubscription[]>([]);
+  const roomsRef = useRef<UserSubscription[]>([]);
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
@@ -329,13 +333,10 @@ export default function ChatSidebar({
         
         // Wait a bit for the room to appear in the list
         setTimeout(() => {
-          setRooms(currentRooms => {
-            const newRoom = currentRooms.find(r => r.roomId === response.roomId);
-            if (newRoom) {
-              handleSelectRoom(newRoom);
-            }
-            return currentRooms;
-          });
+          const newRoom = roomsRef.current.find(r => r.roomId === response.roomId);
+          if (newRoom) {
+            handleSelectRoom(newRoom);
+          }
         }, 500);
         
         // Clear search

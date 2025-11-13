@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useMemo, useRef, memo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useMessages } from '@/hooks/use-messages';
 import MessageList from './MessageList';
@@ -49,17 +49,42 @@ function MessageListInfinite({
   // Flatten all messages from pages
   // API returns newest first, but UI needs oldest first (old messages at top)
   // So we reverse the entire array after flattening
-  const allMessages = data?.pages.flatMap((page) => page.messages).reverse() || [];
+  const allMessages = useMemo(
+    () => data?.pages.flatMap((page) => page.messages).reverse() || [],
+    [data]
+  );
 
   // Notify parent of messages change
-  // Use JSON.stringify to compare array contents instead of reference
-  const allMessagesString = JSON.stringify(allMessages.map(m => m.messageId));
+  const messagesSignatureRef = useRef<string | null>(null);
   useEffect(() => {
-    if (onMessagesChange && allMessages.length > 0) {
-      onMessagesChange(allMessages);
+    if (!onMessagesChange || allMessages.length === 0) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allMessagesString, onMessagesChange]);
+
+    const firstMessageId = allMessages[0]?.messageId ?? '';
+    const lastMessageId = allMessages[allMessages.length - 1]?.messageId ?? '';
+    const signature = `${allMessages.length}:${firstMessageId}:${lastMessageId}`;
+
+    if (messagesSignatureRef.current === signature) {
+      return;
+    }
+
+    messagesSignatureRef.current = signature;
+    onMessagesChange(allMessages);
+  }, [allMessages, onMessagesChange]);
+
+  useEffect(() => {
+    messagesSignatureRef.current = null;
+  }, [roomId]);
+
+  // Reset flags when room changes so the next data load scrolls to bottom
+  useEffect(() => {
+    isInitialLoad.current = true;
+    previousScrollHeight.current = 0;
+    hasUserScrolled.current = false;
+    lastMessageIdRef.current = null;
+    isNearBottomRef.current = true;
+  }, [roomId]);
 
   // Helper function to check if user is near bottom
   const checkIfNearBottom = (): boolean => {
@@ -78,14 +103,18 @@ function MessageListInfinite({
 
   // Scroll to bottom on initial load
   useEffect(() => {
-    if (isInitialLoad.current && allMessages.length > 0 && scrollRef.current) {
+    if (!isInitialLoad.current) return;
+    if (!scrollRef.current || allMessages.length === 0) return;
+
+    const animation = requestAnimationFrame(() => {
       scrollToBottom();
       isInitialLoad.current = false;
-      if (allMessages.length > 0) {
-        lastMessageIdRef.current = allMessages[allMessages.length - 1].messageId;
-      }
-    }
-  }, [allMessages.length]);
+      lastMessageIdRef.current =
+        allMessages[allMessages.length - 1]?.messageId ?? null;
+    });
+
+    return () => cancelAnimationFrame(animation);
+  }, [allMessages, roomId]);
 
   // Auto-scroll when new message arrives (especially from current user)
   useEffect(() => {
@@ -112,7 +141,58 @@ function MessageListInfinite({
         }, 50);
       }
     }
-  }, [allMessagesString]); // Use allMessagesString to avoid unnecessary re-renders
+  }, [allMessages]);
+
+  // When images/videos finish loading, adjust scroll if user stays near bottom
+  useEffect(() => {
+    if (!isNearBottomRef.current) return;
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const mediaElements = Array.from(
+      container.querySelectorAll('img, video')
+    ) as (HTMLImageElement | HTMLVideoElement)[];
+
+    const pending = mediaElements.filter((element) => {
+      if (element instanceof HTMLImageElement) {
+        return !element.complete;
+      }
+      if (element instanceof HTMLVideoElement) {
+        return element.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA;
+      }
+      return false;
+    });
+
+    if (pending.length === 0) return;
+
+    const handleMediaLoad = () => {
+      if (isNearBottomRef.current) {
+        scrollToBottom();
+      }
+    };
+
+    pending.forEach((element) => {
+      if (element instanceof HTMLImageElement) {
+        element.addEventListener('load', handleMediaLoad);
+        element.addEventListener('error', handleMediaLoad);
+      } else {
+        element.addEventListener('loadeddata', handleMediaLoad);
+        element.addEventListener('error', handleMediaLoad);
+      }
+    });
+
+    return () => {
+      pending.forEach((element) => {
+        if (element instanceof HTMLImageElement) {
+          element.removeEventListener('load', handleMediaLoad);
+          element.removeEventListener('error', handleMediaLoad);
+        } else {
+          element.removeEventListener('loadeddata', handleMediaLoad);
+          element.removeEventListener('error', handleMediaLoad);
+        }
+      });
+    };
+  }, [allMessages.length]);
 
   // Track user scroll to enable infinite scroll only after user interaction
   // Also track if user is near bottom for auto-scroll logic
@@ -170,15 +250,6 @@ function MessageListInfinite({
       previousScrollHeight.current = 0;
     }
   }, [isFetchingNextPage, allMessages.length]);
-
-  // Reset initial load flag when room changes
-  useEffect(() => {
-    isInitialLoad.current = true;
-    previousScrollHeight.current = 0;
-    hasUserScrolled.current = false; // Reset scroll tracking
-    lastMessageIdRef.current = null; // Reset last message tracking
-    isNearBottomRef.current = true; // Reset near bottom tracking
-  }, [roomId]);
 
   if (isLoading) {
     return (
