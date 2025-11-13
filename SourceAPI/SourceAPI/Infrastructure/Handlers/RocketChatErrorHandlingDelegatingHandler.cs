@@ -25,19 +25,15 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
         {
             var response = await base.SendAsync(request, cancellationToken);
 
-            // Nếu 404 NOT FOUND hoặc error
             if (response.StatusCode == HttpStatusCode.NotFound ||
                 !response.IsSuccessStatusCode)
             {
-                // Load response body để check error message
                 string errorBody = string.Empty;
                 if (response.Content != null)
                 {
                     await response.Content.LoadIntoBufferAsync();
                     errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 }
-
-                // Nếu là "User not found" → trả về success = true, user = null
                 if (errorBody.Contains("User not found", StringComparison.OrdinalIgnoreCase) ||
                     errorBody.Contains("user does not exist", StringComparison.OrdinalIgnoreCase))
                 {
@@ -51,8 +47,6 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
                             "application/json")
                     };
                 }
-
-                // 404 khác (room, channel, etc.) → trả success = false
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     _logger.LogDebug($"Resource not found: {request.Method} {request.RequestUri}");
@@ -71,14 +65,12 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
         }
         catch (ApiException apiEx)
         {
-            // Bắt Refit ApiException
             _logger.LogWarning(apiEx,
                 $"API Exception: {request.Method} {request.RequestUri} - Status: {apiEx.StatusCode}");
 
             // Check error content
             string errorContent = apiEx.Content ?? string.Empty;
 
-            // Nếu là "User not found" → trả success = true, user = null
             if (errorContent.Contains("User not found", StringComparison.OrdinalIgnoreCase) ||
                 errorContent.Contains("user does not exist", StringComparison.OrdinalIgnoreCase))
             {
@@ -93,7 +85,6 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
                 };
             }
 
-            // 404 khác
             if (apiEx.StatusCode == HttpStatusCode.NotFound)
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
@@ -104,8 +95,6 @@ public class RocketChatErrorHandlingDelegatingHandler : DelegatingHandler
                         "application/json")
                 };
             }
-
-            // Các lỗi khác vẫn throw
             throw;
         }
         catch (HttpRequestException httpEx)

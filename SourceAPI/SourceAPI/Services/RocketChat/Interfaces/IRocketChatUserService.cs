@@ -11,13 +11,9 @@ public interface IRocketChatUserService
 
     Task<SyncUserResponse> SyncUser(int userId, string username, string fullName, string? email = null);
 
-    Task<bool> UserExistsAsync(string username);
 
     RocketUserMapping GetUserMapping(int userId);
 
-    RocketUserMapping GetMappingByRocketUserIdAsync(string rocketUserId);
 
     Task<List<RocketChatUser>> GetRocketChatUsersAsync(int count = 100, int offset = 0);
-
-    Task<bool> SetUserActiveStatusAsync(int userId, bool isActive);
 }
