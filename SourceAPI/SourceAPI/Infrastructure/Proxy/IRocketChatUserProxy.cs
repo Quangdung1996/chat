@@ -156,5 +156,7 @@ public interface IRocketChatUserProxy
 
     [Post("/api/v1/channels.setReadOnly")]
     Task<ApiResponse> SetChannelReadOnlyAsync([Body] SetReadOnlyRequest request);
+
+
 }
 

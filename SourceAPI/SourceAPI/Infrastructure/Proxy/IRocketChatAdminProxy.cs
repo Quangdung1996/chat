@@ -59,18 +59,6 @@ public interface IRocketChatAdminProxy
     [Post("/api/v1/channels.addModerator")]
     Task<ApiResponse> AddChannelModeratorAsync([Body] ModeratorRequest request);
 
-    [Post("/api/v1/groups.addOwner")]
-    Task<ApiResponse> AddGroupOwnerAsync([Body] ModeratorRequest request);
-
-    [Post("/api/v1/groups.removeOwner")]
-    Task<ApiResponse> RemoveGroupOwnerAsync([Body] ModeratorRequest request);
-
-    [Post("/api/v1/groups.rename")]
-    Task<ApiResponse> RenameGroupAsync([Body] RenameRoomRequest request);
-
-    [Post("/api/v1/channels.rename")]
-    Task<ApiResponse> RenameChannelAsync([Body] RenameRoomRequest request);
-
     [Post("/api/v1/groups.setTopic")]
     Task<ApiResponse> SetGroupTopicAsync([Body] SetTopicRequest request);
 
