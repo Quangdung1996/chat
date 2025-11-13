@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MessageCircle, Users as UsersIcon, UserCircle2, Settings2 } from 'lucide-react';
+import { MessageCircle, Settings2 } from 'lucide-react';
 
 export default function TeamsSidebar() {
   const pathname = usePathname();
 
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageCircle },
-    { href: '/channels', label: 'Channels', icon: UsersIcon },
   ];
 
   return (

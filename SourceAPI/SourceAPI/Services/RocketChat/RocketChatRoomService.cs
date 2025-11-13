@@ -38,11 +38,6 @@ namespace SourceAPI.Services.RocketChat
             return await CreateRoomInternalAsync(request, "group");
         }
 
-        public async Task<CreateGroupResponse> CreateChannelAsync(CreateGroupRequest request)
-        {
-            return await CreateRoomInternalAsync(request, "channel");
-        }
-
         public async Task<string> CreateDirectMessageAsync(int currentUserId, string targetUsername)
         {
             try
@@ -127,20 +122,12 @@ namespace SourceAPI.Services.RocketChat
                 };
 
                 // Use Refit - DelegatingHandler auto adds auth headers
-                CreateRoomResponse rocketResponse;
-                if (roomType.IsGroup())
-                {
-                    // Use Refit - DelegatingHandler auto adds auth headers
-                    rocketResponse = await _userProxy.CreatePrivateGroupAsync(createRequest);
-                }
-                else
-                {
-                    rocketResponse = await _adminProxy.CreatePublicChannelAsync(createRequest);
-                }
+                // Always create private group (no public channels)
+                var rocketResponse = await _userProxy.CreatePrivateGroupAsync(createRequest);
 
                 if (rocketResponse == null || !rocketResponse.Success)
                 {
-                    _logger.LogError($"Failed to create {roomType}: {rocketResponse?.Error}");
+                    _logger.LogError($"Failed to create group: {rocketResponse?.Error}");
                     return new CreateGroupResponse
                     {
                         Success = false,
@@ -148,7 +135,7 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                var room = roomType.IsGroup() ? rocketResponse.Group : rocketResponse.Channel;
+                var room = rocketResponse.Group;
 
                 // ✅ Set topic if provided
                 if (!string.IsNullOrWhiteSpace(request.Topic))
@@ -208,6 +195,71 @@ namespace SourceAPI.Services.RocketChat
         public async Task<bool> AddOwnerAsync(string roomId, string rocketUserId, string roomType = "group")
         {
             return await InvokeMemberActionAsync(roomId, rocketUserId, "addOwner", roomType);
+        }
+
+        public async Task<bool> RemoveOwnerAsync(string roomId, string rocketUserId, string roomType = "group")
+        {
+            return await InvokeMemberActionAsync(roomId, rocketUserId, "removeOwner", roomType);
+        }
+
+        public async Task<bool> TransferOwnerAsync(string roomId, string newOwnerId, string roomType = "group")
+        {
+            try
+            {
+                _logger.LogInformation($"Transferring owner for room {roomId} to {newOwnerId} (type: {roomType})");
+
+                // Validate: target user must be a member of the group
+                var membersResponse = await GetRoomMembersAsync(roomId, roomType);
+                if (!membersResponse.Success)
+                {
+                    _logger.LogWarning($"Failed to get members for room {roomId} to validate transfer");
+                    throw new InvalidOperationException("Không thể lấy danh sách thành viên để xác thực chuyển quyền");
+                }
+
+                var isMember = membersResponse.Members.Any(m => m.Id == newOwnerId);
+                if (!isMember)
+                {
+                    _logger.LogWarning($"User {newOwnerId} is not a member of room {roomId}. Cannot transfer ownership.");
+                    throw new InvalidOperationException("Người dùng mục tiêu phải là thành viên của nhóm trước khi chuyển quyền chủ sở hữu");
+                }
+
+                // Get current owners from members list
+                var currentOwners = membersResponse.Members
+                    .Where(m => m.Roles != null && m.Roles.Contains("owner", StringComparer.OrdinalIgnoreCase))
+                    .Select(m => m.Id)
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .ToList();
+
+                // Step 1: Add owner role to new owner
+                var addOwnerResult = await AddOwnerAsync(roomId, newOwnerId, roomType);
+                if (!addOwnerResult)
+                {
+                    _logger.LogError($"Failed to add owner role to {newOwnerId} in room {roomId}");
+                    throw new InvalidOperationException("Không thể thêm quyền chủ sở hữu cho người dùng mới");
+                }
+
+                // Step 2: Remove owner role from current owners (if different from new owner)
+                foreach (var currentOwnerId in currentOwners)
+                {
+                    if (currentOwnerId != newOwnerId)
+                    {
+                        var removeOwnerResult = await RemoveOwnerAsync(roomId, currentOwnerId, roomType);
+                        if (!removeOwnerResult)
+                        {
+                            _logger.LogWarning($"Failed to remove owner role from {currentOwnerId} in room {roomId}. New owner was added but old owner role may still exist.");
+                            // Don't throw here - new owner is already added, just log warning
+                        }
+                    }
+                }
+
+                _logger.LogInformation($"✅ Successfully transferred owner for room {roomId} to {newOwnerId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error transferring owner for room {roomId}: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<Dictionary<string, bool>> AddMembersBulkAsync(
@@ -448,6 +500,10 @@ namespace SourceAPI.Services.RocketChat
                         response = await _userProxy.RemoveFromGroupAsync(new RemoveMemberRequest { RoomId = roomId, UserId = userId });
                     else if (action.IsAddModerator())
                         response = await _userProxy.AddGroupModeratorAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                    else if (action.IsAddOwner())
+                        response = await _userProxy.AddGroupOwnerAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
+                    else if (action.IsRemoveOwner())
+                        response = await _userProxy.RemoveGroupOwnerAsync(new ModeratorRequest { RoomId = roomId, UserId = userId });
                     else
                         return false;
                 }
@@ -766,6 +822,44 @@ namespace SourceAPI.Services.RocketChat
             {
                 _logger.LogError(ex, $"Error getting info for room {roomId}: {ex.Message}");
                 return new RoomInfoResponse { Success = false };
+            }
+        }
+
+        public async Task<bool> PinMessageAsync(string messageId)
+        {
+            try
+            {
+                var request = new PinMessageRequest
+                {
+                    MessageId = messageId
+                };
+
+                var response = await _userProxy.PinMessageAsync(request);
+                return response?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error pinning message {messageId}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UnpinMessageAsync(string messageId)
+        {
+            try
+            {
+                var request = new UnpinMessageRequest
+                {
+                    MessageId = messageId
+                };
+
+                var response = await _userProxy.UnpinMessageAsync(request);
+                return response?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error unpinning message {messageId}: {ex.Message}");
+                return false;
             }
         }
 

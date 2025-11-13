@@ -44,6 +44,9 @@ export const API_CONFIG = {
       deleteRoom: '/api/integrations/rocket/room/{roomId}',
       setAnnouncementMode: '/api/integrations/rocket/room/{roomId}/announcement-mode',
       setTopic: '/api/integrations/rocket/room/{roomId}/topic',
+      setAnnouncement: '/api/integrations/rocket/room/{roomId}/announcement',
+      pinMessage: '/api/integrations/rocket/message/{messageId}/pin',
+      unpinMessage: '/api/integrations/rocket/message/{messageId}/unpin',
 
       // Member Management
       addMember: '/api/integrations/rocket/room/{roomId}/add-member',

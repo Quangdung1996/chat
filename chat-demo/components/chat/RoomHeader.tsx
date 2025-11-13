@@ -18,15 +18,21 @@ interface RoomHeaderProps {
   room: UserSubscription;
   onRefresh?: () => void;
   onReadOnlyChange?: (isReadOnly: boolean, isOwner?: boolean) => void;
+  onRoomInfoChange?: (info: { topic?: string; announcement?: string }) => void;
 }
 
-export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHeaderProps) {
+export default function RoomHeader({ room, onRefresh, onReadOnlyChange, onRoomInfoChange }: RoomHeaderProps) {
   const [showMembers, setShowMembers] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [roomDescription, setRoomDescription] = useState<string | undefined>();
+  const [roomInfo, setRoomInfo] = useState<{
+    topic?: string;
+    announcement?: string;
+    readOnly?: boolean;
+  } | undefined>();
   
   // Confirm modal state
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -63,11 +69,25 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
         const displayText = response.room.topic || response.room.announcement;
         setRoomDescription(displayText);
         
+        // ✅ Store room info for settings
+        const roomInfoData = {
+          topic: response.room.topic,
+          announcement: response.room.announcement,
+          readOnly: response.room.readOnly,
+        };
+        setRoomInfo(roomInfoData);
+        
         // ✅ Check if current user is the owner using room info
         const isOwner = response.room.u?._id === currentUserId;
         
         // Notify parent with readonly status and owner info
         onReadOnlyChange?.(readOnly, isOwner);
+        
+        // ✅ Notify parent with topic and announcement
+        onRoomInfoChange?.({
+          topic: response.room.topic,
+          announcement: response.room.announcement,
+        });
         console.log(`✅ Room ${room.roomId} readOnly: ${readOnly}, isOwner: ${isOwner}, owner: ${response.room.u?.username}, topic: ${response.room.topic}, announcement: ${response.room.announcement}`);
       }
     } catch (error) {
@@ -257,7 +277,16 @@ export default function RoomHeader({ room, onRefresh, onReadOnlyChange }: RoomHe
               </button>
             )}
 
-            <RoomSettingsMenu room={room} onUpdate={onRefresh} />
+            <RoomSettingsMenu 
+              room={room} 
+              onUpdate={() => {
+                // Reload room info when settings are updated
+                loadRoomInfo();
+                onRefresh?.();
+              }}
+              roomInfo={roomInfo}
+              members={members}
+            />
           </div>
         </div>
       </div>

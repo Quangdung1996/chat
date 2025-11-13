@@ -27,6 +27,18 @@ public class DeleteMessageRequest
     public string MsgId { get; set; } = string.Empty;
 }
 
+public class PinMessageRequest
+{
+    [JsonProperty("messageId")]
+    public string MessageId { get; set; } = string.Empty;
+}
+
+public class UnpinMessageRequest
+{
+    [JsonProperty("messageId")]
+    public string MessageId { get; set; } = string.Empty;
+}
+
 public class MessageResponse : ApiResponse
 {
     public MessageData Message { get; set; } = new();

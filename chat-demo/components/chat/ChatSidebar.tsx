@@ -9,7 +9,7 @@ import rocketChatService from '@/services/rocketchat.service';
 import { rocketChatWS } from '@/services/rocketchat-websocket.service';
 import UserMenu from '@/components/UserMenu';
 import CreateRoomModal from './CreateRoomModal';
-import { Search, Plus, X, ChevronDown, MessageSquare, Loader2, XCircle } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, MessageSquare, Loader2, XCircle, Reply } from 'lucide-react';
 import type { UserSubscription } from '@/types/rocketchat';
 import { 
   isDirectMessage, 
@@ -524,15 +524,16 @@ export default function ChatSidebar({
                                   {getRoomTypeLabel(room.type)}
                                 </p>
                                 <div className="flex items-center gap-1.5">
-                                  {/* Thread notifications badge */}
+                                  {/* Thread notifications badge - Orange/Amber color with icon */}
                                   {hasThreadNotifications && (
-                                    <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">
-                                      {threadNotificationsCount > 99 ? '99+' : threadNotificationsCount}
+                                    <span className="flex-shrink-0 h-5 bg-gradient-to-r from-[#ff9500] to-[#ff6b00] dark:from-[#ff9500] dark:to-[#ff6b00] text-white text-[11px] font-bold rounded-md flex items-center justify-center gap-1 px-1.5 shadow-sm">
+                                      <Reply className="w-3 h-3" strokeWidth={2.5} />
+                                      <span>{threadNotificationsCount > 99 ? '99+' : threadNotificationsCount}</span>
                                     </span>
                                   )}
-                                  {/* Unread messages badge */}
+                                  {/* Unread messages badge - Blue color */}
                                   {hasUnread && (
-                                    <span className="flex-shrink-0 min-w-[20px] h-5 bg-[#007aff] dark:bg-[#0a84ff] text-white text-[13px] font-semibold rounded-full flex items-center justify-center px-1.5">
+                                    <span className="flex-shrink-0 min-w-[22px] h-5 bg-gradient-to-r from-[#007aff] to-[#0051d5] dark:from-[#0a84ff] dark:to-[#007aff] text-white text-[12px] font-bold rounded-md flex items-center justify-center px-2 shadow-sm">
                                       {storeUnreadCount > 99 ? '99+' : storeUnreadCount}
                                     </span>
                                   )}
