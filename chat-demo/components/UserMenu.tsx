@@ -82,12 +82,12 @@ export default function UserMenu() {
         <>
           {/* Overlay */}
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-[29]"
             onClick={() => setShowMenu(false)}
           />
 
           {/* Menu */}
-          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-20">
+          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-30">
             <div className="p-4 border-b dark:border-gray-700">
               <p className="font-semibold text-gray-900 dark:text-white">
                 {displayName}

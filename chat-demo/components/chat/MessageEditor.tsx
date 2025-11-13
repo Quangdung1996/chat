@@ -465,7 +465,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 
         {/* Error Toast */}
         {error && !showPreview && (
-          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-800 rounded-lg shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="fixed top-4 right-4 z-[90] flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-800 rounded-lg shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
             <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
           </div>
@@ -508,7 +508,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
 
         {/* Emoji Picker - Responsive positioning */}
         {showEmojiPicker && (
-          <div className="fixed bottom-20 right-4 md:bottom-24 md:right-8 z-50 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden emoji-picker-react max-w-[90vw]">
+          <div className="fixed bottom-20 right-4 md:bottom-24 md:right-8 z-40 shadow-2xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden emoji-picker-react max-w-[90vw]">
             <EmojiPicker
               onEmojiClick={handleEmojiClick}
               autoFocusSearch={false}
@@ -521,7 +521,7 @@ const MessageEditor = forwardRef<MessageEditorRef, MessageEditorProps>(
         {/* File Preview Modal */}
         {showPreview && selectedFile && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 backdrop-blur-sm"
             onClick={(e) => {
               // Close on backdrop click
               if (e.target === e.currentTarget && !uploading) {
