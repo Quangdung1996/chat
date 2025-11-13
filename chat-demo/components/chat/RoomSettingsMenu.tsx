@@ -99,10 +99,12 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
   const handleToggleReadOnly = async () => {
     setLoading(true);
     try {
-      await rocketChatService.setAnnouncementMode(room.roomId, !room.isReadOnly, roomType);
+      // Use roomInfo?.readOnly for consistent data source
+      const currentReadOnly = roomInfo?.readOnly || false;
+      await rocketChatService.setAnnouncementMode(room.roomId, !currentReadOnly, roomType);
       onUpdate?.();
     } catch (error) {
-      alert('Failed to update room: ' + (error as Error).message);
+      alert('Không thể thay đổi chế độ read-only: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -142,7 +144,7 @@ export default function RoomSettingsMenu({ room, onUpdate, roomInfo, members }: 
             onClick={handleToggleReadOnly}
             disabled={loading}
           >
-            {room.isReadOnly ? '🔓 Disable' : '📢 Enable'} Read-Only
+            {roomInfo?.readOnly ? '🔓 Tắt Read-Only' : '📢 Bật Read-Only'}
           </DropdownMenuItem>
 
           <DropdownMenuItem

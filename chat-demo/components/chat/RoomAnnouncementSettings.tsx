@@ -131,10 +131,13 @@ export default function RoomAnnouncementSettings({
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="announcement-mode" className="text-base font-semibold">
-                Chế độ thông báo
+                Chế độ Read-Only (Chỉ đọc)
               </Label>
               <p className="text-sm text-muted-foreground">
-                Khi bật, chỉ owner và moderator mới có thể gửi tin nhắn
+                {announcementMode ? 
+                  '🔒 Đang BẬT - Chỉ owner và moderator có thể gửi tin nhắn' : 
+                  '🔓 Đang TẮT - Tất cả thành viên có thể gửi tin nhắn'
+                }
               </p>
             </div>
             <Switch
