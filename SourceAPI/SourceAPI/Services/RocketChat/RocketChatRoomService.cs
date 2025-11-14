@@ -569,30 +569,47 @@ namespace SourceAPI.Services.RocketChat
         {
             try
             {
-                RoomMessagesResponse response;
+                var aggregatedMessages = new List<RoomMessage>();
+                var aggregatedThreadCount = 0;
+                var currentOffset = offset;
+                var fetchSize = Math.Max(count, 50);
+                var maxIterations = 5;
+                RoomMessagesResponse? lastResponse = null;
 
-                // Call appropriate API based on room type
-                if (roomType.IsGroup())
+                while (aggregatedMessages.Count < count && maxIterations-- > 0)
                 {
-                    response = await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
-                }
-                else if (roomType.IsChannel())
-                {
-                    response = await _userProxy.GetChannelMessagesAsync(roomId, count, offset);
-                }
-                else if (roomType.IsDirect())
-                {
-                    response = await _userProxy.GetDirectMessagesAsync(roomId, count, offset);
-                }
-                else
-                {
-                    _logger.LogWarning($"Unknown room type: {roomType}, defaulting to group");
-                    response = await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
+                    lastResponse = await FetchMessagesByRoomTypeAsync(roomId, roomType, fetchSize, currentOffset);
+
+                    if (lastResponse == null || !lastResponse.Success)
+                    {
+                        _logger.LogWarning($"Failed to get messages from room {roomId} (type: {roomType}) at offset {currentOffset}");
+                        break;
+                    }
+
+                    _logger.LogInformation($"Retrieved {lastResponse.Messages.Count}/{lastResponse.Total} messages from room {roomId} (offset: {currentOffset})");
+
+                    var mainMessages = lastResponse.Messages.Where(m => string.IsNullOrEmpty(m.Tmid)).ToList();
+                    var removedThreads = lastResponse.Messages.Count - mainMessages.Count;
+
+                    if (removedThreads > 0)
+                    {
+                        _logger.LogInformation($"Filtered out {removedThreads} thread replies from batch (remaining main messages: {mainMessages.Count})");
+                    }
+
+                    aggregatedThreadCount += removedThreads;
+                    aggregatedMessages.AddRange(mainMessages);
+
+                    if (lastResponse.Messages.Count < fetchSize || mainMessages.Count == 0)
+                    {
+                        // No more data or only thread replies left
+                        break;
+                    }
+
+                    currentOffset += lastResponse.Messages.Count;
                 }
 
-                if (response == null || !response.Success)
+                if (lastResponse == null || !lastResponse.Success)
                 {
-                    _logger.LogWarning($"Failed to get messages from room {roomId}");
                     return new RoomMessagesResponse
                     {
                         Success = false,
@@ -603,18 +620,24 @@ namespace SourceAPI.Services.RocketChat
                     };
                 }
 
-                _logger.LogInformation($"Retrieved {response.Messages.Count}/{response.Total} messages from room {roomId} (offset: {offset})");
+                var orderedMessages = aggregatedMessages
+                    .OrderByDescending(m => m.Ts)
+                    .Take(count)
+                    .OrderBy(m => m.Ts)
+                    .ToList();
 
-                // ✅ Filter out thread replies (messages with tmid) - they belong to threads only
-                var mainMessages = response.Messages.Where(m => string.IsNullOrEmpty(m.Tmid)).ToList();
-                _logger.LogInformation($"Filtered to {mainMessages.Count} main messages (removed {response.Messages.Count - mainMessages.Count} thread replies)");
+                var effectiveTotal = Math.Max(
+                    lastResponse.Total - aggregatedThreadCount,
+                    offset + orderedMessages.Count);
 
-                // Sort by timestamp descending (newest first) for infinite scroll
-                // First page gets newest messages, subsequent pages get older messages
-                response.Messages = mainMessages.OrderBy(m => m.Ts).ToList();
-                response.Count = response.Messages.Count;
-                // Note: Total from API includes thread replies, but we only return main messages
-                return response;
+                return new RoomMessagesResponse
+                {
+                    Success = true,
+                    Messages = orderedMessages,
+                    Count = orderedMessages.Count,
+                    Offset = offset,
+                    Total = effectiveTotal
+                };
             }
             catch (Exception ex)
             {
@@ -628,6 +651,27 @@ namespace SourceAPI.Services.RocketChat
                     Total = 0
                 };
             }
+        }
+
+        private async Task<RoomMessagesResponse?> FetchMessagesByRoomTypeAsync(string roomId, string roomType, int count, int offset)
+        {
+            if (roomType.IsGroup())
+            {
+                return await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
+            }
+
+            if (roomType.IsChannel())
+            {
+                return await _userProxy.GetChannelMessagesAsync(roomId, count, offset);
+            }
+
+            if (roomType.IsDirect())
+            {
+                return await _userProxy.GetDirectMessagesAsync(roomId, count, offset);
+            }
+
+            _logger.LogWarning($"Unknown room type '{roomType}' for message fetch, defaulting to group");
+            return await _userProxy.GetGroupMessagesAsync(roomId, count, offset);
         }
 
         public async Task<RoomMessagesResponse> GetThreadMessagesAsync(string tmid, int count = 50, int offset = 0)

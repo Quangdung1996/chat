@@ -47,12 +47,18 @@ function MessageListInfinite({
   });
 
   // Flatten all messages from pages
-  // API returns newest first, but UI needs oldest first (old messages at top)
-  // So we reverse the entire array after flattening
-  const allMessages = useMemo(
-    () => data?.pages.flatMap((page) => page.messages).reverse() || [],
-    [data]
-  );
+  // Backend already returns each page in chronological order (oldest -> newest)
+  // but useInfiniteQuery keeps newest pages at index 0. Reverse page order so
+  // older pages come first, then flatten.
+  const allMessages = useMemo(() => {
+    if (!data?.pages) {
+      return [];
+    }
+
+    return [...data.pages]
+      .reverse()
+      .flatMap((page) => page.messages);
+  }, [data]);
 
   // Notify parent of messages change
   const messagesSignatureRef = useRef<string | null>(null);
@@ -313,7 +319,7 @@ function MessageListInfinite({
 
       {/* Messages - reversed to show newest at bottom */}
       <MessageList
-        messages={[...allMessages].reverse()}
+        messages={allMessages}
         roomId={roomId}
         currentUserId={currentUserId}
         currentUsername={currentUsername}
